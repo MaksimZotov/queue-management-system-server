@@ -8,11 +8,13 @@ import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueStatu
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,13 +23,28 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 @Slf4j
 public class QueueServiceImpl implements QueueService {
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueStatusRepo clientInQueueStatusRepo;
+    private final JavaMailSender mailSender;
+    private final String emailUsernameSender;
+
+    public QueueServiceImpl(
+            LocationRepo locationRepo,
+            QueueRepo queueRepo,
+            ClientInQueueStatusRepo clientInQueueStatusRepo,
+            JavaMailSender mailSender,
+            @Value("${spring.mail.username}") String emailUsernameSender
+    ) {
+        this.locationRepo = locationRepo;
+        this.queueRepo = queueRepo;
+        this.clientInQueueStatusRepo = clientInQueueStatusRepo;
+        this.mailSender = mailSender;
+        this.emailUsernameSender = emailUsernameSender;
+    }
 
     @Override
     public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) {
@@ -85,11 +102,11 @@ public class QueueServiceImpl implements QueueService {
 
         QueueEntity queue = queueRepo.findById(id).get();
         ClientInQueueStatusEntity entity = new ClientInQueueStatusEntity();
-        entity.setClientPhoneNumber(joinQueueRequest.getPhoneNumber());
+        entity.setClientEmail(joinQueueRequest.getEmail());
         clientInQueueStatusRepo.save(
                 new ClientInQueueStatusEntity(
                         queue,
-                        joinQueueRequest.getPhoneNumber(),
+                        joinQueueRequest.getEmail(),
                         joinQueueRequest.getFirstName(),
                         joinQueueRequest.getLastName(),
                         curOrderNumber
@@ -106,6 +123,11 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public void notifyClientInQueue(String username, Long id, Long clientId) {
-        // TODO
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setFrom(emailUsernameSender);
+        mailMessage.setTo(clientInQueueStatusRepo.findById(clientId).get().getClientEmail());
+        mailMessage.setSubject("Queue");
+        mailMessage.setText("Your turn!");
+        mailSender.send(mailMessage);
     }
 }

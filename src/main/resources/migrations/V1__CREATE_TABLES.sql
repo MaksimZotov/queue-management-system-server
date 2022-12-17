@@ -30,7 +30,7 @@ CREATE TABLE queue (
 
 CREATE TABLE client_in_queue_status (
     queue_id BIGINT REFERENCES queue (id),
-    client_phone_number VARCHAR(32) NOT NULL,
+    client_email VARCHAR(32) NOT NULL,
     client_first_name VARCHAR(64) NOT NULL,
     client_last_name VARCHAR(64) NOT NULL,
     client_order_number INTEGER,

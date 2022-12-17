@@ -7,8 +7,7 @@ import lombok.extern.jackson.Jacksonized;
 @Value
 @Jacksonized
 public class JoinQueueRequest {
-    @JsonProperty("phone_number")
-    String phoneNumber;
+    String email;
     @JsonProperty("first_name")
     String firstName;
     @JsonProperty("last_name")

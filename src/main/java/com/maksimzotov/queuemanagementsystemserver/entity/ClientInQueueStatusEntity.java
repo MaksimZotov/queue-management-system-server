@@ -14,13 +14,13 @@ public class ClientInQueueStatusEntity {
 
     public ClientInQueueStatusEntity(
             QueueEntity queue,
-            String clientPhoneNumber,
+            String clientEmail,
             String clientFirstName,
             String clientLastName,
             Integer clientOrderNumber
     ) {
         this.queue = queue;
-        this.clientPhoneNumber = clientPhoneNumber;
+        this.clientEmail = clientEmail;
         this.clientFirstName = clientFirstName;
         this.clientLastName = clientLastName;
         this.clientOrderNumber = clientOrderNumber;
@@ -34,8 +34,8 @@ public class ClientInQueueStatusEntity {
     @JoinColumn(name = "queue_id",  referencedColumnName="id")
     private QueueEntity queue;
 
-    @Column(name = "client_phone_number")
-    private String clientPhoneNumber;
+    @Column(name = "client_email")
+    private String clientEmail;
 
     @Column(name = "client_first_name")
     private String clientFirstName;
