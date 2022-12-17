@@ -13,3 +13,10 @@ CREATE TABLE registration_code (
     account_id BIGINT PRIMARY KEY REFERENCES account (id),
     code VARCHAR(4) NOT NULL,
 );
+
+CREATE TABLE location (
+    id BIGSERIAL PRIMARY KEY,
+    owner_username BIGINT REFERENCES account (username) NOT NULL UNIQUE,
+    name VARCHAR(256) NOT NULL,
+    description VARCHAR(2048) NOT NULL
+);

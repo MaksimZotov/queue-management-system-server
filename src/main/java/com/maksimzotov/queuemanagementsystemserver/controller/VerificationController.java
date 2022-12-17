@@ -24,7 +24,7 @@ public class VerificationController {
         try {
             return ResponseEntity.ok().body(verificationService.signup(signupRequest));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+            return ResponseEntity.badRequest().body(new ErrorResult("Signup failed"));
         }
     }
 

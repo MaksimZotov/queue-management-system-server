@@ -2,6 +2,7 @@ package com.maksimzotov.queuemanagementsystemserver.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.*;
+import java.io.Serializable;
 
 import javax.persistence.*;
 
@@ -10,7 +11,7 @@ import javax.persistence.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountEntity {
+public class AccountEntity implements Serializable {
 
     public AccountEntity(
             String username,
