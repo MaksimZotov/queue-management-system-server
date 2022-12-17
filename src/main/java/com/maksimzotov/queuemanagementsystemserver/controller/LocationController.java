@@ -18,12 +18,12 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/locations")
 @RequiredArgsConstructor
 @Slf4j
-public class LocationsController {
+public class LocationController {
 
     private final CurrentAccountService currentAccountService;
     private final LocationService locationService;
 
-    @PostMapping()
+    @PostMapping("/create")
     public ResponseEntity<?> createLocation(
             HttpServletRequest request,
             @RequestBody CreateLocationRequest createLocationRequest
@@ -39,7 +39,7 @@ public class LocationsController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<?> deleteLocation(
             HttpServletRequest request,
             @PathVariable Long id

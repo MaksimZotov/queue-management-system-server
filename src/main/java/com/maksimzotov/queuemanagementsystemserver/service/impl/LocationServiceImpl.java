@@ -21,10 +21,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Transactional
 @Slf4j
-public class LocationServiceImpl implements LocationService  {
+public class LocationServiceImpl implements LocationService {
 
-    private final LocationRepo locationRepo;
     private final AccountRepo accountRepo;
+    private final LocationRepo locationRepo;
 
     @Override
     public Location createLocation(
