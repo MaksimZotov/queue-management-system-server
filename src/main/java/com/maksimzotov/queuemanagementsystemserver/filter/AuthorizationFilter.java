@@ -40,53 +40,54 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+
         String path = request.getServletPath();
+
         if (
-                path.equals("/verification/login") ||
+                path.equals("/verification/signup") ||
                 path.equals("/verification/confirm") ||
-                path.equals("/verification/token/refresh") ||
-                path.equals("/verification/signup")
+                path.equals("/verification/login") ||
+                path.equals("/verification/token/refresh")
         ) {
             filterChain.doFilter(request, response);
-        } else {
-            String authorizationHeader = request.getHeader(AUTHORIZATION);
-
-            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-                try {
-                    String token = authorizationHeader.substring("Bearer ".length());
-
-                    Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
-                    JWTVerifier verifier = JWT.require(algorithm).build();
-                    DecodedJWT decodedJWT = verifier.verify(token);
-                    String username = decodedJWT.getSubject();
-
-                    Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                            username,
-                            null,
-                            authorities
-                    );
-
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    filterChain.doFilter(request, response);
-
-                } catch (Exception exception) {
-                    log.error("Error logging in: {}", exception.getMessage());
-
-                    response.setHeader("error", exception.getMessage());
-                    response.setStatus(FORBIDDEN.value());
-
-                    Map<String, String> error = new HashMap<>();
-                    error.put("error_message", exception.getMessage());
-
-                    response.setContentType(APPLICATION_JSON_VALUE);
-
-                    new ObjectMapper().writeValue(response.getOutputStream(), error);
-                }
-            } else {
-                filterChain.doFilter(request, response);
-            }
+            return;
         }
+
+        String authorizationHeader = request.getHeader(AUTHORIZATION);
+
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            String token = authorizationHeader.substring("Bearer ".length());
+
+            Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
+            JWTVerifier verifier = JWT.require(algorithm).build();
+            DecodedJWT decodedJWT = verifier.verify(token);
+            String username = decodedJWT.getSubject();
+
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    username,
+                    null,
+                    null
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+            filterChain.doFilter(request, response);
+
+        } catch (Exception exception) {
+            setError(response, exception.getMessage());
+        }
+    }
+
+    private void setError(HttpServletResponse response, String message) throws IOException {
+        response.setHeader("error", message);
+        response.setStatus(FORBIDDEN.value());
+        Map<String, String> error = new HashMap<>();
+        error.put("error_message", message);
+        response.setContentType(APPLICATION_JSON_VALUE);
+        new ObjectMapper().writeValue(response.getOutputStream(), error);
     }
 }
