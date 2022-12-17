@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +55,7 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<QueueEntity> pageResult = queueRepo.findByLocationIdContaining(locationId, pageable);
+        Page<QueueEntity> pageResult = queueRepo.findByLocationId(locationId, pageable);
         return new ContainerForList<>(
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages(),
@@ -65,7 +66,7 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public QueueState getQueueState(Long id) {
-        List<ClientInQueueStatusEntity> clients = clientInQueueStatusRepo.findByQueueIdContaining(id);
+        List<ClientInQueueStatusEntity> clients = clientInQueueStatusRepo.findByQueueId(id);
         QueueEntity queue = queueRepo.findById(id).get();
         return new QueueState(
                 id,
@@ -76,17 +77,35 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueState joinQueue(Long id, JoinQueueRequest joinQueueRequest) {
-        return null;
+    public Integer joinQueue(Long id, JoinQueueRequest joinQueueRequest) {
+        Optional<Integer> maxOrderNumber =
+                clientInQueueStatusRepo.findOrderNumbersInQueue(id).stream().max(Integer::compare);
+
+        Integer curOrderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
+
+        QueueEntity queue = queueRepo.findById(id).get();
+        ClientInQueueStatusEntity entity = new ClientInQueueStatusEntity();
+        entity.setClientPhoneNumber(joinQueueRequest.getPhoneNumber());
+        clientInQueueStatusRepo.save(
+                new ClientInQueueStatusEntity(
+                        queue,
+                        joinQueueRequest.getPhoneNumber(),
+                        joinQueueRequest.getFirstName(),
+                        joinQueueRequest.getLastName(),
+                        curOrderNumber
+                )
+        );
+        return curOrderNumber;
     }
 
     @Override
-    public Long serveClientInQueue(String username, Long id, Long clientId) {
-        return clientId;
+    public void serveClientInQueue(String username, Long id, Long clientId) {
+        clientInQueueStatusRepo.deleteById(clientId);
+        clientInQueueStatusRepo.updateClientsOrderNumberInQueue(id);
     }
 
     @Override
-    public Long notifyClientInQueue(String username, Long id, Long clientId) {
-        return clientId;
+    public void notifyClientInQueue(String username, Long id, Long clientId) {
+        // TODO
     }
 }

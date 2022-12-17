@@ -65,10 +65,10 @@ public class QueueController {
         }
     }
 
-    @GetMapping()
+    @GetMapping("/")
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
-            @RequestParam("location_id") Long locationId,
+            @RequestParam(name = "location_id") Long locationId,
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
@@ -105,21 +105,20 @@ public class QueueController {
             @RequestBody JoinQueueRequest joinQueueRequest
     ) {
         try {
-            queueService.joinQueue(id, joinQueueRequest);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body(queueService.joinQueue(id, joinQueueRequest));
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Join failed"));
         }
     }
 
-    @PostMapping("/{id}/serve/{client_id}")
+    @PostMapping("/{id}/clients/{client_id}/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
             @PathVariable("client_id") Long clientId
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccount(
+            currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
                     username -> queueService.serveClientInQueue(username, id, clientId)
             );
@@ -129,14 +128,14 @@ public class QueueController {
         }
     }
 
-    @PostMapping("/{id}/clients/{client_id}")
+    @PostMapping("/{id}/clients/{client_id}/notify")
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
             @PathVariable("client_id") Long clientId
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccount(
+            currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
                     username -> queueService.notifyClientInQueue(username, id, clientId)
             );

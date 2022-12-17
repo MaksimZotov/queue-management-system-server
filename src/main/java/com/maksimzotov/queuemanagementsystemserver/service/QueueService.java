@@ -11,8 +11,7 @@ public interface QueueService {
     Long deleteQueue(String username, Long id);
     ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize);
     QueueState getQueueState(Long id);
-    QueueState joinQueue(Long id, JoinQueueRequest joinQueueRequest);
-
-    Long serveClientInQueue(String username, Long id, Long clientId);
-    Long notifyClientInQueue(String username, Long id, Long clientId);
+    Integer joinQueue(Long id, JoinQueueRequest joinQueueRequest);
+    void serveClientInQueue(String username, Long id, Long clientId);
+    void notifyClientInQueue(String username, Long id, Long clientId);
 }

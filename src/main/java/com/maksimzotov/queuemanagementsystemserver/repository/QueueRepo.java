@@ -6,5 +6,5 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface QueueRepo extends JpaRepository<QueueEntity, Long> {
-    Page<QueueEntity> findByLocationIdContaining(Long locationId, Pageable pageable);
+    Page<QueueEntity> findByLocationId(Long locationId, Pageable pageable);
 }

@@ -12,6 +12,20 @@ import javax.persistence.*;
 @AllArgsConstructor
 public class ClientInQueueStatusEntity {
 
+    public ClientInQueueStatusEntity(
+            QueueEntity queue,
+            String clientPhoneNumber,
+            String clientFirstName,
+            String clientLastName,
+            Integer clientOrderNumber
+    ) {
+        this.queue = queue;
+        this.clientPhoneNumber = clientPhoneNumber;
+        this.clientFirstName = clientFirstName;
+        this.clientLastName = clientLastName;
+        this.clientOrderNumber = clientOrderNumber;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
