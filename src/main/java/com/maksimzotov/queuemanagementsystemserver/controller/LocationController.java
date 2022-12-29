@@ -65,6 +65,7 @@ public class LocationController {
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
+        log.info("getMyLocations() called");
         try {
             ContainerForList<Location> container = currentAccountService.handleRequestFromCurrentAccount(
                     request,
