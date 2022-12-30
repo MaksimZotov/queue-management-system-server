@@ -10,8 +10,9 @@ import lombok.extern.jackson.Jacksonized;
 @AllArgsConstructor
 @Jacksonized
 public class ClientInQueue {
-    @JsonProperty("phone_number")
-    private String phoneNumber;
+    private Long id;
+    @JsonProperty("email")
+    private String email;
     @JsonProperty("first_name")
     private String firstName;
     @JsonProperty("last_name")
@@ -21,6 +22,7 @@ public class ClientInQueue {
 
     public static ClientInQueue toModel(ClientInQueueStatusEntity entity) {
         return new ClientInQueue(
+                entity.getId(),
                 entity.getClientEmail(),
                 entity.getClientFirstName(),
                 entity.getClientLastName(),

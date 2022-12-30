@@ -42,7 +42,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
         http.cors();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().antMatchers("/verification/**").permitAll();
+        http.authorizeRequests().antMatchers(
+                "/verification/**",
+                "/queues/{\\d+}/join"
+        ).permitAll();
         http.authorizeRequests().antMatchers(
                 "/locations",
                 "/locations/me",
