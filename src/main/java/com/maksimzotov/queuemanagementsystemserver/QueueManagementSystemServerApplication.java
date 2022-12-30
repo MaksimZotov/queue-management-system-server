@@ -25,7 +25,9 @@ public class QueueManagementSystemServerApplication {
 		return new WebMvcConfigurer() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/**").allowedOrigins("http://localhost:64407");
+				registry.addMapping("/**")
+						.allowedOrigins("http://localhost:64407")
+						.allowedMethods("*");
 			}
 		};
 	}
