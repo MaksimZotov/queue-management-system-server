@@ -65,7 +65,7 @@ public class QueueController {
         }
     }
 
-    @GetMapping("/")
+    @GetMapping()
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
             @RequestParam(name = "location_id") Long locationId,
