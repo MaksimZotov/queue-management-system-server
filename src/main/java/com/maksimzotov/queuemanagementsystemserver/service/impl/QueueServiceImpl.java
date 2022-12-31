@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,8 @@ import java.util.Optional;
 @Transactional
 @Slf4j
 public class QueueServiceImpl implements QueueService {
+
+    private final SimpMessagingTemplate messagingTemplate;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueStatusRepo clientInQueueStatusRepo;
@@ -33,12 +36,14 @@ public class QueueServiceImpl implements QueueService {
     private final String emailUsernameSender;
 
     public QueueServiceImpl(
+            SimpMessagingTemplate messagingTemplate,
             LocationRepo locationRepo,
             QueueRepo queueRepo,
             ClientInQueueStatusRepo clientInQueueStatusRepo,
             JavaMailSender mailSender,
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
+        this.messagingTemplate = messagingTemplate;
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
         this.clientInQueueStatusRepo = clientInQueueStatusRepo;
@@ -112,6 +117,7 @@ public class QueueServiceImpl implements QueueService {
                         curOrderNumber
                 )
         );
+        messagingTemplate.convertAndSend("/topic/queues/" + id, getQueueState(id));
         return curOrderNumber;
     }
 
@@ -119,6 +125,7 @@ public class QueueServiceImpl implements QueueService {
     public void serveClientInQueue(String username, Long id, Long clientId) {
         clientInQueueStatusRepo.deleteById(clientId);
         clientInQueueStatusRepo.updateClientsOrderNumberInQueue(id);
+        messagingTemplate.convertAndSend("/topic/queues/" + id, getQueueState(id));
     }
 
     @Override
