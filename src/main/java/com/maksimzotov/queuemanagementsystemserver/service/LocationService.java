@@ -7,5 +7,6 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 public interface LocationService {
     Location createLocation(String username, CreateLocationRequest createLocationRequest);
     Long deleteLocation(String username, Long id);
+    Location getLocation(Long id);
     ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize);
 }

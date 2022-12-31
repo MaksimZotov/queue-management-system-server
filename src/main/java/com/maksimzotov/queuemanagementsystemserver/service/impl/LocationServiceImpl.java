@@ -53,6 +53,11 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
+    public Location getLocation(Long id) {
+        return Location.toModel(locationRepo.findById(id).get());
+    }
+
+    @Override
     public ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Page<LocationEntity> pageResult = locationRepo.findByOwnerUsernameContaining(username, pageable);
