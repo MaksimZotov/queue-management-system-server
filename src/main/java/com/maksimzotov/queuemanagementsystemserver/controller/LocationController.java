@@ -71,34 +71,25 @@ public class LocationController {
         }
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyLocations(
-            HttpServletRequest request,
-            @RequestParam Integer page,
-            @RequestParam(name = "page_size") Integer pageSize
-    ) {
-        log.info("getMyLocations() called");
-        try {
-            ContainerForList<Location> container = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> locationService.getLocations(username, page, pageSize)
-            );
-            return ResponseEntity.ok().body(container);
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
-        }
-    }
-
-    @GetMapping("/{username}")
+    @GetMapping()
     public ResponseEntity<?> getLocations(
             HttpServletRequest request,
-            @PathVariable String username,
+            @RequestParam String username,
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
         log.info("getMyLocations() called");
         try {
-            return ResponseEntity.ok().body(locationService.getLocations(username, page, pageSize));
+            ContainerForList<Location> container;
+            if (username == null) {
+                container = currentAccountService.handleRequestFromCurrentAccount(
+                        request,
+                        profileUsername -> locationService.getLocations(profileUsername, page, pageSize)
+                );
+            } else {
+                container = locationService.getLocations(username, page, pageSize);
+            }
+            return ResponseEntity.ok().body(container);
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(new ErrorResult());
         }
