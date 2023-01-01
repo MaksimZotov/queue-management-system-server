@@ -44,12 +44,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().antMatchers(
                 "/verification/**",
-                "/queues/{\\d+}/join"
+                "/locations/me",
+                "/locations/{\\s+}/{\\d+}/{\\d+}/client"
         ).permitAll();
         http.authorizeRequests().antMatchers(
-                "/locations",
-                "/locations/me",
-                "/locations/{\\d+}"
+                "/locations/**"
         ).authenticated();
         http.addFilterBefore(new AuthorizationFilter(secret), UsernamePasswordAuthenticationFilter.class);
     }
