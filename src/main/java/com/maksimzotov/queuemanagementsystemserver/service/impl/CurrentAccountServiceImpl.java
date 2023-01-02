@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
+import com.maksimzotov.queuemanagementsystemserver.util.HandleRequestFromCurrentAccountNoReturnSAM;
 import com.maksimzotov.queuemanagementsystemserver.util.HandleRequestFromCurrentAccountSAM;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +43,24 @@ public class CurrentAccountServiceImpl implements CurrentAccountService {
             DecodedJWT decodedJWT = verifier.verify(refresh_token);
             String username = decodedJWT.getSubject();
             return handleRequestFromCurrentAccountSAM.handleRequestFromCurrentAccount(username);
+        } else {
+            throw new AccountIsNotAuthorizedException();
+        }
+    }
+
+    @Override
+    public void handleRequestFromCurrentAccountNoReturn(
+            HttpServletRequest request,
+            HandleRequestFromCurrentAccountNoReturnSAM handleRequestFromCurrentAccountNoReturnSAM
+    ) throws AccountIsNotAuthorizedException {
+        String authorizationHeader = request.getHeader(AUTHORIZATION);
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String refresh_token = authorizationHeader.substring("Bearer ".length());
+            Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
+            JWTVerifier verifier = JWT.require(algorithm).build();
+            DecodedJWT decodedJWT = verifier.verify(refresh_token);
+            String username = decodedJWT.getSubject();
+            handleRequestFromCurrentAccountNoReturnSAM.handleRequestFromCurrentAccount(username);
         } else {
             throw new AccountIsNotAuthorizedException();
         }

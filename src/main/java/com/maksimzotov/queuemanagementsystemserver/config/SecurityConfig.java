@@ -40,12 +40,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
+        http.cors();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().antMatchers("/verification/**").permitAll();
         http.authorizeRequests().antMatchers(
-                "/locations",
-                "/locations/me",
-                "/locations/{\\d+}"
+                "/verification/**",
+                "/{username}/locations/{location_id}/queues/{queue_id}/client",
+                "/{username}/locations/{location_id}/queues/{queue_id}/join"
+        ).permitAll();
+        http.authorizeRequests().antMatchers(
+                "/locations/**"
         ).authenticated();
         http.addFilterBefore(new AuthorizationFilter(secret), UsernamePasswordAuthenticationFilter.class);
     }

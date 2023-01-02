@@ -40,7 +40,6 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-
         String path = request.getServletPath();
 
         if (

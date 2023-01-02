@@ -18,12 +18,12 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/locations")
 @RequiredArgsConstructor
 @Slf4j
-public class LocationsController {
+public class LocationController {
 
     private final CurrentAccountService currentAccountService;
     private final LocationService locationService;
 
-    @PostMapping()
+    @PostMapping("/create")
     public ResponseEntity<?> createLocation(
             HttpServletRequest request,
             @RequestBody CreateLocationRequest createLocationRequest
@@ -39,7 +39,7 @@ public class LocationsController {
         }
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<?> deleteLocation(
             HttpServletRequest request,
             @PathVariable Long id
@@ -59,20 +59,39 @@ public class LocationsController {
         }
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyLocations(
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getLocation(
             HttpServletRequest request,
+            @PathVariable Long id
+    ) {
+        try {
+            return ResponseEntity.ok().body(locationService.getLocation(id));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Unknown error"));
+        }
+    }
+
+    @GetMapping()
+    public ResponseEntity<?> getLocations(
+            HttpServletRequest request,
+            @RequestParam String username,
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
+        log.info("getMyLocations() called");
         try {
-            ContainerForList<Location> container = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> locationService.getLocations(username, page, pageSize)
-            );
+            ContainerForList<Location> container;
+            if (username == null) {
+                container = currentAccountService.handleRequestFromCurrentAccount(
+                        request,
+                        profileUsername -> locationService.getLocations(profileUsername, page, pageSize)
+                );
+            } else {
+                container = locationService.getLocations(username, page, pageSize);
+            }
             return ResponseEntity.ok().body(container);
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult());
         }
     }
 }
