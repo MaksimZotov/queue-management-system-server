@@ -3,14 +3,11 @@ package com.maksimzotov.queuemanagementsystemserver.controller;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -96,18 +93,6 @@ public class QueueController {
             return ResponseEntity.ok().body(state);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
-        }
-    }
-
-    @PostMapping("/{id}/join")
-    public ResponseEntity<?> joinQueue(
-            @PathVariable Long id,
-            @RequestBody JoinQueueRequest joinQueueRequest
-    ) {
-        try {
-            return ResponseEntity.ok().body(queueService.joinQueue(id, joinQueueRequest));
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Join failed"));
         }
     }
 

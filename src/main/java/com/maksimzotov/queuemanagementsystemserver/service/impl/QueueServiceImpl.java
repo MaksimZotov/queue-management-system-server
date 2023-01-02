@@ -3,6 +3,7 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueStatusRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
@@ -96,29 +97,6 @@ public class QueueServiceImpl implements QueueService {
                 queue.getDescription(),
                 clients.stream().map(ClientInQueue::toModel).toList()
         );
-    }
-
-    @Override
-    public Integer joinQueue(Long id, JoinQueueRequest joinQueueRequest) {
-        Optional<Integer> maxOrderNumber =
-                clientInQueueStatusRepo.findOrderNumbersInQueue(id).stream().max(Integer::compare);
-
-        Integer curOrderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
-
-        QueueEntity queue = queueRepo.findById(id).get();
-        ClientInQueueStatusEntity entity = new ClientInQueueStatusEntity();
-        entity.setClientEmail(joinQueueRequest.getEmail());
-        clientInQueueStatusRepo.save(
-                new ClientInQueueStatusEntity(
-                        queue,
-                        joinQueueRequest.getEmail(),
-                        joinQueueRequest.getFirstName(),
-                        joinQueueRequest.getLastName(),
-                        curOrderNumber
-                )
-        );
-        messagingTemplate.convertAndSend("/topic/queues/" + id, getQueueState(id));
-        return curOrderNumber;
     }
 
     @Override

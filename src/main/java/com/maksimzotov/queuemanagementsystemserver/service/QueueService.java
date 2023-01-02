@@ -1,8 +1,9 @@
 package com.maksimzotov.queuemanagementsystemserver.service;
 
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ClientInQueueState;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 
@@ -11,7 +12,6 @@ public interface QueueService {
     Long deleteQueue(String username, Long id);
     ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize);
     QueueState getQueueState(Long id);
-    Integer joinQueue(Long id, JoinQueueRequest joinQueueRequest);
     void serveClientInQueue(String username, Long id, Long clientId);
     void notifyClientInQueue(String username, Long id, Long clientId);
 }

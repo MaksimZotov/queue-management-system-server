@@ -1,4 +1,4 @@
-package com.maksimzotov.queuemanagementsystemserver.model.queue;
+package com.maksimzotov.queuemanagementsystemserver.model.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;

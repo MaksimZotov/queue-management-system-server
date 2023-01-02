@@ -11,6 +11,8 @@ import java.util.List;
 public interface ClientInQueueStatusRepo extends JpaRepository<ClientInQueueStatusEntity, Long> {
     List<ClientInQueueStatusEntity> findByQueueId(Long queueId);
 
+    ClientInQueueStatusEntity findByClientEmail(String clientEmail);
+
     @Query("SELECT clientOrderNumber FROM client_in_queue_status WHERE queue_id = :p_queue_id")
     List<Integer> findOrderNumbersInQueue(@Param("p_queue_id") Long queueId);
 
