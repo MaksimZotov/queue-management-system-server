@@ -3,7 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueStatusRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
@@ -22,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -110,7 +108,7 @@ public class QueueServiceImpl implements QueueService {
     public void notifyClientInQueue(String username, Long id, Long clientId) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
-        mailMessage.setTo(clientInQueueStatusRepo.findById(clientId).get().getClientEmail());
+        mailMessage.setTo(clientInQueueStatusRepo.findById(clientId).get().getEmail());
         mailMessage.setSubject("Queue");
         mailMessage.setText("Your turn!");
         mailSender.send(mailMessage);

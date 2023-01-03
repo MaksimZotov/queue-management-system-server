@@ -42,10 +42,10 @@ public class ClientInQueueState {
                 true,
                 queueState.getName(),
                 queueState.getClients().size(),
-                entity.getClientEmail(),
-                entity.getClientFirstName(),
-                entity.getClientLastName(),
-                entity.getClientOrderNumber() - 1
+                entity.getEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getOrderNumber() - 1
         );
     }
 }

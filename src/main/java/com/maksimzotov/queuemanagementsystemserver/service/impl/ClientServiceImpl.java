@@ -56,7 +56,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientInQueueState getClientInQueueState(Long id, String email) {
         log.info("getClientInQueueState");
-        ClientInQueueStatusEntity clientInQueueStatusEntity = clientInQueueStatusRepo.findByClientEmail(email);
+        ClientInQueueStatusEntity clientInQueueStatusEntity = clientInQueueStatusRepo.findByEmail(email);
         if (clientInQueueStatusEntity != null) {
             return ClientInQueueState.toModel(queueService.getQueueState(id), clientInQueueStatusEntity);
         } else {

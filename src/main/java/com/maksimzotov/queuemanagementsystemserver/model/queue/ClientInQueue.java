@@ -23,10 +23,10 @@ public class ClientInQueue {
     public static ClientInQueue toModel(ClientInQueueStatusEntity entity) {
         return new ClientInQueue(
                 entity.getId(),
-                entity.getClientEmail(),
-                entity.getClientFirstName(),
-                entity.getClientLastName(),
-                entity.getClientOrderNumber()
+                entity.getEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getOrderNumber()
         );
     }
 }

@@ -11,12 +11,12 @@ import java.util.List;
 public interface ClientInQueueStatusRepo extends JpaRepository<ClientInQueueStatusEntity, Long> {
     List<ClientInQueueStatusEntity> findByQueueId(Long queueId);
 
-    ClientInQueueStatusEntity findByClientEmail(String clientEmail);
+    ClientInQueueStatusEntity findByEmail(String email);
 
-    @Query("SELECT clientOrderNumber FROM client_in_queue_status WHERE queue_id = :p_queue_id")
+    @Query("SELECT orderNumber FROM client_in_queue_status WHERE queue_id = :p_queue_id")
     List<Integer> findOrderNumbersInQueue(@Param("p_queue_id") Long queueId);
 
     @Modifying
-    @Query("UPDATE client_in_queue_status SET clientOrderNumber = clientOrderNumber - 1 WHERE queue_id = :p_queue_id")
+    @Query("UPDATE client_in_queue_status SET orderNumber = orderNumber - 1 WHERE queue_id = :p_queue_id")
     void updateClientsOrderNumberInQueue(@Param("p_queue_id") Long queueId);
 }
