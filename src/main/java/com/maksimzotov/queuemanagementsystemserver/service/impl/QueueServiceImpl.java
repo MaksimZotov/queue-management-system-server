@@ -1,10 +1,13 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueStatusRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -28,24 +32,27 @@ import java.util.Objects;
 public class QueueServiceImpl implements QueueService {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final AccountRepo accountRepo;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
-    private final ClientInQueueStatusRepo clientInQueueStatusRepo;
+    private final ClientInQueueRepo clientInQueueRepo;
     private final JavaMailSender mailSender;
     private final String emailUsernameSender;
 
     public QueueServiceImpl(
             SimpMessagingTemplate messagingTemplate,
+            AccountRepo accountRepo,
             LocationRepo locationRepo,
             QueueRepo queueRepo,
-            ClientInQueueStatusRepo clientInQueueStatusRepo,
+            ClientInQueueRepo clientInQueueRepo,
             JavaMailSender mailSender,
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
         this.messagingTemplate = messagingTemplate;
+        this.accountRepo = accountRepo;
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
-        this.clientInQueueStatusRepo = clientInQueueStatusRepo;
+        this.clientInQueueRepo = clientInQueueRepo;
         this.mailSender = mailSender;
         this.emailUsernameSender = emailUsernameSender;
     }
@@ -54,61 +61,94 @@ public class QueueServiceImpl implements QueueService {
     public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) {
         QueueEntity entity = queueRepo.save(
                 new QueueEntity(
+                        null,
+                        locationId,
                         createQueueRequest.getName(),
-                        createQueueRequest.getDescription(),
-                        locationRepo.findById(locationId).get()
+                        createQueueRequest.getDescription()
                 )
         );
-        return Queue.toModel(entity);
+        return Queue.toModel(entity, true);
     }
 
     @Override
-    public Long deleteQueue(String username, Long id) {
-        QueueEntity entity = queueRepo.findById(id).get();
-        if (Objects.equals(entity.getLocation().getOwner().getUsername(), username)) {
-            queueRepo.delete(entity);
-            return id;
-        } else {
+    public Long deleteQueue(String username, Long queueId) {
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
             return null;
         }
+        QueueEntity queueEntity = queue.get();
+        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
+        if (location.isEmpty()) {
+            return null;
+        }
+        LocationEntity locationEntity = location.get();
+        Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
+        if (account.isEmpty()) {
+            return null;
+        }
+        AccountEntity accountEntity = account.get();
+        if (Objects.equals(accountEntity.getUsername(), username)) {
+            queueRepo.deleteById(queueId);
+            return queueId;
+        }
+        return null;
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize) {
+    public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize, Boolean hasRules) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Page<QueueEntity> pageResult = queueRepo.findByLocationId(locationId, pageable);
         return new ContainerForList<>(
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages(),
                 pageResult.isLast(),
-                pageResult.getContent().stream().map(Queue::toModel).toList()
+                pageResult.getContent().stream().map((item) -> Queue.toModel(item, hasRules)).toList()
         );
     }
 
     @Override
-    public QueueState getQueueState(Long id) {
-        List<ClientInQueueStatusEntity> clients = clientInQueueStatusRepo.findByQueueId(id);
-        QueueEntity queue = queueRepo.findById(id).get();
+    public QueueState getQueueState(Long queueId) {
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            return null;
+        }
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        if (clients.isEmpty()) {
+            return null;
+        }
+        QueueEntity queueEntity = queue.get();
+        List<ClientInQueueEntity> clientsEntities = clients.get();
+
         return new QueueState(
-                id,
-                queue.getName(),
-                queue.getDescription(),
-                clients.stream().map(ClientInQueue::toModel).toList()
+                queueId,
+                queueEntity.getName(),
+                queueEntity.getDescription(),
+                clientsEntities.stream().map(ClientInQueue::toModel).toList()
         );
     }
 
     @Override
-    public void serveClientInQueue(String username, Long id, Long clientId) {
-        clientInQueueStatusRepo.deleteById(clientId);
-        clientInQueueStatusRepo.updateClientsOrderNumberInQueue(id);
-        messagingTemplate.convertAndSend("/topic/queues/" + id, getQueueState(id));
+    public void serveClientInQueue(String username, Long queueId, String email) {
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
+                new ClientInQueueEntity.PrimaryKey(
+                        queueId,
+                        email
+                )
+        );
+        if (clientInQueue.isEmpty()) {
+            return;
+        }
+        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+        clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
+        clientInQueueRepo.deleteByPrimaryKeyEmail(email);
+        messagingTemplate.convertAndSend("/topic/queues/" + queueId, getQueueState(queueId));
     }
 
     @Override
-    public void notifyClientInQueue(String username, Long id, Long clientId) {
+    public void notifyClientInQueue(String username, Long queueId, String email) {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
-        mailMessage.setTo(clientInQueueStatusRepo.findById(clientId).get().getEmail());
+        mailMessage.setTo(email);
         mailMessage.setSubject("Queue");
         mailMessage.setText("Your turn!");
         mailSender.send(mailMessage);

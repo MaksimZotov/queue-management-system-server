@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,45 +29,57 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepo locationRepo;
 
     @Override
-    public Location createLocation(
-            String username,
-            CreateLocationRequest createLocationRequest
-    ) {
+    public Location createLocation(String username, CreateLocationRequest createLocationRequest) {
         LocationEntity entity = locationRepo.save(
                 new LocationEntity(
+                        null,
+                        username,
                         createLocationRequest.getName(),
-                        createLocationRequest.getDescription(),
-                        accountRepo.findByUsername(username)
+                        createLocationRequest.getDescription()
+
                 )
         );
-        return Location.toModel(entity);
+        return Location.toModel(entity, true);
     }
 
     @Override
-    public Long deleteLocation(String username, Long id) {
-        LocationEntity entity = locationRepo.findById(id).get();
-        if (Objects.equals(entity.getOwner().getUsername(), username)) {
-            locationRepo.delete(entity);
-            return id;
-        } else {
+    public Long deleteLocation(String username, Long queueId) {
+        Optional<LocationEntity> location = locationRepo.findById(queueId);
+        if (location.isEmpty()) {
             return null;
         }
+        LocationEntity locationEntity = location.get();
+        Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
+        if (account.isEmpty()) {
+            return null;
+        }
+        AccountEntity accountEntity = account.get();
+        if (Objects.equals(accountEntity.getUsername(), username)) {
+            locationRepo.deleteById(queueId);
+            return queueId;
+        }
+        return null;
     }
 
     @Override
-    public Location getLocation(Long id) {
-        return Location.toModel(locationRepo.findById(id).get());
+    public Location getLocation(Long queueId, Boolean hasRules) {
+        Optional<LocationEntity> location = locationRepo.findById(queueId);
+        if (location.isEmpty()) {
+            return null;
+        }
+        LocationEntity locationEntity = location.get();
+        return Location.toModel(locationEntity, hasRules);
     }
 
     @Override
-    public ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize) {
+    public ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize, Boolean hasRules) {
         Pageable pageable = PageRequest.of(page, pageSize);
         Page<LocationEntity> pageResult = locationRepo.findByOwnerUsernameContaining(username, pageable);
         return new ContainerForList<>(
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages(),
                 pageResult.isLast(),
-                pageResult.getContent().stream().map(Location::toModel).toList()
+                pageResult.getContent().stream().map((item) -> Location.toModel(item, hasRules)).toList()
         );
     }
 }

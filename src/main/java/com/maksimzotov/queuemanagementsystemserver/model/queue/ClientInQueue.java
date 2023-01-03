@@ -1,7 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.model.queue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.jackson.Jacksonized;
@@ -20,10 +20,10 @@ public class ClientInQueue {
     @JsonProperty("order_number")
     private Integer orderNumber;
 
-    public static ClientInQueue toModel(ClientInQueueStatusEntity entity) {
+    public static ClientInQueue toModel(ClientInQueueEntity entity) {
         return new ClientInQueue(
-                entity.getId(),
-                entity.getEmail(),
+                entity.getPrimaryKey().getQueueId(),
+                entity.getPrimaryKey().getEmail(),
                 entity.getFirstName(),
                 entity.getLastName(),
                 entity.getOrderNumber()

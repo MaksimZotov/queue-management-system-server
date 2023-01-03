@@ -3,6 +3,7 @@ package com.maksimzotov.queuemanagementsystemserver.controller;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/queues")
@@ -39,6 +41,8 @@ public class QueueController {
             return ResponseEntity.ok().body(queue);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
@@ -59,24 +63,33 @@ public class QueueController {
             }
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
     @GetMapping()
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
+            @RequestParam String username,
             @RequestParam(name = "location_id") Long locationId,
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
         try {
-            ContainerForList<Queue> container = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> queueService.getQueues(locationId, page, pageSize)
-            );
-            return ResponseEntity.ok().body(container);
+            if (Objects.equals(username, "me")) {
+                return ResponseEntity.ok().body(
+                        currentAccountService.handleRequestFromCurrentAccount(
+                                request,
+                                profileUsername -> queueService.getQueues(locationId, page, pageSize, true)
+                        )
+                );
+            }
+            return ResponseEntity.ok().body(queueService.getQueues(locationId, page, pageSize, false));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
@@ -93,40 +106,46 @@ public class QueueController {
             return ResponseEntity.ok().body(state);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
-    @PostMapping("/{id}/clients/{client_id}/serve")
+    @PostMapping("/{id}/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @PathVariable("client_id") Long clientId
+            @RequestParam String email
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> queueService.serveClientInQueue(username, id, clientId)
+                    username -> queueService.serveClientInQueue(username, id, email)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Service failed"));
         }
     }
 
-    @PostMapping("/{id}/clients/{client_id}/notify")
+    @PostMapping("/{id}/notify")
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @PathVariable("client_id") Long clientId
+            @RequestParam String email
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> queueService.notifyClientInQueue(username, id, clientId)
+                    username -> queueService.notifyClientInQueue(username, id, email)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Notification failed"));
         }
     }
 }

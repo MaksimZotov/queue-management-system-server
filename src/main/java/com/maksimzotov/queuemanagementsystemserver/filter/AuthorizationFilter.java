@@ -7,7 +7,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,8 +15,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +43,9 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 path.equals("/verification/signup") ||
                 path.equals("/verification/confirm") ||
                 path.equals("/verification/login") ||
-                path.equals("/verification/token/refresh")
+                path.equals("/verification/token/refresh") ||
+                path.matches("\\/queues\\/\\d+\\/client") ||
+                path.matches("\\/queues\\/\\d+\\/client\\/\\w+")
         ) {
             filterChain.doFilter(request, response);
             return;

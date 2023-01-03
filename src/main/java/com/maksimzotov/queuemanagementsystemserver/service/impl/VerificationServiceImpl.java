@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerApplication;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
@@ -13,6 +14,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequ
 import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +40,7 @@ public class VerificationServiceImpl implements VerificationService {
 
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
+    private final CleanerService cleanerService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
@@ -50,7 +53,7 @@ public class VerificationServiceImpl implements VerificationService {
     public VerificationServiceImpl(
             AccountRepo accountRepo,
             RegistrationCodeRepo registrationCodeRepo,
-            AuthenticationManager authenticationManager,
+            CleanerService cleanerService, AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
             JavaMailSender mailSender,
             @Value("${spring.mail.username}") String emailUsernameSender,
@@ -61,6 +64,7 @@ public class VerificationServiceImpl implements VerificationService {
     ) {
         this.accountRepo = accountRepo;
         this.registrationCodeRepo = registrationCodeRepo;
+        this.cleanerService = cleanerService;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
@@ -75,15 +79,21 @@ public class VerificationServiceImpl implements VerificationService {
     public AccountEntity signup(SignupRequest signupRequest) {
         int code = new Random().nextInt(9000) + 1000;
         AccountEntity account = new AccountEntity(
+                null,
                 signupRequest.getUsername(),
                 signupRequest.getEmail(),
                 signupRequest.getFirstName(),
                 signupRequest.getLastName(),
-                passwordEncoder.encode(signupRequest.getPassword()),
-                Integer.toString(code)
+                passwordEncoder.encode(signupRequest.getPassword())
         );
 
         accountRepo.save(account);
+        registrationCodeRepo.save(
+                new RegistrationCodeEntity(
+                        account.getUsername(),
+                        Integer.toString(code)
+                )
+        );
 
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
@@ -93,8 +103,8 @@ public class VerificationServiceImpl implements VerificationService {
         mailSender.send(mailMessage);
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
-                deleteNonActivatedUser(
-                        account.getId()
+                cleanerService.deleteNonActivatedUser(
+                        account.getUsername()
                 ),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
@@ -105,14 +115,16 @@ public class VerificationServiceImpl implements VerificationService {
 
     @Override
     public AccountEntity confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) {
-        AccountEntity accountEntity = accountRepo.findByUsername(confirmCodeRequest.getUsername());
-        if (Objects.equals(accountEntity.getRegistrationCode().getCode(), confirmCodeRequest.getCode())) {
-            Long id = accountEntity.getId();
-            accountEntity.deleteRegistrationCode();
-            accountRepo.save(accountEntity);
-            registrationCodeRepo.deleteById(id);
+        Optional<RegistrationCodeEntity> registrationCode = registrationCodeRepo.findById(confirmCodeRequest.getUsername());
+        if (registrationCode.isEmpty()) {
+            return null;
         }
-        return accountEntity;
+        registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
+        Optional<AccountEntity> account = accountRepo.findByUsername(confirmCodeRequest.getUsername());
+        if (account.isEmpty()) {
+            return null;
+        }
+        return account.get();
     }
 
     @Override
@@ -153,9 +165,13 @@ public class VerificationServiceImpl implements VerificationService {
             Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
             JWTVerifier verifier = JWT.require(algorithm).build();
             DecodedJWT decodedJWT = verifier.verify(refreshTokenSrc);
-
             String username = decodedJWT.getSubject();
-            AccountEntity accountEntity = accountRepo.findByUsername(username);
+
+            Optional<AccountEntity> account = accountRepo.findByUsername(username);
+            if (account.isEmpty()) {
+                throw new RefreshTokenIsMissingException();
+            }
+            AccountEntity accountEntity = account.get();
 
             String accessToken = JWT.create()
                     .withSubject(accountEntity.getUsername())
@@ -165,14 +181,6 @@ public class VerificationServiceImpl implements VerificationService {
             return new TokensResponse(accessToken, refreshToken);
         } else {
             throw new RefreshTokenIsMissingException();
-        }
-    }
-
-    private void deleteNonActivatedUser(Long accountId) {
-        log.info("Checking deletion of user with id {}", accountId);
-        if (accountRepo.findById(accountId).get().getRegistrationCode() != null) {
-            accountRepo.deleteById(accountId);
-            log.info("User with id {} deleted", accountId);
         }
     }
 }

@@ -12,23 +12,11 @@ import javax.persistence.*;
 @AllArgsConstructor
 public class QueueEntity {
 
-    public QueueEntity(
-            String name,
-            String description,
-            LocationEntity location
-    ) {
-        this.name = name;
-        this.description = description;
-        this.location = location;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "location_id",  referencedColumnName="id")
-    private LocationEntity location;
+    private Long locationId;
 
     private String name;
 

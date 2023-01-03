@@ -44,8 +44,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().antMatchers(
                 "/verification/**",
-                "/{username}/locations/{location_id}/queues/{queue_id}/client",
-                "/{username}/locations/{location_id}/queues/{queue_id}/join"
+                "/queues/{queue_id}/client",
+                "/queues/{queue_id}/client/**"
         ).permitAll();
         http.authorizeRequests().antMatchers(
                 "/locations/**"

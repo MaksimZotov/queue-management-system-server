@@ -1,7 +1,9 @@
 package com.maksimzotov.queuemanagementsystemserver.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -9,17 +11,12 @@ import javax.persistence.*;
 @Entity(name = "registration_code")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegistrationCodeEntity {
 
     @Id
-    @Column(name = "account_id")
-    private Long accountId;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "account_id")
-    @MapsId
-    @JsonManagedReference
-    private AccountEntity account;
+    private String username;
 
     private String code;
 }

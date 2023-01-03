@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/locations")
@@ -36,18 +37,20 @@ public class LocationController {
             return ResponseEntity.ok().body(location);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
-    @DeleteMapping("/{id}/delete")
+    @DeleteMapping("/{location_id}/delete")
     public ResponseEntity<?> deleteLocation(
             HttpServletRequest request,
-            @PathVariable Long id
+            @PathVariable("location_id") Long locationId
     ) {
         try {
             Long deletedId = currentAccountService.handleRequestFromCurrentAccount(
                     request,
-                    username -> locationService.deleteLocation(username, id)
+                    username -> locationService.deleteLocation(username, locationId)
             );
             if (deletedId != null) {
                 return ResponseEntity.ok().build();
@@ -56,18 +59,29 @@ public class LocationController {
             }
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{location_id}")
     public ResponseEntity<?> getLocation(
             HttpServletRequest request,
-            @PathVariable Long id
+            @PathVariable("location_id") Long locationId,
+            @RequestParam("username") String username
     ) {
         try {
-            return ResponseEntity.ok().body(locationService.getLocation(id));
+            if (Objects.equals(username, "me")) {
+                return ResponseEntity.ok().body(
+                        currentAccountService.handleRequestFromCurrentAccount(
+                                request,
+                                profileUsername -> locationService.getLocation(locationId, true)
+                        )
+                );
+            }
+            return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Unknown error"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 
@@ -81,17 +95,17 @@ public class LocationController {
         log.info("getMyLocations() called");
         try {
             ContainerForList<Location> container;
-            if (username == null) {
+            if (Objects.equals(username, "me")) {
                 container = currentAccountService.handleRequestFromCurrentAccount(
                         request,
-                        profileUsername -> locationService.getLocations(profileUsername, page, pageSize)
+                        profileUsername -> locationService.getLocations(profileUsername, page, pageSize, true)
                 );
             } else {
-                container = locationService.getLocations(username, page, pageSize);
+                container = locationService.getLocations(username, page, pageSize, false);
             }
             return ResponseEntity.ok().body(container);
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult());
+            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }
     }
 }
