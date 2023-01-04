@@ -1,8 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.service;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 
 public interface ClientService {
     QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest);

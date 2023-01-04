@@ -47,8 +47,7 @@ public class ClientController {
             @RequestParam String email
     ) {
         try {
-            clientService.rejoinQueue(queueId, email);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body(clientService.rejoinQueue(queueId, email));
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
         }

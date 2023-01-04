@@ -22,7 +22,8 @@ public class VerificationController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
         try {
-            return ResponseEntity.ok().body(verificationService.signup(signupRequest));
+            verificationService.signup(signupRequest);
+            return ResponseEntity.ok().build();
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Signup failed"));
         }
@@ -31,7 +32,8 @@ public class VerificationController {
     @PostMapping("/confirm")
     public ResponseEntity<?> confirm(@RequestBody ConfirmCodeRequest confirmCodeRequest) {
         try {
-            return ResponseEntity.ok().body(verificationService.confirmRegistrationCode(confirmCodeRequest));
+            verificationService.confirmRegistrationCode(confirmCodeRequest);
+            return ResponseEntity.ok().build();
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Code confirmation failed"));
         }

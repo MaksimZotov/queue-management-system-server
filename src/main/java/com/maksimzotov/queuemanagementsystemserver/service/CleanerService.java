@@ -2,5 +2,6 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 
 public interface CleanerService {
     void deleteNonActivatedUser(String username);
-    void deleteClientCode(Long queueId, String username);
+    void deleteJoinClientCode(Long queueId, String email);
+    void deleteRejoinClientCode(Long queueId, String email);
 }

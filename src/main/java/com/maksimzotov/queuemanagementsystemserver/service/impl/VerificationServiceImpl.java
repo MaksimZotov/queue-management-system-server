@@ -76,7 +76,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public AccountEntity signup(SignupRequest signupRequest) {
+    public void signup(SignupRequest signupRequest) {
         int code = new Random().nextInt(9000) + 1000;
         AccountEntity account = new AccountEntity(
                 null,
@@ -109,22 +109,19 @@ public class VerificationServiceImpl implements VerificationService {
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );
-
-        return account;
     }
 
     @Override
-    public AccountEntity confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) {
+    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) {
         Optional<RegistrationCodeEntity> registrationCode = registrationCodeRepo.findById(confirmCodeRequest.getUsername());
         if (registrationCode.isEmpty()) {
-            return null;
+            return;
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
         Optional<AccountEntity> account = accountRepo.findByUsername(confirmCodeRequest.getUsername());
         if (account.isEmpty()) {
-            return null;
+            return;
         }
-        return account.get();
     }
 
     @Override

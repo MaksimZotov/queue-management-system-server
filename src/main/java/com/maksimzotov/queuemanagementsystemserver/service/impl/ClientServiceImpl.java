@@ -113,13 +113,11 @@ public class ClientServiceImpl implements ClientService {
 
         clientsEntities.add(clientInQueueEntity);
 
-        getQueueState(queueId);
-
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
-                        cleanerService.deleteClientCode(
+                        cleanerService.deleteJoinClientCode(
                                 queueId,
                                 joinQueueRequest.getEmail()
                         ),
@@ -190,7 +188,7 @@ public class ClientServiceImpl implements ClientService {
         mailSender.send(mailMessage);
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
-                        cleanerService.deleteClientCode(
+                        cleanerService.deleteRejoinClientCode(
                                 queueId,
                                 email
                         ),
