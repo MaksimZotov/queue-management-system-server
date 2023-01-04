@@ -4,6 +4,7 @@ import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
@@ -71,33 +72,38 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public Long deleteQueue(String username, Long queueId) {
+    public void deleteQueue(String username, Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Queue does not exist");
         }
         QueueEntity queueEntity = queue.get();
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         if (location.isEmpty()) {
-            return null;
+            throw new IllegalStateException("Queue with id " + queueId + "exists without location");
         }
         LocationEntity locationEntity = location.get();
         Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
         if (account.isEmpty()) {
-            return null;
+            throw new IllegalStateException("Queue with id " + queueId + "in location with id" + locationEntity.getId() + "exists without owner");
         }
         AccountEntity accountEntity = account.get();
         if (Objects.equals(accountEntity.getUsername(), username)) {
             queueRepo.deleteById(queueId);
-            return queueId;
+        } else {
+            throw new DescriptionException("You are not an owner of this queue");
         }
-        return null;
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize, Boolean hasRules) {
+    public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize, Boolean hasRules) throws DescriptionException {
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<QueueEntity> pageResult = queueRepo.findByLocationId(locationId, pageable);
+        Page<QueueEntity> pageResult;
+        try {
+            pageResult = queueRepo.findByLocationId(locationId, pageable);
+        } catch (Exception ex) {
+            throw new DescriptionException("Location does not exist");
+        }
         return new ContainerForList<>(
                 pageResult.getTotalElements(),
                 pageResult.getTotalPages(),
@@ -107,14 +113,14 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueState getQueueState(Long queueId) {
+    public QueueState getQueueState(Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Queue does not exist");
         }
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
         if (clients.isEmpty()) {
-            return null;
+            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
         }
         QueueEntity queueEntity = queue.get();
         List<ClientInQueueEntity> clientsEntities = clients.get();
@@ -128,7 +134,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void serveClientInQueue(String username, Long queueId, String email) {
+    public void serveClientInQueue(String username, Long queueId, String email) throws DescriptionException {
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
                 new ClientInQueueEntity.PrimaryKey(
                         queueId,
@@ -136,7 +142,7 @@ public class QueueServiceImpl implements QueueService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            return;
+            throw new DescriptionException("Client with email " + email + " does not exist in queue");
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());

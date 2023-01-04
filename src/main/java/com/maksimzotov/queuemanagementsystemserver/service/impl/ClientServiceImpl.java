@@ -5,6 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
@@ -15,6 +17,7 @@ import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -23,10 +26,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -66,17 +66,30 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) {
-        log.info("joinQueue");
-
-        Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            return null;
+    public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException, FieldsException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+        if (joinQueueRequest.getFirstName().isEmpty()) {
+            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must not be empty");
+        }
+        if (joinQueueRequest.getFirstName().length() > 64) {
+            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must contains less then 64 symbols");
+        }
+        if (joinQueueRequest.getLastName().isEmpty()) {
+            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must not be empty");
+        }
+        if (joinQueueRequest.getLastName().length() > 64) {
+            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must contains less then 64 symbols");
+        }
+        if (!Util.emailMatches(joinQueueRequest.getEmail())) {
+            fieldsErrors.put(FieldsException.EMAIL, "Email is incorrect");
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
         if (clients.isEmpty()) {
-            return null;
+            throw new DescriptionException("Queue does not exist");
         }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
@@ -136,8 +149,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) {
-        log.info("getClientInQueueState");
+    public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) throws DescriptionException {
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
                 new ClientInQueueEntity.PrimaryKey(
                         queueId,
@@ -147,19 +159,21 @@ public class ClientServiceImpl implements ClientService {
         if (clientInQueue.isEmpty()) {
             return QueueStateForClient.toModel(queueService.getQueueState(queueId));
         }
+
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
             return QueueStateForClient.toModel(queueService.getQueueState(queueId));
         }
+
         return QueueStateForClient.toModel(queueService.getQueueState(queueId), clientInQueueEntity);
     }
 
     @Override
-    public QueueStateForClient rejoinQueue(Long queueId, String email) {
-        Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
-        if (clientCode.isEmpty()) {
+    public QueueStateForClient rejoinQueue(Long queueId, String email) throws DescriptionException {
+        if (clientCodeRepo.existsById(new ClientCodeEntity.PrimaryKey(queueId, email))) {
             return null;
         }
+
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
                 new ClientInQueueEntity.PrimaryKey(
                         queueId,
@@ -169,6 +183,7 @@ public class ClientServiceImpl implements ClientService {
         if (clientInQueue.isEmpty()) {
             return null;
         }
+
         String code = Integer.toString(new Random().nextInt(9000) + 1000);
         clientCodeRepo.save(
                 new ClientCodeEntity(
@@ -200,11 +215,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient confirmCode(Long queueId, String email, String code) {
+    public QueueStateForClient confirmCode(Long queueId, String email, String code) throws DescriptionException {
         Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
         if (clientCode.isEmpty()) {
-            return null;
+            throw new DescriptionException("Code for email " + email + "already sent. Check your email or try later");
         }
+
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
                 new ClientInQueueEntity.PrimaryKey(
                         queueId,
@@ -212,23 +228,21 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Client with " + email + " does not stand in queue");
         }
+
         ClientCodeEntity clientCodeEntity = clientCode.get();
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueEntity.setAccessKey(clientCodeEntity.getCode());
         clientInQueueEntity.setStatus(ClientInQueueStatusEntity.IN_QUEUE);
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
-        Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            return null;
-        }
+
         return QueueStateForClient.toModel(getQueueState(queueId), clientInQueueEntity);
     }
 
     @Override
-    public QueueStateForClient leaveQueue(Long queueId, String email, String accessKey) {
+    public QueueStateForClient leaveQueue(Long queueId, String email, String accessKey) throws DescriptionException {
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
                 new ClientInQueueEntity.PrimaryKey(
                         queueId,
@@ -236,30 +250,30 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Client with " + email + " does not stand in queue");
         }
+
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
-            return null;
+            throw new DescriptionException("You don't have rules to leave queue. Please try to rejoin to queue");
+        }
 
-        }
         clientInQueueRepo.deleteByPrimaryKeyEmail(email);
-        Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            return null;
-        }
+
         return QueueStateForClient.toModel(getQueueState(queueId));
     }
 
-    private QueueState getQueueState(Long queueId) {
+    private QueueState getQueueState(Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Queue does not exist");
         }
+
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
         if (clients.isEmpty()) {
-            return null;
+            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
         }
+
         QueueEntity queueEntity = queue.get();
         List<ClientInQueueEntity> clientsEntities = clients.get();
 

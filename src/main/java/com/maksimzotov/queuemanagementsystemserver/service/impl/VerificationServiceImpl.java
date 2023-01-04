@@ -7,6 +7,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerApplication;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
@@ -16,6 +18,7 @@ import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
+import com.maksimzotov.queuemanagementsystemserver.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -28,9 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -76,7 +77,51 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void signup(SignupRequest signupRequest) {
+    public void signup(SignupRequest signupRequest) throws FieldsException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+        if (signupRequest.getUsername().isEmpty()) {
+            fieldsErrors.put(FieldsException.USERNAME, "Username is empty");
+        }
+        if (signupRequest.getUsername().length() > 64) {
+            fieldsErrors.put(FieldsException.USERNAME, "Username must contains less then 64 symbols");
+        }
+        if (signupRequest.getPassword().length() < 8) {
+            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains more then 8 symbols");
+        }
+        if (signupRequest.getPassword().length() > 64) {
+            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains less then 64 symbols");
+        }
+        if (!signupRequest.getPassword().equals(signupRequest.getRepeatPassword())) {
+            fieldsErrors.put(FieldsException.REPEAT_PASSWORD, "The field repeat password must be equal to the field password");
+        }
+        if (signupRequest.getFirstName().isEmpty()) {
+            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must not be empty");
+        }
+        if (signupRequest.getFirstName().length() > 64) {
+            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must contains less then 64 symbols");
+        }
+        if (signupRequest.getLastName().isEmpty()) {
+            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must not be empty");
+        }
+        if (signupRequest.getLastName().length() > 64) {
+            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must contains less then 64 symbols");
+        }
+        if (!Util.emailMatches(signupRequest.getEmail())) {
+            fieldsErrors.put(FieldsException.EMAIL, "Email is incorrect");
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+        if (accountRepo.existsByUsername(signupRequest.getUsername())) {
+            fieldsErrors.put(FieldsException.USERNAME, "User with such username already exist");
+        }
+        if (accountRepo.existsByEmail(signupRequest.getEmail())) {
+            fieldsErrors.put(FieldsException.EMAIL, "User with such email already exist");
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+
         int code = new Random().nextInt(9000) + 1000;
         AccountEntity account = new AccountEntity(
                 null,
@@ -112,32 +157,47 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) {
-        Optional<RegistrationCodeEntity> registrationCode = registrationCodeRepo.findById(confirmCodeRequest.getUsername());
-        if (registrationCode.isEmpty()) {
-            return;
+    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws FieldsException, DescriptionException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+        if (confirmCodeRequest.getCode().length() != 4) {
+            fieldsErrors.put(FieldsException.CODE, "Code must be equal to 4");
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+        if (registrationCodeRepo.existsById(confirmCodeRequest.getUsername())) {
+            throw new DescriptionException("Registration code does not exist for username " + confirmCodeRequest.getUsername());
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
-        Optional<AccountEntity> account = accountRepo.findByUsername(confirmCodeRequest.getUsername());
-        if (account.isEmpty()) {
-            return;
-        }
     }
 
     @Override
-    public TokensResponse login(LoginRequest loginRequest) {
-        String username = loginRequest.getUsername();
-        String password = loginRequest.getPassword();
-
-        log.info("Username is: {}", username);
-        log.info("Password is: {}", password);
+    public TokensResponse login(LoginRequest loginRequest) throws FieldsException, DescriptionException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+        if (loginRequest.getUsername().isEmpty()) {
+            fieldsErrors.put(FieldsException.USERNAME, "Username is empty");
+        }
+        if (loginRequest.getPassword().length() < 8) {
+            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains more then 8 symbols");
+        }
+        if (loginRequest.getPassword().length() > 64) {
+            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains less then 64 symbols");
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                username,
-                password
+                loginRequest.getUsername(),
+                loginRequest.getPassword()
         );
 
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(authenticationToken);
+        } catch (Exception ex) {
+            throw new DescriptionException("Authentication failed");
+        }
 
         User user = (User)authentication.getPrincipal();
         Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());

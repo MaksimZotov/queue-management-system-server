@@ -1,6 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
@@ -38,7 +39,7 @@ public class LocationController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -48,19 +49,17 @@ public class LocationController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            Long deletedId = currentAccountService.handleRequestFromCurrentAccount(
+            currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
                     username -> locationService.deleteLocation(username, locationId)
             );
-            if (deletedId != null) {
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body(new ErrorResult("Deletion failed"));
-            }
+            return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -80,8 +79,12 @@ public class LocationController {
                 );
             }
             return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -104,8 +107,10 @@ public class LocationController {
                 container = locationService.getLocations(username, page, pageSize, false);
             }
             return ResponseEntity.ok().body(container);
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

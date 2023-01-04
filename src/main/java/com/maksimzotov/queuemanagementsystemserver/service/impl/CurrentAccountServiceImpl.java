@@ -34,7 +34,7 @@ public class CurrentAccountServiceImpl implements CurrentAccountService {
     public  <T> T handleRequestFromCurrentAccount(
             HttpServletRequest request,
             HandleRequestFromCurrentAccountSAM<T> handleRequestFromCurrentAccountSAM
-    ) throws AccountIsNotAuthorizedException {
+    ) throws Exception {
         String authorizationHeader = request.getHeader(AUTHORIZATION);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String refresh_token = authorizationHeader.substring("Bearer ".length());
@@ -52,7 +52,7 @@ public class CurrentAccountServiceImpl implements CurrentAccountService {
     public void handleRequestFromCurrentAccountNoReturn(
             HttpServletRequest request,
             HandleRequestFromCurrentAccountNoReturnSAM handleRequestFromCurrentAccountNoReturnSAM
-    ) throws AccountIsNotAuthorizedException {
+    ) throws Exception {
         String authorizationHeader = request.getHeader(AUTHORIZATION);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String refresh_token = authorizationHeader.substring("Bearer ".length());

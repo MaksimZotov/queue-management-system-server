@@ -2,6 +2,7 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
@@ -43,29 +44,29 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public Long deleteLocation(String username, Long queueId) {
+    public void deleteLocation(String username, Long queueId) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(queueId);
         if (location.isEmpty()) {
-            return null;
+            throw new DescriptionException("Location does not exist");
         }
         LocationEntity locationEntity = location.get();
         Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
         if (account.isEmpty()) {
-            return null;
+            throw new DescriptionException("Location owner does not exist");
         }
         AccountEntity accountEntity = account.get();
         if (Objects.equals(accountEntity.getUsername(), username)) {
             locationRepo.deleteById(queueId);
-            return queueId;
+        } else {
+            throw new DescriptionException("You are not an owner of this location");
         }
-        return null;
     }
 
     @Override
-    public Location getLocation(Long queueId, Boolean hasRules) {
+    public Location getLocation(Long queueId, Boolean hasRules) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(queueId);
         if (location.isEmpty()) {
-            return null;
+            throw new DescriptionException("Location does not exist");
         }
         LocationEntity locationEntity = location.get();
         return Location.toModel(locationEntity, hasRules);

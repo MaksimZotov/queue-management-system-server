@@ -1,5 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
@@ -25,7 +27,7 @@ public class ClientController {
         try {
             return ResponseEntity.ok().body(clientService.getQueueStateForClient(queueId, email, accessKey));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -36,8 +38,12 @@ public class ClientController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.joinQueue(queueId, joinQueueRequest));
+        } catch (FieldsException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -48,8 +54,10 @@ public class ClientController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.rejoinQueue(queueId, email));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -61,8 +69,10 @@ public class ClientController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.confirmCode(queueId, email, code));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -74,8 +84,10 @@ public class ClientController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.leaveQueue(queueId, email, accessKey));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

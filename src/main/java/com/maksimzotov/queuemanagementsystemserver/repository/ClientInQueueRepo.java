@@ -12,6 +12,8 @@ import java.util.Optional;
 public interface ClientInQueueRepo extends JpaRepository<ClientInQueueEntity, ClientInQueueEntity.PrimaryKey> {
     Optional<List<ClientInQueueEntity>> findByPrimaryKeyQueueId(Long queueId);
 
+    Boolean existsByPrimaryKeyQueueId(Long queueId);
+
     @Query("SELECT orderNumber FROM client_in_queue WHERE queue_id = :p_queue_id")
     List<Integer> findOrderNumbersInQueue(@Param("p_queue_id") Long queueId);
 

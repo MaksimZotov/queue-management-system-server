@@ -1,6 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
@@ -42,7 +43,7 @@ public class QueueController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -52,19 +53,17 @@ public class QueueController {
             @PathVariable Long id
     ) {
         try {
-            Long deletedId = currentAccountService.handleRequestFromCurrentAccount(
+            currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
                     username -> queueService.deleteQueue(username, id)
             );
-            if (deletedId != null) {
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body(new ErrorResult("Deletion failed"));
-            }
+            return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -87,9 +86,11 @@ public class QueueController {
             }
             return ResponseEntity.ok().body(queueService.getQueues(locationId, page, pageSize, false));
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -105,9 +106,11 @@ public class QueueController {
             );
             return ResponseEntity.ok().body(state);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Fail"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -124,9 +127,11 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Service failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -145,7 +150,7 @@ public class QueueController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Notification failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

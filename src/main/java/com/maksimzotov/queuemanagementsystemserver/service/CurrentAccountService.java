@@ -10,10 +10,10 @@ public interface CurrentAccountService {
     <T> T handleRequestFromCurrentAccount(
             HttpServletRequest request,
             HandleRequestFromCurrentAccountSAM<T> handleRequestFromCurrentAccountSAM
-    ) throws AccountIsNotAuthorizedException;
+    ) throws Exception;
 
     void handleRequestFromCurrentAccountNoReturn(
             HttpServletRequest request,
             HandleRequestFromCurrentAccountNoReturnSAM handleRequestFromCurrentAccountNoReturnSAM
-    ) throws AccountIsNotAuthorizedException;
+    ) throws Exception;
 }
