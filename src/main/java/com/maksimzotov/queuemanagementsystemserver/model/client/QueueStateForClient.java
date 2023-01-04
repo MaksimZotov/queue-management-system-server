@@ -26,12 +26,14 @@ public class QueueStateForClient {
     Integer beforeMe;
     @JsonProperty("access_key")
     String accessKey;
+    String status;
 
     public static QueueStateForClient toModel(QueueState queueState) {
         return new QueueStateForClient(
                 false,
                 queueState.getName(),
                 queueState.getClients().size(),
+                null,
                 null,
                 null,
                 null,
@@ -49,7 +51,8 @@ public class QueueStateForClient {
                 entity.getFirstName(),
                 entity.getLastName(),
                 entity.getOrderNumber() - 1,
-                entity.getAccessKey()
+                entity.getAccessKey(),
+                entity.getStatus()
         );
     }
 }

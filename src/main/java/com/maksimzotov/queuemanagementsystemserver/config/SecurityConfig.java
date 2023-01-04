@@ -43,13 +43,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.cors();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().antMatchers(
-                "/verification/**",
-                "/queues/{queue_id}/client",
-                "/queues/{queue_id}/client/**"
+                "/**"
         ).permitAll();
-        http.authorizeRequests().antMatchers(
-                "/locations/**"
-        ).authenticated();
+        //http.authorizeRequests().antMatchers(
+        //        "/verification/**",
+        //        "/queues/{queue_id}/client",
+        //        "/queues/{queue_id}/client/**"
+        //).permitAll();
+        //http.authorizeRequests().antMatchers(
+        //        "/locations/**"
+        //).authenticated();
         http.addFilterBefore(new AuthorizationFilter(secret), UsernamePasswordAuthenticationFilter.class);
     }
 

@@ -60,7 +60,7 @@ public class VerificationServiceImpl implements VerificationService {
             @Value("${app.tokens.secret}") String secret,
             @Value("${app.tokens.access.expiration}") Long accessTokenExpiration,
             @Value("${app.tokens.refresh.expiration}") Long refreshTokenExpiration,
-            @Value("${app.registration.confirmationtime}") Integer confirmationTimeInSeconds
+            @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
     ) {
         this.accountRepo = accountRepo;
         this.registrationCodeRepo = registrationCodeRepo;

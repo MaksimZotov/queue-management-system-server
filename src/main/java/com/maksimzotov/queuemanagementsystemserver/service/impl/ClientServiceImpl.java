@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerApplication;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
@@ -11,6 +12,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
@@ -32,29 +35,34 @@ import java.util.Random;
 public class ClientServiceImpl implements ClientService {
 
     private final QueueService queueService;
+    private final CleanerService cleanerService;
     private final SimpMessagingTemplate messagingTemplate;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
     private final JavaMailSender mailSender;
     private final String emailUsernameSender;
+    private final Integer confirmationTimeInSeconds;
 
     public ClientServiceImpl(
             QueueService queueService,
-            SimpMessagingTemplate messagingTemplate,
+            CleanerService cleanerService, SimpMessagingTemplate messagingTemplate,
             QueueRepo queueRepo,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
             JavaMailSender mailSender,
-            @Value("${spring.mail.username}") String emailUsernameSender
+            @Value("${spring.mail.username}") String emailUsernameSender,
+            @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
         this.queueService = queueService;
+        this.cleanerService = cleanerService;
         this.messagingTemplate = messagingTemplate;
         this.queueRepo = queueRepo;
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientCodeRepo = clientCodeRepo;
         this.mailSender = mailSender;
         this.emailUsernameSender = emailUsernameSender;
+        this.confirmationTimeInSeconds = confirmationTimeInSeconds;
     }
 
     @Override
@@ -110,6 +118,15 @@ public class ClientServiceImpl implements ClientService {
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
 
+        QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+                        cleanerService.deleteClientCode(
+                                queueId,
+                                joinQueueRequest.getEmail()
+                        ),
+                confirmationTimeInSeconds,
+                TimeUnit.SECONDS
+        );
+
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(joinQueueRequest.getEmail());
@@ -154,21 +171,33 @@ public class ClientServiceImpl implements ClientService {
         if (clientInQueue.isEmpty()) {
             return null;
         }
+        String code = Integer.toString(new Random().nextInt(9000) + 1000);
         clientCodeRepo.save(
                 new ClientCodeEntity(
                         new ClientCodeEntity.PrimaryKey(
                                 queueId,
                                 email
                         ),
-                        Integer.toString(new Random().nextInt(9000) + 1000)
+                        code
                 )
         );
+
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(email);
         mailMessage.setSubject("Rejoin confirmation");
-        mailMessage.setText("Rejoin confirmation code:");
+        mailMessage.setText("Rejoin confirmation code: " + code);
         mailSender.send(mailMessage);
+
+        QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+                        cleanerService.deleteClientCode(
+                                queueId,
+                                email
+                        ),
+                confirmationTimeInSeconds,
+                TimeUnit.SECONDS
+        );
+
         return QueueStateForClient.toModel(getQueueState(queueId));
     }
 
