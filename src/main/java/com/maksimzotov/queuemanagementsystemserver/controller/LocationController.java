@@ -115,7 +115,11 @@ public class LocationController {
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
-            return ResponseEntity.ok().body(locationService.getLocations(username, page, pageSize, false));
+            try {
+                return ResponseEntity.ok().body(locationService.getLocations(username, page, pageSize, false));
+            } catch (Exception nestedException) {
+                return ResponseEntity.internalServerError().build();
+            }
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }
