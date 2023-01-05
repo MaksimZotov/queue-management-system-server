@@ -281,7 +281,8 @@ public class ClientServiceImpl implements ClientService {
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList()
+                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                null
         );
     }
 }

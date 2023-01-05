@@ -122,18 +122,26 @@ public class QueueServiceImpl implements QueueService {
         if (queue.isEmpty()) {
             throw new DescriptionException("Queue does not exist");
         }
+        QueueEntity queueEntity = queue.get();
+
+        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
+        if (location.isEmpty()) {
+            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo without");
+        }
+        LocationEntity locationEntity = location.get();
+
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
         if (clients.isEmpty()) {
             throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
         }
-        QueueEntity queueEntity = queue.get();
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
         return new QueueState(
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList()
+                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                locationEntity.getOwnerUsername()
         );
     }
 

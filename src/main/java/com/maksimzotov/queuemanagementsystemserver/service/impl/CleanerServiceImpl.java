@@ -88,7 +88,8 @@ public class CleanerServiceImpl implements CleanerService {
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList()
+                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                null
         );
     }
 }
