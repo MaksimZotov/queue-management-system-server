@@ -47,6 +47,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 path.matches("\\/queues\\/\\d+\\/client") ||
                 path.matches("\\/queues\\/\\d+\\/client\\/\\w+") ||
                 path.matches("\\/locations") ||
+                path.matches("\\/locations/check") ||
                 path.matches("\\/locations\\/\\d+")
         ) {
             filterChain.doFilter(request, response);

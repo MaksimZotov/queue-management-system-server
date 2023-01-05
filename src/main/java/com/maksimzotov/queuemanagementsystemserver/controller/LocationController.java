@@ -1,11 +1,13 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.location.HasRulesInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
@@ -77,19 +79,20 @@ public class LocationController {
             @RequestParam("username") String username
     ) {
         try {
-            if (Objects.equals(username, "me")) {
-                return ResponseEntity.ok().body(
-                        currentAccountService.handleRequestFromCurrentAccount(
-                                request,
-                                profileUsername -> locationService.getLocation(locationId, true)
-                        )
-                );
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            profileUsername -> locationService.getLocation(locationId, true)
+                    )
+            );
+        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
+            try {
+                return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
+            }  catch (DescriptionException nestedException) {
+                return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
+            } catch (Exception nestedException) {
+                return ResponseEntity.internalServerError().build();
             }
-            return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -104,22 +107,33 @@ public class LocationController {
             @RequestParam Integer page,
             @RequestParam(name = "page_size") Integer pageSize
     ) {
-        log.info("getMyLocations() called");
         try {
-            ContainerForList<Location> container;
-            if (Objects.equals(username, "me")) {
-                container = currentAccountService.handleRequestFromCurrentAccount(
-                        request,
-                        profileUsername -> locationService.getLocations(profileUsername, page, pageSize, true)
-                );
-            } else {
-                container = locationService.getLocations(username, page, pageSize, false);
-            }
-            return ResponseEntity.ok().body(container);
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            profileUsername -> locationService.getLocations(profileUsername, page, pageSize, true)
+                    )
+            );
+        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
+            return ResponseEntity.ok().body(locationService.getLocations(username, page, pageSize, false));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkHasRules(
+            HttpServletRequest request,
+            @RequestParam String username
+    ) {
+        try {
+            boolean hasRules = currentAccountService.handleRequestFromCurrentAccount(
+                    request,
+                    profileUsername -> true
+            );
+            return ResponseEntity.ok().body(new HasRulesInfo(hasRules));
+        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
+            return ResponseEntity.ok().body(new HasRulesInfo(false));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }
