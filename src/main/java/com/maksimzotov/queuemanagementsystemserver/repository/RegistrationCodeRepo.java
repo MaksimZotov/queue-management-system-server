@@ -6,5 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.Optional;
 
-public interface RegistrationCodeRepo extends CrudRepository<RegistrationCodeEntity, String> {
+public interface RegistrationCodeRepo extends JpaRepository<RegistrationCodeEntity, String> {
+    Boolean existsByUsername(String username);
 }

@@ -38,8 +38,6 @@ public class VerificationController {
         try {
             verificationService.confirmRegistrationCode(confirmCodeRequest);
             return ResponseEntity.ok().build();
-        } catch (FieldsException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {

@@ -32,25 +32,31 @@ public class CleanerServiceImpl implements CleanerService {
     @Override
     public void deleteNonActivatedUser(String username) {
         log.info("Checking deletion of user with username {}", username);
-        registrationCodeRepo.deleteById(username);
-        accountRepo.deleteByUsername(username);
-        log.info("User with username {} deleted", username);
+        if (registrationCodeRepo.existsByUsername(username)) {
+            registrationCodeRepo.deleteById(username);
+            accountRepo.deleteByUsername(username);
+            log.info("User with username {} deleted", username);
+        }
     }
 
     @Override
     public void deleteJoinClientCode(Long queueId, String email) {
         log.info("Checking deletion of join code of client with email {} in queue {}", email, queueId);
+
         ClientCodeEntity.PrimaryKey primaryKey = new ClientCodeEntity.PrimaryKey(
                 queueId,
                 email
         );
-        clientCodeRepo.deleteById(primaryKey);
-        clientInQueueRepo.deleteByPrimaryKeyEmail(email);
 
-        QueueState curQueueState = getQueueState(queueId);
-        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        if (clientCodeRepo.existsById(primaryKey)) {
+            clientCodeRepo.deleteById(primaryKey);
+            clientInQueueRepo.deleteByPrimaryKeyEmail(email);
 
-        log.info("Join code of client with email {} in queue {} deleted", email, queueId);
+            QueueState curQueueState = getQueueState(queueId);
+            messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+
+            log.info("Join code of client with email {} in queue {} deleted", email, queueId);
+        }
     }
 
     @Override
@@ -60,8 +66,10 @@ public class CleanerServiceImpl implements CleanerService {
                 queueId,
                 email
         );
-        clientCodeRepo.deleteById(primaryKey);
-        log.info("Rejoin code of client with email {} in queue {} deleted", email, queueId);
+        if (clientCodeRepo.existsById(primaryKey)) {
+            clientCodeRepo.deleteById(primaryKey);
+            log.info("Rejoin code of client with email {} in queue {} deleted", email, queueId);
+        }
     }
 
     private QueueState getQueueState(Long queueId) {

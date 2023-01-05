@@ -10,7 +10,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResp
 
 public interface VerificationService {
     void signup(SignupRequest signupRequest) throws FieldsException;
-    void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws FieldsException, DescriptionException;
+    void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws DescriptionException;
     TokensResponse login(LoginRequest loginRequest) throws FieldsException, DescriptionException;
     TokensResponse refreshToken(String refreshToken) throws RefreshTokenIsMissingException;
 }

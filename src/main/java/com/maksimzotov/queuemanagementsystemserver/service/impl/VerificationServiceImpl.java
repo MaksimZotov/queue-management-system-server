@@ -157,15 +157,11 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws FieldsException, DescriptionException {
-        Map<String, String> fieldsErrors = new HashMap<>();
+    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws DescriptionException {
         if (confirmCodeRequest.getCode().length() != 4) {
-            fieldsErrors.put(FieldsException.CODE, "Code must be equal to 4");
+            throw new DescriptionException("Code must be equal to 4");
         }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
-        }
-        if (registrationCodeRepo.existsById(confirmCodeRequest.getUsername())) {
+        if (!registrationCodeRepo.existsByUsername(confirmCodeRequest.getUsername())) {
             throw new DescriptionException("Registration code does not exist for username " + confirmCodeRequest.getUsername());
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
@@ -184,6 +180,16 @@ public class VerificationServiceImpl implements VerificationService {
             fieldsErrors.put(FieldsException.PASSWORD, "Password must contains less then 64 symbols");
         }
         if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+        Optional<AccountEntity> account = accountRepo.findByUsername(loginRequest.getUsername());
+        if (account.isEmpty()) {
+            fieldsErrors.put(FieldsException.USERNAME, "User with username " + loginRequest.getUsername() + " does not exist");
+            throw new FieldsException(fieldsErrors);
+        }
+        AccountEntity accountEntity = account.get();
+        if (!passwordEncoder.matches(loginRequest.getPassword(), accountEntity.getPassword())) {
+            fieldsErrors.put(FieldsException.PASSWORD, "Incorrect password");
             throw new FieldsException(fieldsErrors);
         }
 
