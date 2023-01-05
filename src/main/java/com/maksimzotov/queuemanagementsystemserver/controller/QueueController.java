@@ -1,12 +1,11 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
@@ -17,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/queues")
@@ -78,17 +76,20 @@ public class QueueController {
             @RequestParam(name = "page_size") Integer pageSize
     ) {
         try {
-            if (Objects.equals(username, "me")) {
-                return ResponseEntity.ok().body(
-                        currentAccountService.handleRequestFromCurrentAccount(
-                                request,
-                                profileUsername -> queueService.getQueues(locationId, page, pageSize, true)
-                        )
-                );
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            profileUsername -> queueService.getQueues(locationId, page, pageSize, true)
+                    )
+            );
+        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
+            try {
+                return ResponseEntity.ok().body(queueService.getQueues(locationId, page, pageSize, false));
+            } catch (DescriptionException nestedException) {
+                return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
+            } catch (Exception nestedException) {
+                return ResponseEntity.internalServerError().build();
             }
-            return ResponseEntity.ok().body(queueService.getQueues(locationId, page, pageSize, false));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {

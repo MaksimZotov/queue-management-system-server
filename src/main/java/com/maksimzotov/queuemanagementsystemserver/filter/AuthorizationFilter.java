@@ -44,6 +44,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 path.equals("/verification/confirm") ||
                 path.equals("/verification/login") ||
                 path.equals("/verification/token/refresh") ||
+                path.equals("/queues") ||
                 path.matches("\\/queues\\/\\d+\\/client") ||
                 path.matches("\\/queues\\/\\d+\\/client\\/\\w+") ||
                 path.matches("\\/locations") ||
