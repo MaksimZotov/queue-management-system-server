@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
@@ -65,6 +66,8 @@ public class VerificationController {
             return ResponseEntity.ok().body(verificationService.refreshToken(refreshToken));
         } catch (RefreshTokenIsMissingException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Refresh token is missing"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(403).build();
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

@@ -6,7 +6,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocation
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 
 public interface LocationService {
-    Location createLocation(String username, CreateLocationRequest createLocationRequest);
+    Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException;
     void deleteLocation(String username, Long queueId) throws DescriptionException;
     Location getLocation(Long queueId, Boolean hasRules) throws DescriptionException;
     ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize, Boolean hasRules);

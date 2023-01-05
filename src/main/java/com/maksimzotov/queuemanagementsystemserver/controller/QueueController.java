@@ -42,6 +42,8 @@ public class QueueController {
             return ResponseEntity.ok().body(queue);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        }  catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

@@ -14,16 +14,18 @@ CREATE TABLE registration_code (
 
 CREATE TABLE location (
     id BIGSERIAL PRIMARY KEY,
-    owner_username VARCHAR(64) REFERENCES account (username) NOT NULL UNIQUE,
-    name VARCHAR(256) NOT NULL UNIQUE,
-    description VARCHAR(2048) NOT NULL
+    owner_username VARCHAR(64) REFERENCES account (username) NOT NULL,
+    name VARCHAR(256) NOT NULL,
+    description VARCHAR(2048) NOT NULL,
+    UNIQUE (owner_username, name)
 );
 
 CREATE TABLE queue (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048) NOT NULL
+    description VARCHAR(2048) NOT NULL,
+    UNIQUE (location_id, name)
 );
 
 CREATE TABLE client_in_queue_status (

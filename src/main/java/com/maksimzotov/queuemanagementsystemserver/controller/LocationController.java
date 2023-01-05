@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
@@ -38,6 +39,10 @@ public class LocationController {
             return ResponseEntity.ok().body(location);
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (TokenExpiredException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }
@@ -55,7 +60,9 @@ public class LocationController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -80,7 +87,9 @@ public class LocationController {
             }
             return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -108,7 +117,9 @@ public class LocationController {
             }
             return ResponseEntity.ok().body(container);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

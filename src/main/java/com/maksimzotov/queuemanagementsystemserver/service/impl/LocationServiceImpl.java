@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +31,10 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepo locationRepo;
 
     @Override
-    public Location createLocation(String username, CreateLocationRequest createLocationRequest) {
+    public Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException {
+        if (createLocationRequest.getName().isEmpty()) {
+            throw new DescriptionException("Location name must not be empty");
+        }
         LocationEntity entity = locationRepo.save(
                 new LocationEntity(
                         null,
@@ -74,7 +78,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize, Boolean hasRules) {
-        Pageable pageable = PageRequest.of(page, pageSize);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
         Page<LocationEntity> pageResult = locationRepo.findByOwnerUsernameContaining(username, pageable);
         return new ContainerForList<>(
                 pageResult.getTotalElements(),

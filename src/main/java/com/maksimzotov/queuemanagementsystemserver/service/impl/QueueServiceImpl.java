@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -59,7 +60,10 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) {
+    public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException {
+        if (createQueueRequest.getName().isEmpty()) {
+            throw new DescriptionException("Queue name must not be empty");
+        }
         QueueEntity entity = queueRepo.save(
                 new QueueEntity(
                         null,
@@ -97,7 +101,7 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize, Boolean hasRules) throws DescriptionException {
-        Pageable pageable = PageRequest.of(page, pageSize);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
         Page<QueueEntity> pageResult;
         try {
             pageResult = queueRepo.findByLocationId(locationId, pageable);

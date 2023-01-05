@@ -241,7 +241,7 @@ public class VerificationServiceImpl implements VerificationService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshToken);
+            return new TokensResponse(accessToken, refreshTokenSrc);
         } else {
             throw new RefreshTokenIsMissingException();
         }
