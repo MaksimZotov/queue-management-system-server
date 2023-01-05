@@ -67,7 +67,7 @@ public class VerificationController {
         } catch (RefreshTokenIsMissingException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Refresh token is missing"));
         }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.badRequest().build();
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

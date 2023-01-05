@@ -40,7 +40,7 @@ public class LocationController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         } catch (TokenExpiredException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -62,7 +62,7 @@ public class LocationController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -89,7 +89,7 @@ public class LocationController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -119,7 +119,7 @@ public class LocationController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
         }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }
