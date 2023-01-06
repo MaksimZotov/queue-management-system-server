@@ -101,7 +101,7 @@ public class VerificationServiceImpl implements VerificationService {
             fieldsErrors.put(FieldsException.FIRST_NAME, "Имя должно содержать меньше 64 символов");
         }
         if (signupRequest.getLastName().isEmpty()) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия не может быть пустым");
+            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия не может быть пустой");
         }
         if (signupRequest.getLastName().length() > 64) {
             fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия должна содержать меньше 64 символов");
