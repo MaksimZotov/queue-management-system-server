@@ -65,7 +65,7 @@ public class VerificationController {
         try {
             return ResponseEntity.ok().body(verificationService.refreshToken(refreshToken));
         } catch (RefreshTokenIsMissingException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Refresh token is missing"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Токен для обновления отсутствует"));
         }  catch (TokenExpiredException ex) {
             return ResponseEntity.badRequest().build();
         } catch (Exception ex) {

@@ -80,43 +80,59 @@ public class VerificationServiceImpl implements VerificationService {
     public void signup(SignupRequest signupRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
         if (signupRequest.getUsername().isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Username is empty");
+            fieldsErrors.put(FieldsException.USERNAME, "Логин не может быть пустым");
         }
         if (signupRequest.getUsername().length() > 64) {
-            fieldsErrors.put(FieldsException.USERNAME, "Username must contains less then 64 symbols");
+            fieldsErrors.put(FieldsException.USERNAME, "Логин должнен содержать меньше 64 символов");
         }
         if (signupRequest.getPassword().length() < 8) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains more then 8 symbols");
+            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать больше 8 символов");
         }
         if (signupRequest.getPassword().length() > 64) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains less then 64 symbols");
+            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать меньше 64 символов");
         }
         if (!signupRequest.getPassword().equals(signupRequest.getRepeatPassword())) {
-            fieldsErrors.put(FieldsException.REPEAT_PASSWORD, "The field repeat password must be equal to the field password");
+            fieldsErrors.put(FieldsException.REPEAT_PASSWORD, "Пароли не совпадают");
         }
         if (signupRequest.getFirstName().isEmpty()) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must not be empty");
+            fieldsErrors.put(FieldsException.FIRST_NAME, "Имя не может быть пустым");
         }
         if (signupRequest.getFirstName().length() > 64) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must contains less then 64 symbols");
+            fieldsErrors.put(FieldsException.FIRST_NAME, "Имя должно содержать меньше 64 символов");
         }
         if (signupRequest.getLastName().isEmpty()) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must not be empty");
+            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия не может быть пустым");
         }
         if (signupRequest.getLastName().length() > 64) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must contains less then 64 symbols");
+            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия должна содержать меньше 64 символов");
         }
         if (!Util.emailMatches(signupRequest.getEmail())) {
-            fieldsErrors.put(FieldsException.EMAIL, "Email is incorrect");
+            fieldsErrors.put(FieldsException.EMAIL, "Некорректная почта");
         }
         if (!fieldsErrors.isEmpty()) {
             throw new FieldsException(fieldsErrors);
         }
         if (accountRepo.existsByUsername(signupRequest.getUsername())) {
-            fieldsErrors.put(FieldsException.USERNAME, "User with such username already exist");
+            if (registrationCodeRepo.existsById(signupRequest.getUsername())) {
+                fieldsErrors.put(
+                        FieldsException.USERNAME,
+                        "Логин " + signupRequest.getUsername() +
+                                " зарезервирован. Пожалуйста, попробуете позже"
+                );
+            } else {
+                fieldsErrors.put(
+                        FieldsException.USERNAME,
+                        "Пользователь с логином " + signupRequest.getUsername() + " уже существует"
+                );
+            }
         }
         if (accountRepo.existsByEmail(signupRequest.getEmail())) {
-            fieldsErrors.put(FieldsException.EMAIL, "User with such email already exist");
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    "Пользователь с почтой " + signupRequest.getEmail() +
+                            " уже существует"
+
+            );
         }
         if (!fieldsErrors.isEmpty()) {
             throw new FieldsException(fieldsErrors);
@@ -143,8 +159,8 @@ public class VerificationServiceImpl implements VerificationService {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(signupRequest.getEmail());
-        mailMessage.setSubject("Registration code");
-        mailMessage.setText("Registration code: " + code);
+        mailMessage.setSubject("Подтверждение регистрации");
+        mailMessage.setText("Код для подтверждения регистрации: " + code);
         mailSender.send(mailMessage);
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
@@ -159,10 +175,10 @@ public class VerificationServiceImpl implements VerificationService {
     @Override
     public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws DescriptionException {
         if (confirmCodeRequest.getCode().length() != 4) {
-            throw new DescriptionException("Code must be equal to 4");
+            throw new DescriptionException("Код должен содержать 4 символа");
         }
         if (!registrationCodeRepo.existsByUsername(confirmCodeRequest.getUsername())) {
-            throw new DescriptionException("Registration code does not exist for username " + confirmCodeRequest.getUsername());
+            throw new DescriptionException("Код регистрации отсутствует для пользователя с логином " + confirmCodeRequest.getUsername());
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
     }
@@ -171,25 +187,25 @@ public class VerificationServiceImpl implements VerificationService {
     public TokensResponse login(LoginRequest loginRequest) throws FieldsException, DescriptionException {
         Map<String, String> fieldsErrors = new HashMap<>();
         if (loginRequest.getUsername().isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Username is empty");
+            fieldsErrors.put(FieldsException.USERNAME, "Логин не может быть пустым");
         }
         if (loginRequest.getPassword().length() < 8) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains more then 8 symbols");
+            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать больше 8 символов");
         }
         if (loginRequest.getPassword().length() > 64) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Password must contains less then 64 symbols");
+            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать меньше 64 символов");
         }
         if (!fieldsErrors.isEmpty()) {
             throw new FieldsException(fieldsErrors);
         }
         Optional<AccountEntity> account = accountRepo.findByUsername(loginRequest.getUsername());
         if (account.isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "User with username " + loginRequest.getUsername() + " does not exist");
+            fieldsErrors.put(FieldsException.USERNAME, "Пользователя с логином " + loginRequest.getUsername() + " не существует");
             throw new FieldsException(fieldsErrors);
         }
         AccountEntity accountEntity = account.get();
         if (!passwordEncoder.matches(loginRequest.getPassword(), accountEntity.getPassword())) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Incorrect password");
+            fieldsErrors.put(FieldsException.PASSWORD, "Неверный пароль");
             throw new FieldsException(fieldsErrors);
         }
 
@@ -202,7 +218,7 @@ public class VerificationServiceImpl implements VerificationService {
         try {
             authentication = authenticationManager.authenticate(authenticationToken);
         } catch (Exception ex) {
-            throw new DescriptionException("Authentication failed");
+            throw new DescriptionException("Не удалось авторизоваться");
         }
 
         User user = (User)authentication.getPrincipal();

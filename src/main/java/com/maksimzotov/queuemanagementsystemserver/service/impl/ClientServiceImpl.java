@@ -67,24 +67,24 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
         if (joinQueueRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException("First name must not be empty");
+            throw new DescriptionException("Имя не может быть пустым");
         }
         if (joinQueueRequest.getFirstName().length() > 64) {
-            throw new DescriptionException("First name must contains less then 64 symbols");
+            throw new DescriptionException("Имя должно содержать меньше 64 символов");
         }
         if (joinQueueRequest.getLastName().isEmpty()) {
-            throw new DescriptionException("Last name must not be empty");
+            throw new DescriptionException("Фамилия не может быть пустой");
         }
         if (joinQueueRequest.getLastName().length() > 64) {
-            throw new DescriptionException("Last name must contains less then 64 symbols");
+            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
         }
         if (!Util.emailMatches(joinQueueRequest.getEmail())) {
-            throw new DescriptionException("Email is incorrect");
+            throw new DescriptionException("Некорректная почта");
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
         if (clients.isEmpty()) {
-            throw new DescriptionException("Queue does not exist");
+            throw new DescriptionException("Очередь не существует");
         }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
@@ -136,8 +136,8 @@ public class ClientServiceImpl implements ClientService {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(joinQueueRequest.getEmail());
-        mailMessage.setSubject("Join confirmation");
-        mailMessage.setText("Join confirmation code: " + code);
+        mailMessage.setSubject("Подтверждение подключения к очереди");
+        mailMessage.setText("Код для подтверждения подключения к очереди: " + code);
         mailSender.send(mailMessage);
 
         return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
@@ -166,7 +166,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient rejoinQueue(Long queueId, String email) throws DescriptionException {
         if (!Util.emailMatches(email)) {
-            throw new DescriptionException("Email is incorrect");
+            throw new DescriptionException("Некорректная почта");
         }
 
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
@@ -176,7 +176,7 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Client with email " + email + " does not stand in queue");
+            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
 
         String code = Integer.toString(new Random().nextInt(9000) + 1000);
@@ -193,8 +193,8 @@ public class ClientServiceImpl implements ClientService {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(email);
-        mailMessage.setSubject("Rejoin confirmation");
-        mailMessage.setText("Rejoin confirmation code: " + code);
+        mailMessage.setSubject("Подтверждение переподключения к очереди");
+        mailMessage.setText("Код для подтверждения переподключения к очереди: " + code);
         mailSender.send(mailMessage);
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
@@ -213,7 +213,10 @@ public class ClientServiceImpl implements ClientService {
     public QueueStateForClient confirmCode(Long queueId, String email, String code) throws DescriptionException {
         Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
         if (clientCode.isEmpty()) {
-            throw new DescriptionException("Code for email " + email + "already sent. Check your email or try later");
+            throw new DescriptionException(
+                    "Клиенту с почтой " + email +
+                            " уже было отправлено письмо с кодом. Пожалуйста, проверьте почту или попробуйте позже"
+            );
         }
 
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
@@ -223,7 +226,7 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Client with email " + email + " does not stand in queue");
+            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
 
         ClientCodeEntity clientCodeEntity = clientCode.get();
@@ -233,7 +236,10 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
-        return QueueStateForClient.toModel(getQueueState(queueId), clientInQueueEntity);
+        QueueState curQueueState = getQueueState(queueId);
+        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+
+        return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
     }
 
     @Override
@@ -245,23 +251,26 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Client with " + email + " does not stand in queue");
+            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
-            throw new DescriptionException("You don't have rules to leave queue. Please try to rejoin to queue");
+            throw new DescriptionException("У вас нет прав на то, чтобы покинуть очередь. Пожалуйста, попробуйте переподключиться");
         }
 
         clientInQueueRepo.deleteByPrimaryKeyEmail(email);
 
-        return QueueStateForClient.toModel(getQueueState(queueId));
+        QueueState curQueueState = getQueueState(queueId);
+        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+
+        return QueueStateForClient.toModel(curQueueState);
     }
 
     private QueueState getQueueState(Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            throw new DescriptionException("Queue does not exist");
+            throw new DescriptionException("Очередь не существует");
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);

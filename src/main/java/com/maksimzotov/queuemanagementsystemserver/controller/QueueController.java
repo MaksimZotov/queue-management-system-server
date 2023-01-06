@@ -39,7 +39,7 @@ public class QueueController {
             );
             return ResponseEntity.ok().body(queue);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
         }  catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -59,7 +59,7 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -109,7 +109,7 @@ public class QueueController {
             );
             return ResponseEntity.ok().body(state);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -130,7 +130,7 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -151,7 +151,7 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

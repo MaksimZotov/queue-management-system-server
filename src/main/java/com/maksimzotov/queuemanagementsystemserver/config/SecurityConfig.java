@@ -1,6 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.config;
 
-import com.maksimzotov.queuemanagementsystemserver.filter.AuthorizationFilter;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,26 +11,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
+@AllArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
-    private final String secret;
-
-    public SecurityConfig(
-            UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder,
-            @Value("${app.tokens.secret}") String secret
-    ) {
-        this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
-        this.secret = secret;
-    }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -42,18 +31,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
         http.cors();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().antMatchers(
-                "/**"
-        ).permitAll();
-        //http.authorizeRequests().antMatchers(
-        //        "/verification/**",
-        //        "/queues/{queue_id}/client",
-        //        "/queues/{queue_id}/client/**"
-        //).permitAll();
-        //http.authorizeRequests().antMatchers(
-        //        "/locations/**"
-        //).authenticated();
-        http.addFilterBefore(new AuthorizationFilter(secret), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean

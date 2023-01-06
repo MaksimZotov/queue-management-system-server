@@ -21,5 +21,6 @@ public interface ClientInQueueRepo extends JpaRepository<ClientInQueueEntity, Cl
     @Query("UPDATE client_in_queue SET orderNumber = orderNumber - 1 WHERE order_number > :p_order_number")
     void updateClientsOrderNumberInQueue(@Param("p_order_number") Integer orderNumber);
 
+    void deleteByPrimaryKeyQueueId(Long queueId);
     void deleteByPrimaryKeyEmail(String email);
 }

@@ -2,12 +2,15 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,13 +31,14 @@ import java.util.Optional;
 @Slf4j
 public class LocationServiceImpl implements LocationService {
 
-    private final AccountRepo accountRepo;
     private final LocationRepo locationRepo;
+    private final QueueRepo queueRepo;
+    private final ClientInQueueRepo clientInQueueRepo;
 
     @Override
     public Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException {
         if (createLocationRequest.getName().isEmpty()) {
-            throw new DescriptionException("Location name must not be empty");
+            throw new DescriptionException("Название локации не может быть пустым");
         }
         LocationEntity entity = locationRepo.save(
                 new LocationEntity(
@@ -48,29 +53,32 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public void deleteLocation(String username, Long queueId) throws DescriptionException {
-        Optional<LocationEntity> location = locationRepo.findById(queueId);
+    public void deleteLocation(String username, Long locationId) throws DescriptionException {
+        Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
-            throw new DescriptionException("Location does not exist");
+            throw new DescriptionException("Локации не существует");
         }
         LocationEntity locationEntity = location.get();
-        Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
-        if (account.isEmpty()) {
-            throw new DescriptionException("Location owner does not exist");
-        }
-        AccountEntity accountEntity = account.get();
-        if (Objects.equals(accountEntity.getUsername(), username)) {
-            locationRepo.deleteById(queueId);
+        if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
+            Optional<Iterable<Long>> queueIds = queueRepo.findAllIdByLocationId(locationId);
+            if (queueIds.isEmpty()) {
+                throw new IllegalStateException("Failed when fetching queues ids by location id");
+            }
+            for (Long id : queueIds.get()) {
+                clientInQueueRepo.deleteByPrimaryKeyQueueId(id);
+            }
+            queueRepo.deleteByLocationId(locationId);
+            locationRepo.deleteById(locationId);
         } else {
-            throw new DescriptionException("You are not an owner of this location");
+            throw new DescriptionException("У вас нет прав на удаление локации");
         }
     }
 
     @Override
-    public Location getLocation(Long queueId, Boolean hasRules) throws DescriptionException {
-        Optional<LocationEntity> location = locationRepo.findById(queueId);
+    public Location getLocation(Long locationId, Boolean hasRules) throws DescriptionException {
+        Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
-            throw new DescriptionException("Location does not exist");
+            throw new DescriptionException("Локации не сущестует");
         }
         LocationEntity locationEntity = location.get();
         return Location.toModel(locationEntity, hasRules);

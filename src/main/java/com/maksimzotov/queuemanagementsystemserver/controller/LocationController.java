@@ -40,9 +40,9 @@ public class LocationController {
             );
             return ResponseEntity.ok().body(location);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
         } catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
@@ -62,9 +62,9 @@ public class LocationController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
         }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Token expired"));
+            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {

@@ -62,7 +62,7 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException {
         if (createQueueRequest.getName().isEmpty()) {
-            throw new DescriptionException("Queue name must not be empty");
+            throw new DescriptionException("Название очереди не может быть пустым");
         }
         QueueEntity entity = queueRepo.save(
                 new QueueEntity(
@@ -79,23 +79,21 @@ public class QueueServiceImpl implements QueueService {
     public void deleteQueue(String username, Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            throw new DescriptionException("Queue does not exist");
+            throw new DescriptionException("Очереди не существует");
         }
         QueueEntity queueEntity = queue.get();
+
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         if (location.isEmpty()) {
             throw new IllegalStateException("Queue with id " + queueId + "exists without location");
         }
         LocationEntity locationEntity = location.get();
-        Optional<AccountEntity> account = accountRepo.findByUsername(locationEntity.getOwnerUsername());
-        if (account.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "in location with id" + locationEntity.getId() + "exists without owner");
-        }
-        AccountEntity accountEntity = account.get();
-        if (Objects.equals(accountEntity.getUsername(), username)) {
+
+        if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
+            clientInQueueRepo.deleteByPrimaryKeyQueueId(queueId);
             queueRepo.deleteById(queueId);
         } else {
-            throw new DescriptionException("You are not an owner of this queue");
+            throw new DescriptionException("У вас нет прав на удаление очереди");
         }
     }
 
@@ -106,7 +104,7 @@ public class QueueServiceImpl implements QueueService {
         try {
             pageResult = queueRepo.findByLocationId(locationId, pageable);
         } catch (Exception ex) {
-            throw new DescriptionException("Location does not exist");
+            throw new DescriptionException("Локации не существует");
         }
         return new ContainerForList<>(
                 pageResult.getTotalElements(),
@@ -120,7 +118,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueState getQueueState(Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            throw new DescriptionException("Queue does not exist");
+            throw new DescriptionException("Очереди не существует");
         }
         QueueEntity queueEntity = queue.get();
 
@@ -154,7 +152,7 @@ public class QueueServiceImpl implements QueueService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Client with email " + email + " does not exist in queue");
+            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
@@ -167,8 +165,8 @@ public class QueueServiceImpl implements QueueService {
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(email);
-        mailMessage.setSubject("Queue");
-        mailMessage.setText("Your turn!");
+        mailMessage.setSubject("Очередь");
+        mailMessage.setText("Пожалуйста, подойдите к месту оказания услуги");
         mailSender.send(mailMessage);
     }
 }
