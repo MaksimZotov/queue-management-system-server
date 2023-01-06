@@ -6,7 +6,6 @@ import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
@@ -66,25 +65,21 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException, FieldsException {
-        Map<String, String> fieldsErrors = new HashMap<>();
+    public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
         if (joinQueueRequest.getFirstName().isEmpty()) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must not be empty");
+            throw new DescriptionException("First name must not be empty");
         }
         if (joinQueueRequest.getFirstName().length() > 64) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "First name must contains less then 64 symbols");
+            throw new DescriptionException("First name must contains less then 64 symbols");
         }
         if (joinQueueRequest.getLastName().isEmpty()) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must not be empty");
+            throw new DescriptionException("Last name must not be empty");
         }
         if (joinQueueRequest.getLastName().length() > 64) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Last name must contains less then 64 symbols");
+            throw new DescriptionException("Last name must contains less then 64 symbols");
         }
         if (!Util.emailMatches(joinQueueRequest.getEmail())) {
-            fieldsErrors.put(FieldsException.EMAIL, "Email is incorrect");
-        }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
+            throw new DescriptionException("Email is incorrect");
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
@@ -170,8 +165,8 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public QueueStateForClient rejoinQueue(Long queueId, String email) throws DescriptionException {
-        if (clientCodeRepo.existsById(new ClientCodeEntity.PrimaryKey(queueId, email))) {
-            return null;
+        if (!Util.emailMatches(email)) {
+            throw new DescriptionException("Email is incorrect");
         }
 
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
@@ -181,7 +176,7 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            return null;
+            throw new DescriptionException("Client with email " + email + " does not stand in queue");
         }
 
         String code = Integer.toString(new Random().nextInt(9000) + 1000);
@@ -228,7 +223,7 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Client with " + email + " does not stand in queue");
+            throw new DescriptionException("Client with email " + email + " does not stand in queue");
         }
 
         ClientCodeEntity clientCodeEntity = clientCode.get();

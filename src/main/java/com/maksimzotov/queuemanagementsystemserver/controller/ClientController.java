@@ -38,8 +38,6 @@ public class ClientController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.joinQueue(queueId, joinQueueRequest));
-        } catch (FieldsException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
