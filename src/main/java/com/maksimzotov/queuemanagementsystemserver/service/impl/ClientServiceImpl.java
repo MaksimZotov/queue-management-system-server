@@ -214,8 +214,7 @@ public class ClientServiceImpl implements ClientService {
         Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
         if (clientCode.isEmpty()) {
             throw new DescriptionException(
-                    "Клиенту с почтой " + email +
-                            " уже было отправлено письмо с кодом. Пожалуйста, проверьте почту или попробуйте позже"
+                    "Время действия кода истекло. Пожалуйста, попробуйте подключиться заново"
             );
         }
 

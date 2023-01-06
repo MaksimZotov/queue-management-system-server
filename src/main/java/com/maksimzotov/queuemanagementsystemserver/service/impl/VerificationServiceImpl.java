@@ -178,7 +178,7 @@ public class VerificationServiceImpl implements VerificationService {
             throw new DescriptionException("Код должен содержать 4 символа");
         }
         if (!registrationCodeRepo.existsByUsername(confirmCodeRequest.getUsername())) {
-            throw new DescriptionException("Код регистрации отсутствует для пользователя с логином " + confirmCodeRequest.getUsername());
+            throw new DescriptionException("Время действия кода истекло");
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
     }
