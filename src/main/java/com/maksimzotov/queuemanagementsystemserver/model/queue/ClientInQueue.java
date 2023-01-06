@@ -3,22 +3,24 @@ package com.maksimzotov.queuemanagementsystemserver.model.queue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
-@Data
+@Value
 @AllArgsConstructor
 @Jacksonized
 public class ClientInQueue {
-    private Long id;
+    Long id;
     @JsonProperty("email")
-    private String email;
+    String email;
     @JsonProperty("first_name")
-    private String firstName;
+    String firstName;
     @JsonProperty("last_name")
-    private String lastName;
+    String lastName;
     @JsonProperty("order_number")
-    private Integer orderNumber;
+    Integer orderNumber;
+    String status;
+
 
     public static ClientInQueue toModel(ClientInQueueEntity entity) {
         return new ClientInQueue(
@@ -26,7 +28,8 @@ public class ClientInQueue {
                 entity.getPrimaryKey().getEmail(),
                 entity.getFirstName(),
                 entity.getLastName(),
-                entity.getOrderNumber()
+                entity.getOrderNumber(),
+                entity.getStatus()
         );
     }
 }
