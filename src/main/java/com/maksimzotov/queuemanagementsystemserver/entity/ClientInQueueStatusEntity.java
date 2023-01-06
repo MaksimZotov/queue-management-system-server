@@ -13,7 +13,7 @@ import javax.persistence.*;
 public class ClientInQueueStatusEntity {
 
     public static String RESERVED = "RESERVED";
-    public static String IN_QUEUE = "IN_QUEUE";
+    public static String CONFIRMED = "CONFIRMED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

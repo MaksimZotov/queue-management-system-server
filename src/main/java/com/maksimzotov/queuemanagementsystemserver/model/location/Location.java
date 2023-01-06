@@ -12,6 +12,8 @@ import lombok.extern.jackson.Jacksonized;
 public class Location {
 
     private Long id;
+    @JsonProperty("owner_username")
+    private String ownerUsername;
     private String name;
     private String description;
     @JsonProperty("has_rules")
@@ -20,6 +22,7 @@ public class Location {
     public static Location toModel(LocationEntity entity, Boolean hasRules) {
         return new Location(
                 entity.getId(),
+                entity.getOwnerUsername(),
                 entity.getName(),
                 entity.getDescription(),
                 hasRules

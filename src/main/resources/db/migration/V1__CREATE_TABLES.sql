@@ -35,7 +35,7 @@ CREATE TABLE client_in_queue_status (
 
 CREATE TABLE client_in_queue (
     queue_id BIGINT REFERENCES queue (id),
-    email VARCHAR(64)  NOT NULL,
+    email VARCHAR(64) NOT NULL,
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR(64) NOT NULL,
     order_number INTEGER,
@@ -53,4 +53,4 @@ CREATE TABLE client_code (
 
 INSERT INTO client_in_queue_status VALUES
     (1, 'RESERVED'),
-    (2, 'IN_QUEUE');
+    (2, 'CONFIRMED');

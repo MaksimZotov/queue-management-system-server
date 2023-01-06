@@ -234,7 +234,7 @@ public class ClientServiceImpl implements ClientService {
         ClientCodeEntity clientCodeEntity = clientCode.get();
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueEntity.setAccessKey(clientCodeEntity.getCode());
-        clientInQueueEntity.setStatus(ClientInQueueStatusEntity.IN_QUEUE);
+        clientInQueueEntity.setStatus(ClientInQueueStatusEntity.CONFIRMED);
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
