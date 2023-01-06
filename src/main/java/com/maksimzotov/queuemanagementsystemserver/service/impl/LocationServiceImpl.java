@@ -60,12 +60,12 @@ public class LocationServiceImpl implements LocationService {
         }
         LocationEntity locationEntity = location.get();
         if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
-            Optional<Iterable<Long>> queueIds = queueRepo.findAllIdByLocationId(locationId);
-            if (queueIds.isEmpty()) {
+            Optional<Iterable<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
+            if (queueEntities.isEmpty()) {
                 throw new IllegalStateException("Failed when fetching queues ids by location id");
             }
-            for (Long id : queueIds.get()) {
-                clientInQueueRepo.deleteByPrimaryKeyQueueId(id);
+            for (QueueEntity queueEntity : queueEntities.get()) {
+                clientInQueueRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
             }
             queueRepo.deleteByLocationId(locationId);
             locationRepo.deleteById(locationId);
