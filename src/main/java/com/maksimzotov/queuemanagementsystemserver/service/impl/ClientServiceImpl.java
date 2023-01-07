@@ -258,6 +258,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException("У вас нет прав на то, чтобы покинуть очередь. Пожалуйста, попробуйте переподключиться");
         }
 
+        clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByPrimaryKeyEmail(email);
 
         QueueState curQueueState = getQueueState(queueId);

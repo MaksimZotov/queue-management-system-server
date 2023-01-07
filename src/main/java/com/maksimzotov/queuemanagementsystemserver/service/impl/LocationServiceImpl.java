@@ -7,10 +7,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
-import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +31,8 @@ public class LocationServiceImpl implements LocationService {
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
+
+    private final ClientCodeRepo clientCodeRepo;
 
     @Override
     public Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException {
@@ -65,6 +64,7 @@ public class LocationServiceImpl implements LocationService {
                 throw new IllegalStateException("Failed when fetching queues ids by location id");
             }
             for (QueueEntity queueEntity : queueEntities.get()) {
+                clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
                 clientInQueueRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
             }
             queueRepo.deleteByLocationId(locationId);

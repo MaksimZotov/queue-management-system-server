@@ -1,16 +1,12 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
-import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -38,6 +35,7 @@ public class QueueServiceImpl implements QueueService {
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
+    private final ClientCodeRepo clientCodeRepo;
     private final JavaMailSender mailSender;
     private final String emailUsernameSender;
 
@@ -47,6 +45,7 @@ public class QueueServiceImpl implements QueueService {
             LocationRepo locationRepo,
             QueueRepo queueRepo,
             ClientInQueueRepo clientInQueueRepo,
+            ClientCodeRepo clientCodeRepo,
             JavaMailSender mailSender,
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
@@ -55,6 +54,7 @@ public class QueueServiceImpl implements QueueService {
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
         this.clientInQueueRepo = clientInQueueRepo;
+        this.clientCodeRepo = clientCodeRepo;
         this.mailSender = mailSender;
         this.emailUsernameSender = emailUsernameSender;
     }
@@ -90,6 +90,7 @@ public class QueueServiceImpl implements QueueService {
         LocationEntity locationEntity = location.get();
 
         if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
+            clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
             clientInQueueRepo.deleteByPrimaryKeyQueueId(queueId);
             queueRepo.deleteById(queueId);
         } else {
@@ -138,7 +139,10 @@ public class QueueServiceImpl implements QueueService {
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                clientsEntities.stream()
+                        .map(ClientInQueue::toModel)
+                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
+                        .toList(),
                 locationEntity.getOwnerUsername()
         );
     }

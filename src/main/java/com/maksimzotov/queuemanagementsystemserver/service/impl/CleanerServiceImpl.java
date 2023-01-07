@@ -13,6 +13,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,10 +51,22 @@ public class CleanerServiceImpl implements CleanerService {
 
         if (clientCodeRepo.existsById(primaryKey)) {
             clientCodeRepo.deleteById(primaryKey);
-            clientInQueueRepo.deleteByPrimaryKeyEmail(email);
 
-            QueueState curQueueState = getQueueState(queueId);
-            messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+            Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
+                    new ClientInQueueEntity.PrimaryKey(
+                            queueId,
+                            email
+                    )
+            );
+
+            if (clientInQueue.isPresent()) {
+                ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+                clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
+                clientInQueueRepo.deleteByPrimaryKeyEmail(email);
+
+                QueueState curQueueState = getQueueState(queueId);
+                messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+            }
 
             log.info("Join code of client with email {} in queue {} deleted", email, queueId);
         }
@@ -88,7 +101,10 @@ public class CleanerServiceImpl implements CleanerService {
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                clientsEntities.stream()
+                        .map(ClientInQueue::toModel)
+                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
+                        .toList(),
                 null
         );
     }
