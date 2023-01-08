@@ -5,6 +5,7 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
@@ -152,6 +153,30 @@ public class QueueController {
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/{queue_id}/client/add")
+    public ResponseEntity<?> addClient(
+            HttpServletRequest request,
+            @PathVariable("queue_id") Long queueId,
+            @RequestBody JoinQueueRequest joinQueueRequest
+    ) {
+        try {
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            username -> queueService.addClient(queueId, joinQueueRequest)
+                    )
+            );
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

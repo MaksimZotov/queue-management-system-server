@@ -88,6 +88,15 @@ public class ClientServiceImpl implements ClientService {
         }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
+        if (clientInQueueRepo.existsById(
+                new ClientInQueueEntity.PrimaryKey(
+                        queueId,
+                        joinQueueRequest.getEmail()
+                )
+        )) {
+            throw new DescriptionException("Клиент с почтой " + joinQueueRequest.getEmail() + " уже стоит в очереди");
+        }
+
         Optional<Integer> maxOrderNumber = clientsEntities.stream()
                 .map(ClientInQueueEntity::getOrderNumber)
                 .max(Integer::compare);
@@ -285,7 +294,10 @@ public class ClientServiceImpl implements ClientService {
                 queueId,
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream().map(ClientInQueue::toModel).toList(),
+                clientsEntities.stream()
+                        .map(ClientInQueue::toModel)
+                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
+                        .toList(),
                 null
         );
     }

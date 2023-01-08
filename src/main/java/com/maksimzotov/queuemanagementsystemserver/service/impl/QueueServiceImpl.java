@@ -1,13 +1,19 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
+import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -20,10 +26,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -172,5 +175,56 @@ public class QueueServiceImpl implements QueueService {
         mailMessage.setSubject("Очередь");
         mailMessage.setText("Пожалуйста, подойдите к месту оказания услуги");
         mailSender.send(mailMessage);
+    }
+
+    @Override
+    public ClientInQueue addClient(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
+        if (joinQueueRequest.getFirstName().isEmpty()) {
+            throw new DescriptionException("Имя не может быть пустым");
+        }
+        if (joinQueueRequest.getFirstName().length() > 64) {
+            throw new DescriptionException("Имя должно содержать меньше 64 символов");
+        }
+        if (joinQueueRequest.getLastName().isEmpty()) {
+            throw new DescriptionException("Фамилия не может быть пустой");
+        }
+        if (joinQueueRequest.getLastName().length() > 64) {
+            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
+        }
+        if (!Util.emailMatches(joinQueueRequest.getEmail())) {
+            throw new DescriptionException("Некорректная почта");
+        }
+
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        if (clients.isEmpty()) {
+            throw new DescriptionException("Очередь не существует");
+        }
+        List<ClientInQueueEntity> clientsEntities = clients.get();
+
+        Optional<Integer> maxOrderNumber = clientsEntities.stream()
+                .map(ClientInQueueEntity::getOrderNumber)
+                .max(Integer::compare);
+
+        Integer curOrderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
+
+        String code = Integer.toString(new Random().nextInt(9000) + 1000);
+
+        ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
+                new ClientInQueueEntity.PrimaryKey(
+                        queueId,
+                        joinQueueRequest.getEmail()
+                ),
+                joinQueueRequest.getFirstName(),
+                joinQueueRequest.getLastName(),
+                curOrderNumber,
+                code,
+                ClientInQueueStatusEntity.CONFIRMED
+        );
+        clientInQueueRepo.save(clientInQueueEntity);
+
+        QueueState curQueueState = getQueueState(queueId);
+        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+
+        return ClientInQueue.toModel(clientInQueueEntity);
     }
 }
