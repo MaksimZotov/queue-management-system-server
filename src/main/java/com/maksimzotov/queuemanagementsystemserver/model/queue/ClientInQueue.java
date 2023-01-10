@@ -19,6 +19,8 @@ public class ClientInQueue {
     String lastName;
     @JsonProperty("order_number")
     Integer orderNumber;
+    @JsonProperty("public_code")
+    Integer publicCode;
     @JsonProperty("access_key")
     String accessKey;
     String status;
@@ -31,6 +33,7 @@ public class ClientInQueue {
                 entity.getFirstName(),
                 entity.getLastName(),
                 entity.getOrderNumber(),
+                entity.getPublicCode(),
                 entity.getAccessKey(),
                 entity.getStatus()
         );
