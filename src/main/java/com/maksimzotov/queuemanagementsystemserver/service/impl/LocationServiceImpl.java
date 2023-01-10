@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
@@ -59,13 +58,13 @@ public class LocationServiceImpl implements LocationService {
         }
         LocationEntity locationEntity = location.get();
         if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
-            Optional<Iterable<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
+            Optional<List<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
             if (queueEntities.isEmpty()) {
                 throw new IllegalStateException("Failed when fetching queues ids by location id");
             }
             for (QueueEntity queueEntity : queueEntities.get()) {
                 clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
-                clientInQueueRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
+                clientInQueueRepo.deleteByQueueId(queueEntity.getId());
             }
             queueRepo.deleteByLocationId(locationId);
             locationRepo.deleteById(locationId);
@@ -85,14 +84,13 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize, Boolean hasRules) {
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
-        Page<LocationEntity> pageResult = locationRepo.findByOwnerUsernameContaining(username, pageable);
+    public ContainerForList<Location> getLocations(String username, Boolean hasRules) throws DescriptionException {
+        Optional<List<LocationEntity>> locationsEntities = locationRepo.findByOwnerUsernameContaining(username);
+        if (locationsEntities.isEmpty()) {
+            throw new DescriptionException("Владелец локаций не найден");
+        }
         return new ContainerForList<>(
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages(),
-                pageResult.isLast(),
-                pageResult.getContent().stream().map((item) -> Location.toModel(item, hasRules)).toList()
+                locationsEntities.get().stream().map((item) -> Location.toModel(item, hasRules)).toList()
         );
     }
 }

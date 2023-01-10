@@ -12,6 +12,7 @@ import java.util.List;
 @Jacksonized
 public class QueueState {
     private Long id;
+    private Long locationId;
     private String name;
     private String description;
     private List<ClientInQueue> clients;

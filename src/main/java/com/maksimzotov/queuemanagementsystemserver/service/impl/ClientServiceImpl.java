@@ -13,6 +13,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
@@ -35,6 +36,7 @@ public class ClientServiceImpl implements ClientService {
 
     private final QueueService queueService;
     private final CleanerService cleanerService;
+    private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -45,7 +47,9 @@ public class ClientServiceImpl implements ClientService {
 
     public ClientServiceImpl(
             QueueService queueService,
-            CleanerService cleanerService, SimpMessagingTemplate messagingTemplate,
+            CleanerService cleanerService,
+            BoardService boardService,
+            SimpMessagingTemplate messagingTemplate,
             QueueRepo queueRepo,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
@@ -55,6 +59,7 @@ public class ClientServiceImpl implements ClientService {
     ) {
         this.queueService = queueService;
         this.cleanerService = cleanerService;
+        this.boardService = boardService;
         this.messagingTemplate = messagingTemplate;
         this.queueRepo = queueRepo;
         this.clientInQueueRepo = clientInQueueRepo;
@@ -82,17 +87,15 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException("Некорректная почта");
         }
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
             throw new DescriptionException("Очередь не существует");
         }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
-        if (clientInQueueRepo.existsById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        joinQueueRequest.getEmail()
-                )
+        if (clientInQueueRepo.existsByQueueIdAndEmail(
+                queueId,
+                joinQueueRequest.getEmail()
         )) {
             throw new DescriptionException("Клиент с почтой " + joinQueueRequest.getEmail() + " уже стоит в очереди");
         }
@@ -115,14 +118,28 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
 
+        int publicCode;
+        List<Integer> publicCodes = clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList();
+        Optional<Integer> minOptional = publicCodes.stream().min(Integer::compare);
+        if (minOptional.isEmpty()) {
+            publicCode = 1;
+        } else {
+            int min = minOptional.get();
+            if (min > 1) {
+                publicCode = min - 1;
+            } else {
+                publicCode = publicCodes.stream().max(Integer::compare).get() + 1;
+            }
+        }
+
         ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        joinQueueRequest.getEmail()
-                ),
+                null,
+                queueId,
+                joinQueueRequest.getEmail(),
                 joinQueueRequest.getFirstName(),
                 joinQueueRequest.getLastName(),
                 curOrderNumber,
+                publicCode,
                 code,
                 ClientInQueueStatusEntity.RESERVED
         );
@@ -132,6 +149,7 @@ public class ClientServiceImpl implements ClientService {
 
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        boardService.updateLocation(curQueueState.getLocationId());
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
                         cleanerService.deleteJoinClientCode(
@@ -154,11 +172,9 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) throws DescriptionException {
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        email
-                )
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+                queueId,
+                email
         );
         if (clientInQueue.isEmpty()) {
             return QueueStateForClient.toModel(queueService.getQueueState(queueId));
@@ -178,11 +194,9 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException("Некорректная почта");
         }
 
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        email
-                )
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+                queueId,
+                email
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
@@ -227,11 +241,9 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        email
-                )
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+                queueId,
+                email
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
@@ -246,17 +258,16 @@ public class ClientServiceImpl implements ClientService {
 
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        boardService.updateLocation(curQueueState.getLocationId());
 
         return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
     }
 
     @Override
     public QueueStateForClient leaveQueue(Long queueId, String email, String accessKey) throws DescriptionException {
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        email
-                )
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+                queueId,
+                email
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
@@ -268,10 +279,11 @@ public class ClientServiceImpl implements ClientService {
         }
 
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
-        clientInQueueRepo.deleteByPrimaryKeyEmail(email);
+        clientInQueueRepo.deleteByEmail(email);
 
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        boardService.updateLocation(curQueueState.getLocationId());
 
         return QueueStateForClient.toModel(curQueueState);
     }
@@ -282,7 +294,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException("Очередь не существует");
         }
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
             throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
         }
@@ -292,6 +304,7 @@ public class ClientServiceImpl implements ClientService {
 
         return new QueueState(
                 queueId,
+                queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 clientsEntities.stream()

@@ -6,6 +6,7 @@ import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
+import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.Optional;
 @AllArgsConstructor
 public class CleanerServiceImpl implements CleanerService {
 
+    private final BoardService boardService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -52,20 +54,22 @@ public class CleanerServiceImpl implements CleanerService {
         if (clientCodeRepo.existsById(primaryKey)) {
             clientCodeRepo.deleteById(primaryKey);
 
-            Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                    new ClientInQueueEntity.PrimaryKey(
-                            queueId,
-                            email
-                    )
+            Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+                    queueId,
+                    email
             );
 
             if (clientInQueue.isPresent()) {
                 ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
                 clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
-                clientInQueueRepo.deleteByPrimaryKeyEmail(email);
+                clientInQueueRepo.deleteByEmail(email);
 
                 QueueState curQueueState = getQueueState(queueId);
                 messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+
+                try {
+                    boardService.updateLocation(curQueueState.getLocationId());
+                } catch (Exception ex) {}
             }
 
             log.info("Join code of client with email {} in queue {} deleted", email, queueId);
@@ -90,7 +94,7 @@ public class CleanerServiceImpl implements CleanerService {
         if (queue.isEmpty()) {
             return null;
         }
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
             return null;
         }
@@ -99,6 +103,7 @@ public class CleanerServiceImpl implements CleanerService {
 
         return new QueueState(
                 queueId,
+                queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 clientsEntities.stream()

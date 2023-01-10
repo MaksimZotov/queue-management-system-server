@@ -13,23 +13,21 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class ClientInQueueEntity {
 
-    @Embeddable
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PrimaryKey implements Serializable {
-        private Long queueId;
-        private String email;
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @EmbeddedId
-    private PrimaryKey primaryKey;
+    private Long queueId;
+
+    private String email;
 
     private String firstName;
 
     private String lastName;
 
     private Integer orderNumber;
+
+    private Integer publicCode;
 
     private String accessKey;
 

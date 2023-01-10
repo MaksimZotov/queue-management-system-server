@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface QueueRepo extends JpaRepository<QueueEntity, Long> {
-    Page<QueueEntity> findByLocationId(Long locationId, Pageable pageable);
-    Optional<Iterable<QueueEntity>> findAllByLocationId(Long locationId);
+    Optional<List<QueueEntity>> findAllByLocationId(Long locationId);
     void deleteByLocationId(Long locationId);
 }

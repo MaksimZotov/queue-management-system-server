@@ -7,6 +7,7 @@ import java.util.Optional;
 
 public interface AccountRepo extends JpaRepository<AccountEntity, Long> {
     Optional<AccountEntity> findByUsername(String username);
+    Optional<AccountEntity> findByEmail(String email);
     void deleteByUsername(String username);
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String username);

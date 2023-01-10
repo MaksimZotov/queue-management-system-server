@@ -6,20 +6,13 @@ import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
+import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
-import com.maksimzotov.queuemanagementsystemserver.util.Util;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -33,8 +26,8 @@ import java.util.*;
 @Slf4j
 public class QueueServiceImpl implements QueueService {
 
+    private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final AccountRepo accountRepo;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -45,6 +38,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueServiceImpl(
             SimpMessagingTemplate messagingTemplate,
             AccountRepo accountRepo,
+            BoardService boardService,
             LocationRepo locationRepo,
             QueueRepo queueRepo,
             ClientInQueueRepo clientInQueueRepo,
@@ -53,7 +47,7 @@ public class QueueServiceImpl implements QueueService {
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
         this.messagingTemplate = messagingTemplate;
-        this.accountRepo = accountRepo;
+        this.boardService = boardService;
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
         this.clientInQueueRepo = clientInQueueRepo;
@@ -75,6 +69,7 @@ public class QueueServiceImpl implements QueueService {
                         createQueueRequest.getDescription()
                 )
         );
+        boardService.updateLocation(entity.getLocationId());
         return Queue.toModel(entity, true);
     }
 
@@ -94,27 +89,22 @@ public class QueueServiceImpl implements QueueService {
 
         if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
             clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
-            clientInQueueRepo.deleteByPrimaryKeyQueueId(queueId);
+            clientInQueueRepo.deleteByQueueId(queueId);
             queueRepo.deleteById(queueId);
+            boardService.updateLocation(location.get().getId());
         } else {
             throw new DescriptionException("У вас нет прав на удаление очереди");
         }
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Long locationId, Integer page, Integer pageSize, Boolean hasRules) throws DescriptionException {
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
-        Page<QueueEntity> pageResult;
-        try {
-            pageResult = queueRepo.findByLocationId(locationId, pageable);
-        } catch (Exception ex) {
+    public ContainerForList<Queue> getQueues(Long locationId, Boolean hasRules) throws DescriptionException {
+        Optional<List<QueueEntity>> queuesEntities = queueRepo.findAllByLocationId(locationId);
+        if (queuesEntities.isEmpty()) {
             throw new DescriptionException("Локации не существует");
         }
         return new ContainerForList<>(
-                pageResult.getTotalElements(),
-                pageResult.getTotalPages(),
-                pageResult.isLast(),
-                pageResult.getContent().stream().map((item) -> Queue.toModel(item, hasRules)).toList()
+                queuesEntities.get().stream().map((item) -> Queue.toModel(item, hasRules)).toList()
         );
     }
 
@@ -132,7 +122,7 @@ public class QueueServiceImpl implements QueueService {
         }
         LocationEntity locationEntity = location.get();
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
             throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
         }
@@ -140,6 +130,7 @@ public class QueueServiceImpl implements QueueService {
 
         return new QueueState(
                 queueId,
+                queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 clientsEntities.stream()
@@ -151,24 +142,29 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void serveClientInQueue(String username, Long queueId, String email) throws DescriptionException {
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        email
-                )
-        );
+    public void serveClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException {
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
+            throw new DescriptionException("Клиент не стоит в очереди");
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
-        clientInQueueRepo.deleteByPrimaryKeyEmail(email);
-        messagingTemplate.convertAndSend("/topic/queues/" + queueId, getQueueState(queueId));
+        clientInQueueRepo.deleteById(clientId);
+        QueueState curQueueState = getQueueState(queueId);
+        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        boardService.updateLocation(curQueueState.getLocationId());
     }
 
     @Override
-    public void notifyClientInQueue(String username, Long queueId, String email) {
+    public void notifyClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException {
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
+        if (clientInQueue.isEmpty()) {
+            throw new DescriptionException("Клиент с почтой не стоит в очереди");
+        }
+        String email = clientInQueue.get().getEmail();
+        if (email == null) {
+            throw new DescriptionException("У клиента не указан email");
+        }
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setFrom(emailUsernameSender);
         mailMessage.setTo(email);
@@ -178,24 +174,21 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ClientInQueue addClient(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
-        if (joinQueueRequest.getFirstName().isEmpty()) {
+    public ClientInQueue addClient(Long queueId, AddClientRequest addClientRequest) throws DescriptionException {
+        if (addClientRequest.getFirstName().isEmpty()) {
             throw new DescriptionException("Имя не может быть пустым");
         }
-        if (joinQueueRequest.getFirstName().length() > 64) {
+        if (addClientRequest.getFirstName().length() > 64) {
             throw new DescriptionException("Имя должно содержать меньше 64 символов");
         }
-        if (joinQueueRequest.getLastName().isEmpty()) {
+        if (addClientRequest.getLastName().isEmpty()) {
             throw new DescriptionException("Фамилия не может быть пустой");
         }
-        if (joinQueueRequest.getLastName().length() > 64) {
+        if (addClientRequest.getLastName().length() > 64) {
             throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
         }
-        if (!Util.emailMatches(joinQueueRequest.getEmail())) {
-            throw new DescriptionException("Некорректная почта");
-        }
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findByPrimaryKeyQueueId(queueId);
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
             throw new DescriptionException("Очередь не существует");
         }
@@ -209,14 +202,28 @@ public class QueueServiceImpl implements QueueService {
 
         String code = Integer.toString(new Random().nextInt(9000) + 1000);
 
+        int publicCode;
+        List<Integer> publicCodes = clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList();
+        Optional<Integer> minOptional = publicCodes.stream().min(Integer::compare);
+        if (minOptional.isEmpty()) {
+            publicCode = 1;
+        } else {
+            int min = minOptional.get();
+            if (min > 1) {
+                publicCode = min - 1;
+            } else {
+                publicCode = publicCodes.stream().max(Integer::compare).get() + 1;
+            }
+        }
+
         ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
-                new ClientInQueueEntity.PrimaryKey(
-                        queueId,
-                        joinQueueRequest.getEmail()
-                ),
-                joinQueueRequest.getFirstName(),
-                joinQueueRequest.getLastName(),
+                null,
+                queueId,
+                null,
+                addClientRequest.getFirstName(),
+                addClientRequest.getLastName(),
                 curOrderNumber,
+                publicCode,
                 code,
                 ClientInQueueStatusEntity.CONFIRMED
         );
@@ -224,6 +231,7 @@ public class QueueServiceImpl implements QueueService {
 
         QueueState curQueueState = getQueueState(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
+        boardService.updateLocation(curQueueState.getLocationId());
 
         return ClientInQueue.toModel(clientInQueueEntity);
     }

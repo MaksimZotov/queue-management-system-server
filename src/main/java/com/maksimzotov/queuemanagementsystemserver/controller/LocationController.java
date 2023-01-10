@@ -103,20 +103,18 @@ public class LocationController {
     @GetMapping()
     public ResponseEntity<?> getLocations(
             HttpServletRequest request,
-            @RequestParam String username,
-            @RequestParam Integer page,
-            @RequestParam(name = "page_size") Integer pageSize
+            @RequestParam String username
     ) {
         try {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            profileUsername -> locationService.getLocations(profileUsername, page, pageSize, true)
+                            profileUsername -> locationService.getLocations(profileUsername, true)
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
             try {
-                return ResponseEntity.ok().body(locationService.getLocations(username, page, pageSize, false));
+                return ResponseEntity.ok().body(locationService.getLocations(username, false));
             } catch (Exception nestedException) {
                 return ResponseEntity.internalServerError().build();
             }

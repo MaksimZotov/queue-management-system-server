@@ -34,14 +34,15 @@ CREATE TABLE client_in_queue_status (
 );
 
 CREATE TABLE client_in_queue (
+    id BIGSERIAL PRIMARY KEY,
     queue_id BIGINT REFERENCES queue (id),
-    email VARCHAR(64) NOT NULL,
+    email VARCHAR(64),
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR(64) NOT NULL,
     order_number INTEGER,
+    public_code INTEGER NOT NULL,
     access_key VARCHAR(4) NOT NULL,
-    status VARCHAR(64) REFERENCES client_in_queue_status (name) NOT NULL,
-    PRIMARY KEY (queue_id, email)
+    status VARCHAR(64) REFERENCES client_in_queue_status (name) NOT NULL
 );
 
 CREATE TABLE client_code (
@@ -49,6 +50,12 @@ CREATE TABLE client_code (
     email VARCHAR(64) NOT NULL,
     code VARCHAR(4) NOT NULL,
     PRIMARY KEY (queue_id, email, code)
+);
+
+CREATE TABLE rules (
+    location_id BIGINT REFERENCES location (id) NOT NULL,
+    email VARCHAR(64) REFERENCES account (email) NOT NULL,
+    PRIMARY KEY (location_id, email)
 );
 
 INSERT INTO client_in_queue_status VALUES

@@ -9,5 +9,5 @@ public interface LocationService {
     Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException;
     void deleteLocation(String username, Long locationId) throws DescriptionException;
     Location getLocation(Long locationId, Boolean hasRules) throws DescriptionException;
-    ContainerForList<Location> getLocations(String username, Integer page, Integer pageSize, Boolean hasRules);
+    ContainerForList<Location> getLocations(String username, Boolean hasRules) throws DescriptionException;
 }

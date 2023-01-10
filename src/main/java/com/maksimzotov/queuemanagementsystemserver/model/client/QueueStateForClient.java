@@ -27,6 +27,8 @@ public class QueueStateForClient {
     String lastName;
     @JsonProperty("before_me")
     Integer beforeMe;
+    @JsonProperty("public_code")
+    Integer publicCode;
     @JsonProperty("access_key")
     String accessKey;
     String status;
@@ -36,6 +38,7 @@ public class QueueStateForClient {
                 false,
                 queueState.getName(),
                 queueState.getClients().size(),
+                null,
                 null,
                 null,
                 null,
@@ -54,10 +57,11 @@ public class QueueStateForClient {
                 true,
                 queueState.getName(),
                 queueState.getClients().size(),
-                entity.getPrimaryKey().getEmail(),
+                entity.getEmail(),
                 entity.getFirstName(),
                 entity.getLastName(),
                 entity.getOrderNumber() - 1,
+                entity.getPublicCode(),
                 accessKey,
                 entity.getStatus()
         );

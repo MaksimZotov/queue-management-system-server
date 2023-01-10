@@ -6,6 +6,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
@@ -72,20 +73,18 @@ public class QueueController {
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
             @RequestParam String username,
-            @RequestParam(name = "location_id") Long locationId,
-            @RequestParam Integer page,
-            @RequestParam(name = "page_size") Integer pageSize
+            @RequestParam(name = "location_id") Long locationId
     ) {
         try {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            profileUsername -> queueService.getQueues(locationId, page, pageSize, true)
+                            profileUsername -> queueService.getQueues(locationId, true)
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
             try {
-                return ResponseEntity.ok().body(queueService.getQueues(locationId, page, pageSize, false));
+                return ResponseEntity.ok().body(queueService.getQueues(locationId, false));
             } catch (DescriptionException nestedException) {
                 return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
             } catch (Exception nestedException) {
@@ -122,12 +121,12 @@ public class QueueController {
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @RequestParam String email
+            @RequestParam(name = "client_id") Long clientId
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> queueService.serveClientInQueue(username, id, email)
+                    username -> queueService.serveClientInQueue(username, id, clientId)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
@@ -143,16 +142,18 @@ public class QueueController {
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @RequestParam String email
+            @RequestParam(name = "client_id") Long clientId
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> queueService.notifyClientInQueue(username, id, email)
+                    username -> queueService.notifyClientInQueue(username, id, clientId)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }
@@ -162,13 +163,13 @@ public class QueueController {
     public ResponseEntity<?> addClient(
             HttpServletRequest request,
             @PathVariable("queue_id") Long queueId,
-            @RequestBody JoinQueueRequest joinQueueRequest
+            @RequestBody AddClientRequest addClientRequest
     ) {
         try {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            username -> queueService.addClient(queueId, joinQueueRequest)
+                            username -> queueService.addClient(queueId, addClientRequest)
                     )
             );
         } catch (AccountIsNotAuthorizedException ex) {
