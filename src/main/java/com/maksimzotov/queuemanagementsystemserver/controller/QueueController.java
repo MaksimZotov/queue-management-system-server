@@ -79,12 +79,12 @@ public class QueueController {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            profileUsername -> queueService.getQueues(locationId, true)
+                            profileUsername -> queueService.getQueues(locationId, profileUsername)
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
             try {
-                return ResponseEntity.ok().body(queueService.getQueues(locationId, false));
+                return ResponseEntity.ok().body(queueService.getQueues(locationId, null));
             } catch (DescriptionException nestedException) {
                 return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
             } catch (Exception nestedException) {

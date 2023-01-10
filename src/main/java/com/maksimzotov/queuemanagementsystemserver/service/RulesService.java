@@ -9,4 +9,5 @@ public interface RulesService {
     ContainerForList<RulesModel> getRules(String username, Long locationId) throws DescriptionException;
     void addRules(String username, Long locationId, String email) throws DescriptionException;
     void deleteRules(String username, Long locationId, String email) throws DescriptionException;
+    public Boolean checkRulesInLocation(String username, Long locationId);
 }

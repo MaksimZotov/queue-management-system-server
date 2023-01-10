@@ -8,7 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 public interface QueueService {
     Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException;
     void deleteQueue(String username, Long queueId) throws DescriptionException;
-    ContainerForList<Queue> getQueues(Long locationId, Boolean hasRules) throws DescriptionException;
+    ContainerForList<Queue> getQueues(Long locationId, String username) throws DescriptionException;
     QueueState getQueueState(Long queueId) throws DescriptionException;
     void serveClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException;
     void notifyClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException;

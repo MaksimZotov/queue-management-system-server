@@ -40,7 +40,7 @@ public class RulesServiceImpl implements RulesService {
     @Override
     @Transactional
     public void addRules(String username, Long locationId, String email) throws DescriptionException {
-        check(username, locationId, email);
+        checkRulesByEmail(username, locationId, email);
         RulesEntity rulesEntity = new RulesEntity(locationId, email);
         if (rulesRepo.existsById(rulesEntity)) {
             throw new DescriptionException("У пользователя с почтой " + email + " уже есть права в этой локации");
@@ -51,7 +51,7 @@ public class RulesServiceImpl implements RulesService {
     @Override
     @Transactional
     public void deleteRules(String username, Long locationId, String email) throws DescriptionException {
-        check(username, locationId, email);
+        checkRulesByEmail(username, locationId, email);
         RulesEntity rulesEntity = new RulesEntity(locationId, email);
         if (!rulesRepo.existsById(rulesEntity)) {
             throw new DescriptionException("У пользователя с почтой " + email + " уже нет прав в этой локации");
@@ -59,7 +59,7 @@ public class RulesServiceImpl implements RulesService {
         rulesRepo.deleteById(rulesEntity);
     }
 
-    public void check(String username, Long locationId, String email) throws DescriptionException {
+    public void checkRulesByEmail(String username, Long locationId, String email) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
             throw new DescriptionException("Локации не существует");
@@ -77,5 +77,20 @@ public class RulesServiceImpl implements RulesService {
         if (!Objects.equals(locationEntity.getOwnerUsername(), username) && !rulesRepo.existsById(rulesEntityToCheck)) {
             throw new DescriptionException("У вас нет прав на совершение операции");
         }
+    }
+
+    public Boolean checkRulesInLocation(String username, Long locationId) {
+        Optional<AccountEntity> account = accountRepo.findByUsername(username);
+        if (account.isEmpty()) {
+            return false;
+        }
+        Optional<LocationEntity> location = locationRepo.findById(locationId);
+        if (location.isEmpty()) {
+            return  false;
+        }
+        if (Objects.equals(location.get().getOwnerUsername(), username)) {
+            return true;
+        }
+        return rulesRepo.existsById(new RulesEntity(locationId, account.get().getEmail()));
     }
 }

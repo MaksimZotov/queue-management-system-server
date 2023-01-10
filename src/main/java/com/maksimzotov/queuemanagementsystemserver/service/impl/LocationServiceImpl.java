@@ -8,6 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocation
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
+import com.maksimzotov.queuemanagementsystemserver.service.RulesService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ import java.util.Optional;
 @Slf4j
 public class LocationServiceImpl implements LocationService {
 
+    private final RulesService rulesService;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -57,30 +59,30 @@ public class LocationServiceImpl implements LocationService {
             throw new DescriptionException("Локации не существует");
         }
         LocationEntity locationEntity = location.get();
-        if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
-            Optional<List<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
-            if (queueEntities.isEmpty()) {
-                throw new IllegalStateException("Failed when fetching queues ids by location id");
-            }
-            for (QueueEntity queueEntity : queueEntities.get()) {
-                clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
-                clientInQueueRepo.deleteByQueueId(queueEntity.getId());
-            }
-            queueRepo.deleteByLocationId(locationId);
-            locationRepo.deleteById(locationId);
-        } else {
+        if (!Objects.equals(locationEntity.getOwnerUsername(), username)) {
             throw new DescriptionException("У вас нет прав на удаление локации");
+
         }
+        Optional<List<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
+        if (queueEntities.isEmpty()) {
+            throw new IllegalStateException("Failed when fetching queues ids by location id");
+        }
+        for (QueueEntity queueEntity : queueEntities.get()) {
+            clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
+            clientInQueueRepo.deleteByQueueId(queueEntity.getId());
+        }
+        queueRepo.deleteByLocationId(locationId);
+        locationRepo.deleteById(locationId);
     }
 
     @Override
-    public Location getLocation(Long locationId, Boolean hasRules) throws DescriptionException {
+    public Location getLocation(Long locationId, String username) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
             throw new DescriptionException("Локации не сущестует");
         }
         LocationEntity locationEntity = location.get();
-        return Location.toModel(locationEntity, hasRules);
+        return Location.toModel(locationEntity, rulesService.checkRulesInLocation(username, locationId));
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.service.RulesService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -26,6 +27,7 @@ import java.util.*;
 @Slf4j
 public class QueueServiceImpl implements QueueService {
 
+    private final RulesService rulesService;
     private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationRepo locationRepo;
@@ -38,6 +40,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueServiceImpl(
             SimpMessagingTemplate messagingTemplate,
             AccountRepo accountRepo,
+            RulesService rulesService,
             BoardService boardService,
             LocationRepo locationRepo,
             QueueRepo queueRepo,
@@ -47,6 +50,7 @@ public class QueueServiceImpl implements QueueService {
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
         this.messagingTemplate = messagingTemplate;
+        this.rulesService = rulesService;
         this.boardService = boardService;
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
@@ -98,13 +102,15 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Long locationId, Boolean hasRules) throws DescriptionException {
+    public ContainerForList<Queue> getQueues(Long locationId, String username) throws DescriptionException {
         Optional<List<QueueEntity>> queuesEntities = queueRepo.findAllByLocationId(locationId);
         if (queuesEntities.isEmpty()) {
             throw new DescriptionException("Локации не существует");
         }
         return new ContainerForList<>(
-                queuesEntities.get().stream().map((item) -> Queue.toModel(item, hasRules)).toList()
+                queuesEntities.get().stream()
+                        .map((item) -> Queue.toModel(item, rulesService.checkRulesInLocation(username, locationId)))
+                        .toList()
         );
     }
 

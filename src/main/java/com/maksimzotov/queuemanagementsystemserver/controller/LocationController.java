@@ -75,19 +75,18 @@ public class LocationController {
     @GetMapping("/{location_id}")
     public ResponseEntity<?> getLocation(
             HttpServletRequest request,
-            @PathVariable("location_id") Long locationId,
-            @RequestParam("username") String username
+            @PathVariable("location_id") Long locationId
     ) {
         try {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            profileUsername -> locationService.getLocation(locationId, true)
+                            profileUsername -> locationService.getLocation(locationId, profileUsername)
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
             try {
-                return ResponseEntity.ok().body(locationService.getLocation(locationId, false));
+                return ResponseEntity.ok().body(locationService.getLocation(locationId, null));
             }  catch (DescriptionException nestedException) {
                 return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
             } catch (Exception nestedException) {
@@ -109,7 +108,10 @@ public class LocationController {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            profileUsername -> locationService.getLocations(profileUsername, true)
+                            profileUsername -> locationService.getLocations(
+                                    username,
+                                    Objects.equals(profileUsername, username)
+                            )
                     )
             );
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
@@ -131,7 +133,7 @@ public class LocationController {
         try {
             boolean hasRules = currentAccountService.handleRequestFromCurrentAccount(
                     request,
-                    profileUsername -> true
+                    profileUsername -> Objects.equals(profileUsername, username)
             );
             return ResponseEntity.ok().body(new HasRulesInfo(hasRules));
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {

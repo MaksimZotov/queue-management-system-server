@@ -234,7 +234,7 @@ public class VerificationServiceImpl implements VerificationService {
                 .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .sign(algorithm);
 
-        return new TokensResponse(access, refresh);
+        return new TokensResponse(access, refresh, user.getUsername());
     }
 
     @Override
@@ -257,7 +257,7 @@ public class VerificationServiceImpl implements VerificationService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshTokenSrc);
+            return new TokensResponse(accessToken, refreshTokenSrc, username);
         } else {
             throw new RefreshTokenIsMissingException();
         }
