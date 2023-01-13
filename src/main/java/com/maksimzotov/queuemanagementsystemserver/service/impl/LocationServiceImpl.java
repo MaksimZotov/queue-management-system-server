@@ -30,6 +30,7 @@ public class LocationServiceImpl implements LocationService {
 
     private final RulesService rulesService;
     private final LocationRepo locationRepo;
+    private final RulesRepo rulesRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
 
@@ -71,6 +72,7 @@ public class LocationServiceImpl implements LocationService {
             clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
             clientInQueueRepo.deleteByQueueId(queueEntity.getId());
         }
+        rulesRepo.deleteByLocationId(locationId);
         queueRepo.deleteByLocationId(locationId);
         locationRepo.deleteById(locationId);
     }

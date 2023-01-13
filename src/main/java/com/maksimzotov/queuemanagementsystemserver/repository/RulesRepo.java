@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface RulesRepo extends JpaRepository<RulesEntity, RulesEntity> {
     Optional<List<RulesEntity>> findAllByLocationId(Long locationId);
+
+    void deleteByLocationId(Long locationId);
 }
