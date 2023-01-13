@@ -122,7 +122,7 @@ public class VerificationServiceImpl implements VerificationService {
             } else {
                 fieldsErrors.put(
                         FieldsException.USERNAME,
-                        "Пользователь с адресом " + signupRequest.getUsername() + " уже существует"
+                        "Пользователь с уникальным именем " + signupRequest.getUsername() + " уже существует"
                 );
             }
         }
@@ -200,7 +200,7 @@ public class VerificationServiceImpl implements VerificationService {
         }
         Optional<AccountEntity> account = accountRepo.findByUsername(loginRequest.getUsername());
         if (account.isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Пользователя с адресом " + loginRequest.getUsername() + " не существует");
+            fieldsErrors.put(FieldsException.USERNAME, "Пользователя с уникальным именем " + loginRequest.getUsername() + " не существует");
             throw new FieldsException(fieldsErrors);
         }
         AccountEntity accountEntity = account.get();
