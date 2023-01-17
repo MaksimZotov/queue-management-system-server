@@ -248,8 +248,11 @@ public class ClientServiceImpl implements ClientService {
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
-
         ClientCodeEntity clientCodeEntity = clientCode.get();
+        if (!Objects.equals(clientCodeEntity.getCode(), code)) {
+            throw new DescriptionException("Неверный код");
+        }
+
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueEntity.setAccessKey(clientCodeEntity.getCode());
         clientInQueueEntity.setStatus(ClientInQueueStatusEntity.CONFIRMED);
