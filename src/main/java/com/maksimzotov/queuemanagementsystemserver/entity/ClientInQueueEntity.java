@@ -1,28 +1,23 @@
 package com.maksimzotov.queuemanagementsystemserver.entity;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.io.Serializable;
 
-@Entity(name = "account")
-@Getter
-@Setter
+@Entity(name = "client_in_queue")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AccountEntity {
+public class ClientInQueueEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String username;
+    private Long queueId;
 
     private String email;
 
@@ -30,5 +25,11 @@ public class AccountEntity {
 
     private String lastName;
 
-    private String password;
+    private Integer orderNumber;
+
+    private Integer publicCode;
+
+    private String accessKey;
+
+    private String status;
 }

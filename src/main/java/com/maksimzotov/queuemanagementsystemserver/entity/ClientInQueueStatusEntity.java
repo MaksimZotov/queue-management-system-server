@@ -12,37 +12,12 @@ import javax.persistence.*;
 @AllArgsConstructor
 public class ClientInQueueStatusEntity {
 
-    public ClientInQueueStatusEntity(
-            QueueEntity queue,
-            String clientEmail,
-            String clientFirstName,
-            String clientLastName,
-            Integer clientOrderNumber
-    ) {
-        this.queue = queue;
-        this.clientEmail = clientEmail;
-        this.clientFirstName = clientFirstName;
-        this.clientLastName = clientLastName;
-        this.clientOrderNumber = clientOrderNumber;
-    }
+    public static String RESERVED = "RESERVED";
+    public static String CONFIRMED = "CONFIRMED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "queue_id",  referencedColumnName="id")
-    private QueueEntity queue;
-
-    @Column(name = "client_email")
-    private String clientEmail;
-
-    @Column(name = "client_first_name")
-    private String clientFirstName;
-
-    @Column(name = "client_last_name")
-    private String clientLastName;
-
-    @Column(name = "client_order_number")
-    private Integer clientOrderNumber;
+    private String name;
 }

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +26,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AccountEntity accountEntity = accountRepo.findByUsername(username);
-        if (accountEntity == null) {
+        Optional<AccountEntity> account = accountRepo.findByUsername(username);
+        if (account.isEmpty()) {
             log.error("User not found in the database");
             throw new UsernameNotFoundException("User not found in the database");
-        } else {
-            log.info("User found in the database: {}", username);
-            Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-            return new User(accountEntity.getUsername(), accountEntity.getPassword(), authorities);
         }
+        AccountEntity accountEntity = account.get();
+        log.info("User found in the database: {}", username);
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        return new User(accountEntity.getUsername(), accountEntity.getPassword(), authorities);
     }
 }

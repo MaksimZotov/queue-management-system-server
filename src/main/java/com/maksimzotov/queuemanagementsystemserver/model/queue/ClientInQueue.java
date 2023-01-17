@@ -1,32 +1,41 @@
 package com.maksimzotov.queuemanagementsystemserver.model.queue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
 
-@Data
+@Value
 @AllArgsConstructor
 @Jacksonized
 public class ClientInQueue {
-    private Long id;
+    Long id;
     @JsonProperty("email")
-    private String email;
+    String email;
     @JsonProperty("first_name")
-    private String firstName;
+    String firstName;
     @JsonProperty("last_name")
-    private String lastName;
+    String lastName;
     @JsonProperty("order_number")
-    private Integer orderNumber;
+    Integer orderNumber;
+    @JsonProperty("public_code")
+    Integer publicCode;
+    @JsonProperty("access_key")
+    String accessKey;
+    String status;
 
-    public static ClientInQueue toModel(ClientInQueueStatusEntity entity) {
+
+    public static ClientInQueue toModel(ClientInQueueEntity entity) {
         return new ClientInQueue(
                 entity.getId(),
-                entity.getClientEmail(),
-                entity.getClientFirstName(),
-                entity.getClientLastName(),
-                entity.getClientOrderNumber()
+                entity.getEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getOrderNumber(),
+                entity.getPublicCode(),
+                entity.getAccessKey(),
+                entity.getStatus()
         );
     }
 }

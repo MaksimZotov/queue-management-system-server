@@ -1,10 +1,13 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
-import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
@@ -38,7 +41,11 @@ public class QueueController {
             );
             return ResponseEntity.ok().body(queue);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        }  catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -48,35 +55,45 @@ public class QueueController {
             @PathVariable Long id
     ) {
         try {
-            Long deletedId = currentAccountService.handleRequestFromCurrentAccount(
+            currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
                     username -> queueService.deleteQueue(username, id)
             );
-            if (deletedId != null) {
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body(new ErrorResult("Deletion failed"));
-            }
+            return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
     @GetMapping()
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
-            @RequestParam(name = "location_id") Long locationId,
-            @RequestParam Integer page,
-            @RequestParam(name = "page_size") Integer pageSize
+            @RequestParam String username,
+            @RequestParam(name = "location_id") Long locationId
     ) {
         try {
-            ContainerForList<Queue> container = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> queueService.getQueues(locationId, page, pageSize)
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            profileUsername -> queueService.getQueues(locationId, profileUsername)
+                    )
             );
-            return ResponseEntity.ok().body(container);
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
+            try {
+                return ResponseEntity.ok().body(queueService.getQueues(locationId, null));
+            } catch (DescriptionException nestedException) {
+                return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
+            } catch (Exception nestedException) {
+                return ResponseEntity.internalServerError().build();
+            }
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -92,15 +109,19 @@ public class QueueController {
             );
             return ResponseEntity.ok().body(state);
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    @PostMapping("/{id}/clients/{client_id}/serve")
+    @PostMapping("/{id}/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @PathVariable("client_id") Long clientId
+            @RequestParam(name = "client_id") Long clientId
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
@@ -109,15 +130,19 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
-    @PostMapping("/{id}/clients/{client_id}/notify")
+    @PostMapping("/{id}/notify")
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
             @PathVariable Long id,
-            @PathVariable("client_id") Long clientId
+            @RequestParam(name = "client_id") Long clientId
     ) {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
@@ -126,7 +151,35 @@ public class QueueController {
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Account is not authorized"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/{queue_id}/client/add")
+    public ResponseEntity<?> addClient(
+            HttpServletRequest request,
+            @PathVariable("queue_id") Long queueId,
+            @RequestBody AddClientRequest addClientRequest
+    ) {
+        try {
+            return ResponseEntity.ok().body(
+                    currentAccountService.handleRequestFromCurrentAccount(
+                            request,
+                            username -> queueService.addClient(queueId, addClientRequest)
+                    )
+            );
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

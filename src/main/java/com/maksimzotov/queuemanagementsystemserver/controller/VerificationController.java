@@ -1,5 +1,8 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
@@ -22,18 +25,24 @@ public class VerificationController {
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest signupRequest) {
         try {
-            return ResponseEntity.ok().body(verificationService.signup(signupRequest));
+            verificationService.signup(signupRequest);
+            return ResponseEntity.ok().build();
+        } catch (FieldsException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Signup failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
     @PostMapping("/confirm")
     public ResponseEntity<?> confirm(@RequestBody ConfirmCodeRequest confirmCodeRequest) {
         try {
-            return ResponseEntity.ok().body(verificationService.confirmRegistrationCode(confirmCodeRequest));
+            verificationService.confirmRegistrationCode(confirmCodeRequest);
+            return ResponseEntity.ok().build();
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Code confirmation failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -42,8 +51,12 @@ public class VerificationController {
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             return ResponseEntity.ok().body(verificationService.login(loginRequest));
+        } catch (FieldsException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Login failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -52,9 +65,11 @@ public class VerificationController {
         try {
             return ResponseEntity.ok().body(verificationService.refreshToken(refreshToken));
         } catch (RefreshTokenIsMissingException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Refresh token is missing"));
+            return ResponseEntity.badRequest().body(new ErrorResult("Токен для обновления отсутствует"));
+        }  catch (TokenExpiredException ex) {
+            return ResponseEntity.badRequest().build();
         } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Token refreshing failed"));
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

@@ -12,23 +12,11 @@ import javax.persistence.*;
 @AllArgsConstructor
 public class LocationEntity {
 
-    public LocationEntity(
-            String name,
-            String description,
-            AccountEntity owner
-    ) {
-        this.name = name;
-        this.description = description;
-        this.owner = owner;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "owner_username",  referencedColumnName="username")
-    private AccountEntity owner;
+    private String ownerUsername;
 
     private String name;
 

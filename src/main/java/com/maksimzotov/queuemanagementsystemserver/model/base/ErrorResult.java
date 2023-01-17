@@ -4,33 +4,33 @@ import java.util.Map;
 
 public class ErrorResult {
     private final String description;
-    private final Map<String, String> items;
+    private final Map<String, String> errors;
 
     public ErrorResult() {
         this.description = null;
-        this.items = null;
+        this.errors = null;
     }
 
-    public ErrorResult(Map<String, String> items) {
+    public ErrorResult(Map<String, String> errors) {
         this.description = null;
-        this.items = items;
+        this.errors = errors;
     }
 
     public ErrorResult(String description) {
         this.description = description;
-        this.items = null;
+        this.errors = null;
     }
 
-    public ErrorResult(String description, Map<String, String> items) {
+    public ErrorResult(String description, Map<String, String> errors) {
         this.description = description;
-        this.items = items;
+        this.errors = errors;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public Map<String, String> getItems() {
-        return items;
+    public Map<String, String> getErrors() {
+        return errors;
     }
 }
