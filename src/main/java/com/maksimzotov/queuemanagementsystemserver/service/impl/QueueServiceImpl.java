@@ -18,6 +18,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -240,5 +241,34 @@ public class QueueServiceImpl implements QueueService {
         boardService.updateLocation(curQueueState.getLocationId());
 
         return ClientInQueue.toModel(clientInQueueEntity);
+    }
+
+    @Transactional(propagation = Propagation.NEVER)
+    @Override
+    public QueueState getQueueStateWithoutTransaction(Long queueId) throws DescriptionException {
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException("Очередь не существует");
+        }
+
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
+        if (clients.isEmpty()) {
+            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
+        }
+
+        QueueEntity queueEntity = queue.get();
+        List<ClientInQueueEntity> clientsEntities = clients.get();
+
+        return new QueueState(
+                queueId,
+                queueEntity.getLocationId(),
+                queueEntity.getName(),
+                queueEntity.getDescription(),
+                clientsEntities.stream()
+                        .map(ClientInQueue::toModel)
+                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
+                        .toList(),
+                null
+        );
     }
 }

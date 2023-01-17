@@ -3,11 +3,13 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
+import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -25,6 +27,7 @@ import java.util.Optional;
 public class CleanerServiceImpl implements CleanerService {
 
     private final BoardService boardService;
+    private final QueueService queueService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -43,7 +46,7 @@ public class CleanerServiceImpl implements CleanerService {
     }
 
     @Override
-    public void deleteJoinClientCode(Long queueId, String email) {
+    public void deleteJoinClientCode(Long queueId, String email) throws DescriptionException {
         log.info("Checking deletion of join code of client with email {} in queue {}", email, queueId);
 
         ClientCodeEntity.PrimaryKey primaryKey = new ClientCodeEntity.PrimaryKey(
@@ -64,12 +67,9 @@ public class CleanerServiceImpl implements CleanerService {
                 clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
                 clientInQueueRepo.deleteByEmail(email);
 
-                QueueState curQueueState = getQueueState(queueId);
+                QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
                 messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
-
-                try {
-                    boardService.updateLocation(curQueueState.getLocationId());
-                } catch (Exception ex) {}
+                boardService.updateLocation(curQueueState.getLocationId());
             }
 
             log.info("Join code of client with email {} in queue {} deleted", email, queueId);
@@ -87,30 +87,5 @@ public class CleanerServiceImpl implements CleanerService {
             clientCodeRepo.deleteById(primaryKey);
             log.info("Rejoin code of client with email {} in queue {} deleted", email, queueId);
         }
-    }
-
-    private QueueState getQueueState(Long queueId) {
-        Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            return null;
-        }
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            return null;
-        }
-        QueueEntity queueEntity = queue.get();
-        List<ClientInQueueEntity> clientsEntities = clients.get();
-
-        return new QueueState(
-                queueId,
-                queueEntity.getLocationId(),
-                queueEntity.getName(),
-                queueEntity.getDescription(),
-                clientsEntities.stream()
-                        .map(ClientInQueue::toModel)
-                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
-                        .toList(),
-                null
-        );
     }
 }

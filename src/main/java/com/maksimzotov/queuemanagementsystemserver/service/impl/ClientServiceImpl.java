@@ -147,15 +147,21 @@ public class ClientServiceImpl implements ClientService {
 
         clientsEntities.add(clientInQueueEntity);
 
-        QueueState curQueueState = getQueueState(queueId);
+        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+                {
+                    try {
                         cleanerService.deleteJoinClientCode(
                                 queueId,
                                 joinQueueRequest.getEmail()
-                        ),
+                        );
+                    } catch (DescriptionException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );
@@ -177,15 +183,15 @@ public class ClientServiceImpl implements ClientService {
                 email
         );
         if (clientInQueue.isEmpty()) {
-            return QueueStateForClient.toModel(queueService.getQueueState(queueId));
+            return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
-            return QueueStateForClient.toModel(queueService.getQueueState(queueId));
+            return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
         }
 
-        return QueueStateForClient.toModel(queueService.getQueueState(queueId), clientInQueueEntity);
+        return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId), clientInQueueEntity);
     }
 
     @Override
@@ -229,7 +235,7 @@ public class ClientServiceImpl implements ClientService {
                 TimeUnit.SECONDS
         );
 
-        return QueueStateForClient.toModel(getQueueState(queueId));
+        return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
     }
 
     @Override
@@ -259,7 +265,7 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
-        QueueState curQueueState = getQueueState(queueId);
+        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
 
@@ -284,37 +290,10 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByEmail(email);
 
-        QueueState curQueueState = getQueueState(queueId);
+        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
 
         return QueueStateForClient.toModel(curQueueState);
-    }
-
-    private QueueState getQueueState(Long queueId) throws DescriptionException {
-        Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            throw new DescriptionException("Очередь не существует");
-        }
-
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
-        }
-
-        QueueEntity queueEntity = queue.get();
-        List<ClientInQueueEntity> clientsEntities = clients.get();
-
-        return new QueueState(
-                queueId,
-                queueEntity.getLocationId(),
-                queueEntity.getName(),
-                queueEntity.getDescription(),
-                clientsEntities.stream()
-                        .map(ClientInQueue::toModel)
-                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
-                        .toList(),
-                null
-        );
     }
 }

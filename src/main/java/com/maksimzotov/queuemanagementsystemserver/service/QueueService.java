@@ -13,4 +13,5 @@ public interface QueueService {
     void serveClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException;
     void notifyClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException;
     ClientInQueue addClient(Long queueId, AddClientRequest joinQueueRequest) throws DescriptionException;
+    QueueState getQueueStateWithoutTransaction(Long queueId) throws DescriptionException;
 }
