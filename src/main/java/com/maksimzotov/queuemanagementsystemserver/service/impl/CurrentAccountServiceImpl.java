@@ -8,7 +8,6 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
 import com.maksimzotov.queuemanagementsystemserver.util.HandleRequestFromCurrentAccountNoReturnSAM;
 import com.maksimzotov.queuemanagementsystemserver.util.HandleRequestFromCurrentAccountSAM;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +18,6 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Service
 @Transactional
-@Slf4j
 public class CurrentAccountServiceImpl implements CurrentAccountService {
 
     private final String secret;

@@ -20,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@Slf4j
 @AllArgsConstructor
 public class RightsServiceImpl implements RightsService {
 

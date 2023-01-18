@@ -9,12 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +18,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Transactional
-@Slf4j
 public class LocationServiceImpl implements LocationService {
 
     private final RightsService rightsService;
@@ -33,7 +27,6 @@ public class LocationServiceImpl implements LocationService {
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
-
     private final ClientCodeRepo clientCodeRepo;
 
     @Override

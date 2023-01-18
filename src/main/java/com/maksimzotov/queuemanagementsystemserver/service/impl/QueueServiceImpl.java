@@ -6,13 +6,12 @@ import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -25,7 +24,6 @@ import java.util.*;
 
 @Service
 @Transactional
-@Slf4j
 public class QueueServiceImpl implements QueueService {
 
     private final RightsService rightsService;

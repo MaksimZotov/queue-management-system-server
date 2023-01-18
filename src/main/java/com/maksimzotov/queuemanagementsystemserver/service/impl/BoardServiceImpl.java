@@ -7,7 +7,6 @@ import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Slf4j
 @AllArgsConstructor
 public class BoardServiceImpl implements BoardService {
 

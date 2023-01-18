@@ -17,12 +17,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResp
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
+import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
 import com.maksimzotov.queuemanagementsystemserver.util.Util;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,40 +35,36 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
-@Slf4j
 public class VerificationServiceImpl implements VerificationService {
 
+    private final MailService mailService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final CleanerService cleanerService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
-    private final String emailUsernameSender;
     private final String secret;
     private final Long accessTokenExpiration;
     private final Long refreshTokenExpiration;
     private final Integer confirmationTimeInSeconds;
 
     public VerificationServiceImpl(
+            MailService mailService,
             AccountRepo accountRepo,
             RegistrationCodeRepo registrationCodeRepo,
             CleanerService cleanerService, AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
-            JavaMailSender mailSender,
-            @Value("${spring.mail.username}") String emailUsernameSender,
             @Value("${app.tokens.secret}") String secret,
             @Value("${app.tokens.access.expiration}") Long accessTokenExpiration,
             @Value("${app.tokens.refresh.expiration}") Long refreshTokenExpiration,
             @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
     ) {
+        this.mailService = mailService;
         this.accountRepo = accountRepo;
         this.registrationCodeRepo = registrationCodeRepo;
         this.cleanerService = cleanerService;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
-        this.mailSender = mailSender;
-        this.emailUsernameSender = emailUsernameSender;
         this.secret = secret;
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
@@ -156,12 +151,11 @@ public class VerificationServiceImpl implements VerificationService {
                 )
         );
 
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setFrom(emailUsernameSender);
-        mailMessage.setTo(signupRequest.getEmail());
-        mailMessage.setSubject("Подтверждение регистрации");
-        mailMessage.setText("Код для подтверждения регистрации: " + code);
-        mailSender.send(mailMessage);
+        mailService.send(
+                signupRequest.getEmail(),
+                "Подтверждение регистрации",
+                "Код для подтверждения регистрации: " + code
+        );
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
                 cleanerService.deleteNonActivatedUser(

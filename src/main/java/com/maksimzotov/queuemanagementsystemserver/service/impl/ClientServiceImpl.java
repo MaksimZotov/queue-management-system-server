@@ -10,15 +10,9 @@ import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForCli
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
-import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
-import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Util;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,38 +25,34 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
-@Slf4j
 public class ClientServiceImpl implements ClientService {
 
+    private final MailService mailService;
     private final QueueService queueService;
     private final CleanerService cleanerService;
     private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
-    private final JavaMailSender mailSender;
-    private final String emailUsernameSender;
     private final Integer confirmationTimeInSeconds;
 
     public ClientServiceImpl(
+            MailService mailService,
             QueueService queueService,
             CleanerService cleanerService,
             BoardService boardService,
             SimpMessagingTemplate messagingTemplate,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
-            JavaMailSender mailSender,
-            @Value("${spring.mail.username}") String emailUsernameSender,
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
+        this.mailService = mailService;
         this.queueService = queueService;
         this.cleanerService = cleanerService;
         this.boardService = boardService;
         this.messagingTemplate = messagingTemplate;
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientCodeRepo = clientCodeRepo;
-        this.mailSender = mailSender;
-        this.emailUsernameSender = emailUsernameSender;
         this.confirmationTimeInSeconds = confirmationTimeInSeconds;
     }
 
@@ -163,12 +153,11 @@ public class ClientServiceImpl implements ClientService {
                 TimeUnit.SECONDS
         );
 
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setFrom(emailUsernameSender);
-        mailMessage.setTo(joinQueueRequest.getEmail());
-        mailMessage.setSubject("Подтверждение подключения к очереди");
-        mailMessage.setText("Код для подтверждения подключения к очереди: " + code);
-        mailSender.send(mailMessage);
+        mailService.send(
+                joinQueueRequest.getEmail(),
+                "Подтверждение подключения к очереди",
+                "Код для подтверждения подключения к очереди: " + code
+        );
 
         return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
     }
@@ -216,12 +205,11 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
 
-        SimpleMailMessage mailMessage = new SimpleMailMessage();
-        mailMessage.setFrom(emailUsernameSender);
-        mailMessage.setTo(email);
-        mailMessage.setSubject("Подтверждение переподключения к очереди");
-        mailMessage.setText("Код для подтверждения переподключения к очереди: " + code);
-        mailSender.send(mailMessage);
+        mailService.send(
+                email,
+                "Подтверждение переподключения к очереди",
+                "Код для подтверждения переподключения к очереди: " + code
+        );
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
                         cleanerService.deleteRejoinClientCode(
