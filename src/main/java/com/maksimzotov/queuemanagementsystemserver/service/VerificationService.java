@@ -7,10 +7,13 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCod
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResponse;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
+
+import javax.servlet.http.HttpServletRequest;
 
 public interface VerificationService {
-    void signup(SignupRequest signupRequest) throws FieldsException;
-    void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws DescriptionException;
-    TokensResponse login(LoginRequest loginRequest) throws FieldsException, DescriptionException;
+    void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException;
+    void confirmRegistrationCode(Localizer localizer, ConfirmCodeRequest confirmCodeRequest) throws DescriptionException;
+    TokensResponse login(Localizer localizer, LoginRequest loginRequest) throws FieldsException, DescriptionException;
     TokensResponse refreshToken(String refreshToken) throws RefreshTokenIsMissingException;
 }

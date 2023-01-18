@@ -10,6 +10,7 @@ import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
@@ -19,9 +20,10 @@ import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRe
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
-import com.maksimzotov.queuemanagementsystemserver.util.Util;
+import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
+import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -52,7 +54,8 @@ public class VerificationServiceImpl implements VerificationService {
             MailService mailService,
             AccountRepo accountRepo,
             RegistrationCodeRepo registrationCodeRepo,
-            CleanerService cleanerService, AuthenticationManager authenticationManager,
+            CleanerService cleanerService,
+            AuthenticationManager authenticationManager,
             PasswordEncoder passwordEncoder,
             @Value("${app.tokens.secret}") String secret,
             @Value("${app.tokens.access.expiration}") Long accessTokenExpiration,
@@ -72,68 +75,10 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void signup(SignupRequest signupRequest) throws FieldsException {
-        Map<String, String> fieldsErrors = new HashMap<>();
-        if (signupRequest.getUsername().isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Логин не может быть пустым");
-        }
-        if (signupRequest.getUsername().length() > 64) {
-            fieldsErrors.put(FieldsException.USERNAME, "Логин должнен содержать меньше 64 символов");
-        }
-        if (signupRequest.getPassword().length() < 8) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать больше 8 символов");
-        }
-        if (signupRequest.getPassword().length() > 64) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать меньше 64 символов");
-        }
-        if (!signupRequest.getPassword().equals(signupRequest.getRepeatPassword())) {
-            fieldsErrors.put(FieldsException.REPEAT_PASSWORD, "Пароли не совпадают");
-        }
-        if (signupRequest.getFirstName().isEmpty()) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "Имя не может быть пустым");
-        }
-        if (signupRequest.getFirstName().length() > 64) {
-            fieldsErrors.put(FieldsException.FIRST_NAME, "Имя должно содержать меньше 64 символов");
-        }
-        if (signupRequest.getLastName().isEmpty()) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия не может быть пустой");
-        }
-        if (signupRequest.getLastName().length() > 64) {
-            fieldsErrors.put(FieldsException.LAST_NAME, "Фамилия должна содержать меньше 64 символов");
-        }
-        if (!Util.emailMatches(signupRequest.getEmail())) {
-            fieldsErrors.put(FieldsException.EMAIL, "Некорректная почта");
-        }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
-        }
-        if (accountRepo.existsByUsername(signupRequest.getUsername())) {
-            if (registrationCodeRepo.existsById(signupRequest.getUsername())) {
-                fieldsErrors.put(
-                        FieldsException.USERNAME,
-                        "Логин " + signupRequest.getUsername() +
-                                " зарезервирован. Пожалуйста, попробуете позже"
-                );
-            } else {
-                fieldsErrors.put(
-                        FieldsException.USERNAME,
-                        "Пользователь с уникальным именем " + signupRequest.getUsername() + " уже существует"
-                );
-            }
-        }
-        if (accountRepo.existsByEmail(signupRequest.getEmail())) {
-            fieldsErrors.put(
-                    FieldsException.EMAIL,
-                    "Пользователь с почтой " + signupRequest.getEmail() +
-                            " уже существует"
+    public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
+        checkSignup(localizer, signupRequest);
 
-            );
-        }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
-        }
-
-        int code = new Random().nextInt(9000) + 1000;
+        int code = CodeGenerator.generate();
         AccountEntity account = new AccountEntity(
                 null,
                 signupRequest.getUsername(),
@@ -142,7 +87,6 @@ public class VerificationServiceImpl implements VerificationService {
                 signupRequest.getLastName(),
                 passwordEncoder.encode(signupRequest.getPassword())
         );
-
         accountRepo.save(account);
         registrationCodeRepo.save(
                 new RegistrationCodeEntity(
@@ -153,8 +97,8 @@ public class VerificationServiceImpl implements VerificationService {
 
         mailService.send(
                 signupRequest.getEmail(),
-                "Подтверждение регистрации",
-                "Код для подтверждения регистрации: " + code
+                localizer.getMessage(Message.CONFIRMATION_OF_REGISTRATION),
+                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
         );
 
         QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
@@ -167,41 +111,19 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public void confirmRegistrationCode(ConfirmCodeRequest confirmCodeRequest) throws DescriptionException {
+    public void confirmRegistrationCode(Localizer localizer, ConfirmCodeRequest confirmCodeRequest) throws DescriptionException {
         if (confirmCodeRequest.getCode().length() != 4) {
-            throw new DescriptionException("Код должен содержать 4 символа");
+            throw new DescriptionException(localizer.getMessage(Message.CODE_MUST_CONTAINS_4_SYMBOLS));
         }
         if (!registrationCodeRepo.existsByUsername(confirmCodeRequest.getUsername())) {
-            throw new DescriptionException("Время действия кода истекло");
+            throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED));
         }
         registrationCodeRepo.deleteById(confirmCodeRequest.getUsername());
     }
 
     @Override
-    public TokensResponse login(LoginRequest loginRequest) throws FieldsException, DescriptionException {
-        Map<String, String> fieldsErrors = new HashMap<>();
-        if (loginRequest.getUsername().isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Логин не может быть пустым");
-        }
-        if (loginRequest.getPassword().length() < 8) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать больше 8 символов");
-        }
-        if (loginRequest.getPassword().length() > 64) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Пароль должнен содержать меньше 64 символов");
-        }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
-        }
-        Optional<AccountEntity> account = accountRepo.findByUsername(loginRequest.getUsername());
-        if (account.isEmpty()) {
-            fieldsErrors.put(FieldsException.USERNAME, "Пользователя с уникальным именем " + loginRequest.getUsername() + " не существует");
-            throw new FieldsException(fieldsErrors);
-        }
-        AccountEntity accountEntity = account.get();
-        if (!passwordEncoder.matches(loginRequest.getPassword(), accountEntity.getPassword())) {
-            fieldsErrors.put(FieldsException.PASSWORD, "Неверный пароль");
-            throw new FieldsException(fieldsErrors);
-        }
+    public TokensResponse login(Localizer localizer, LoginRequest loginRequest) throws FieldsException, DescriptionException {
+        checkLogin(localizer, loginRequest);
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(),
@@ -212,7 +134,7 @@ public class VerificationServiceImpl implements VerificationService {
         try {
             authentication = authenticationManager.authenticate(authenticationToken);
         } catch (Exception ex) {
-            throw new DescriptionException("Не удалось авторизоваться");
+            throw new DescriptionException(localizer.getMessage(Message.AUTHORIZATION_FAILED));
         }
 
         User user = (User)authentication.getPrincipal();
@@ -254,6 +176,162 @@ public class VerificationServiceImpl implements VerificationService {
             return new TokensResponse(accessToken, refreshTokenSrc, username);
         } else {
             throw new RefreshTokenIsMissingException();
+        }
+    }
+
+    private void checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+
+        if (signupRequest.getUsername().isEmpty()) {
+            fieldsErrors.put(
+                    FieldsException.USERNAME,
+                    localizer.getMessage(Message.USERNAME_MUST_NOT_BE_EMPTY)
+            );
+        }
+        if (signupRequest.getUsername().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.USERNAME,
+                    localizer.getMessage(Message.USERNAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (signupRequest.getPassword().length() < 8) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_8_SYMBOLS)
+            );
+        }
+        if (signupRequest.getPassword().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (!signupRequest.getPassword().equals(signupRequest.getRepeatPassword())) {
+            fieldsErrors.put(
+                    FieldsException.REPEAT_PASSWORD,
+                    localizer.getMessage(Message.PASSWORDS_DO_NOT_MATCH)
+            );
+        }
+        if (signupRequest.getFirstName().isEmpty()) {
+            fieldsErrors.put(
+                    FieldsException.FIRST_NAME,
+                    localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY)
+            );
+        }
+        if (signupRequest.getFirstName().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.FIRST_NAME,
+                    localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (signupRequest.getLastName().isEmpty()) {
+            fieldsErrors.put(
+                    FieldsException.LAST_NAME,
+                    localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY)
+            );
+        }
+        if (signupRequest.getLastName().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.LAST_NAME,
+                    localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (!EmailChecker.emailMatches(signupRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(Message.WRONG_EMAIL)
+            );
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+
+        if (accountRepo.existsByUsername(signupRequest.getUsername())) {
+            if (registrationCodeRepo.existsById(signupRequest.getUsername())) {
+                fieldsErrors.put(
+                        FieldsException.USERNAME,
+                        localizer.getMessage(
+                                Message.USERNAME_RESERVED_START,
+                                signupRequest.getUsername(),
+                                Message.USERNAME_RESERVED_END
+                        )
+                );
+            } else {
+                fieldsErrors.put(
+                        FieldsException.USERNAME,
+                        localizer.getMessage(
+                                Message.USER_WITH_USERNAME_ALREADY_EXISTS_START,
+                                signupRequest.getUsername(),
+                                Message.USER_WITH_USERNAME_ALREADY_EXISTS_END
+                        )
+                );
+            }
+        }
+        if (accountRepo.existsByEmail(signupRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(
+                            Message.USER_WITH_EMAIL_ALREADY_EXISTS_START,
+                            signupRequest.getUsername(),
+                            Message.USER_WITH_EMAIL_ALREADY_EXISTS_END
+                    )
+            );
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+    }
+
+    private void checkLogin(Localizer localizer, LoginRequest loginRequest) throws FieldsException {
+        Map<String, String> fieldsErrors = new HashMap<>();
+
+        if (loginRequest.getUsername().isEmpty()) {
+            fieldsErrors.put(
+                    FieldsException.USERNAME,
+                    localizer.getMessage(Message.USERNAME_MUST_NOT_BE_EMPTY)
+            );
+        }
+        if (loginRequest.getUsername().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.USERNAME,
+                    localizer.getMessage(Message.USERNAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (loginRequest.getPassword().length() < 8) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_8_SYMBOLS)
+            );
+        }
+        if (loginRequest.getPassword().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+            );
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
+
+        Optional<AccountEntity> account = accountRepo.findByUsername(loginRequest.getUsername());
+        if (account.isEmpty()) {
+            fieldsErrors.put(
+                    FieldsException.USERNAME,
+                    localizer.getMessage(
+                            Message.USER_WITH_USERNAME_DOES_NOT_EXIST_START,
+                            loginRequest.getUsername(),
+                            Message.USER_WITH_USERNAME_DOES_NOT_EXIST_END
+                    )
+            );
+            throw new FieldsException(fieldsErrors);
+        }
+        AccountEntity accountEntity = account.get();
+        if (!passwordEncoder.matches(loginRequest.getPassword(), accountEntity.getPassword())) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.WRONG_PASSWORD)
+            );
+            throw new FieldsException(fieldsErrors);
         }
     }
 }

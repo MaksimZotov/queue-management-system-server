@@ -11,7 +11,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
-import com.maksimzotov.queuemanagementsystemserver.util.Util;
+import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -70,7 +70,7 @@ public class ClientServiceImpl implements ClientService {
         if (joinQueueRequest.getLastName().length() > 64) {
             throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
         }
-        if (!Util.emailMatches(joinQueueRequest.getEmail())) {
+        if (!EmailChecker.emailMatches(joinQueueRequest.getEmail())) {
             throw new DescriptionException("Некорректная почта");
         }
 
@@ -182,7 +182,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public QueueStateForClient rejoinQueue(Long queueId, String email) throws DescriptionException {
-        if (!Util.emailMatches(email)) {
+        if (!EmailChecker.emailMatches(email)) {
             throw new DescriptionException("Некорректная почта");
         }
 
