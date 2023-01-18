@@ -8,7 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocation
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.RulesService;
+import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -28,9 +28,9 @@ import java.util.Optional;
 @Slf4j
 public class LocationServiceImpl implements LocationService {
 
-    private final RulesService rulesService;
+    private final RightsService rightsService;
     private final LocationRepo locationRepo;
-    private final RulesRepo rulesRepo;
+    private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
 
@@ -72,7 +72,7 @@ public class LocationServiceImpl implements LocationService {
             clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
             clientInQueueRepo.deleteByQueueId(queueEntity.getId());
         }
-        rulesRepo.deleteByLocationId(locationId);
+        rightsRepo.deleteByLocationId(locationId);
         queueRepo.deleteByLocationId(locationId);
         locationRepo.deleteById(locationId);
     }
@@ -84,17 +84,17 @@ public class LocationServiceImpl implements LocationService {
             throw new DescriptionException("Локации не сущестует");
         }
         LocationEntity locationEntity = location.get();
-        return Location.toModel(locationEntity, rulesService.checkRulesInLocation(username, locationId));
+        return Location.toModel(locationEntity, rightsService.checkRightsInLocation(username, locationId));
     }
 
     @Override
-    public ContainerForList<Location> getLocations(String username, Boolean hasRules) throws DescriptionException {
+    public ContainerForList<Location> getLocations(String username, Boolean hasRights) throws DescriptionException {
         Optional<List<LocationEntity>> locationsEntities = locationRepo.findByOwnerUsernameContaining(username);
         if (locationsEntities.isEmpty()) {
             throw new DescriptionException("Владелец локаций не найден");
         }
         return new ContainerForList<>(
-                locationsEntities.get().stream().map((item) -> Location.toModel(item, hasRules)).toList()
+                locationsEntities.get().stream().map((item) -> Location.toModel(item, hasRights)).toList()
         );
     }
 }

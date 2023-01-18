@@ -11,7 +11,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
-import com.maksimzotov.queuemanagementsystemserver.service.RulesService;
+import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -28,7 +28,7 @@ import java.util.*;
 @Slf4j
 public class QueueServiceImpl implements QueueService {
 
-    private final RulesService rulesService;
+    private final RightsService rightsService;
     private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationRepo locationRepo;
@@ -41,7 +41,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueServiceImpl(
             SimpMessagingTemplate messagingTemplate,
             AccountRepo accountRepo,
-            RulesService rulesService,
+            RightsService rightsService,
             BoardService boardService,
             LocationRepo locationRepo,
             QueueRepo queueRepo,
@@ -51,7 +51,7 @@ public class QueueServiceImpl implements QueueService {
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
         this.messagingTemplate = messagingTemplate;
-        this.rulesService = rulesService;
+        this.rightsService = rightsService;
         this.boardService = boardService;
         this.locationRepo = locationRepo;
         this.queueRepo = queueRepo;
@@ -110,7 +110,7 @@ public class QueueServiceImpl implements QueueService {
         }
         return new ContainerForList<>(
                 queuesEntities.get().stream()
-                        .map((item) -> Queue.toModel(item, rulesService.checkRulesInLocation(username, locationId)))
+                        .map((item) -> Queue.toModel(item, rightsService.checkRightsInLocation(username, locationId)))
                         .toList()
         );
     }

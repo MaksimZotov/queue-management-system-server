@@ -9,12 +9,12 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import java.io.Serializable;
 
-@Entity(name = "rules")
-@IdClass(RulesEntity.class)
+@Entity(name = "rights")
+@IdClass(RightsEntity.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RulesEntity implements Serializable {
+public class RightsEntity implements Serializable {
 
     @Id
     private Long locationId;

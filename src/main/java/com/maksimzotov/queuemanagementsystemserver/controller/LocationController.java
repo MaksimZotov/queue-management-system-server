@@ -4,10 +4,9 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.HasRulesInfo;
+import com.maksimzotov.queuemanagementsystemserver.model.location.HasRightsInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
@@ -126,18 +125,18 @@ public class LocationController {
     }
 
     @GetMapping("/check")
-    public ResponseEntity<?> checkHasRules(
+    public ResponseEntity<?> checkHasRights(
             HttpServletRequest request,
             @RequestParam String username
     ) {
         try {
-            boolean hasRules = currentAccountService.handleRequestFromCurrentAccount(
+            boolean hasRights = currentAccountService.handleRequestFromCurrentAccount(
                     request,
                     profileUsername -> Objects.equals(profileUsername, username)
             );
-            return ResponseEntity.ok().body(new HasRulesInfo(hasRules));
+            return ResponseEntity.ok().body(new HasRightsInfo(hasRights));
         } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
-            return ResponseEntity.ok().body(new HasRulesInfo(false));
+            return ResponseEntity.ok().body(new HasRightsInfo(false));
         } catch (Exception ex) {
             return ResponseEntity.internalServerError().build();
         }

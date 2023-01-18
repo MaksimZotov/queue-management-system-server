@@ -5,7 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.RulesService;
+import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -14,18 +14,18 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/rules")
+@RequestMapping("/rights")
 @RequiredArgsConstructor
 @Slf4j
-public class RulesController {
+public class RightsController {
 
     private final CurrentAccountService currentAccountService;
 
-    private final RulesService rulesService;
+    private final RightsService rightsService;
 
 
     @GetMapping
-    public ResponseEntity<?> getRules(
+    public ResponseEntity<?> getRights(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
     ) {
@@ -33,7 +33,7 @@ public class RulesController {
             return ResponseEntity.ok().body(
                     currentAccountService.handleRequestFromCurrentAccount(
                             request,
-                            username -> rulesService.getRules(username, locationId)
+                            username -> rightsService.getRights(username, locationId)
                     )
             );
         } catch (AccountIsNotAuthorizedException ex) {
@@ -49,7 +49,7 @@ public class RulesController {
 
 
     @PostMapping("/add")
-    public ResponseEntity<?> addRules(
+    public ResponseEntity<?> addRights(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
             @RequestParam("email") String email
@@ -57,7 +57,7 @@ public class RulesController {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> rulesService.addRules(username, locationId, email)
+                    username -> rightsService.addRights(username, locationId, email)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
@@ -72,7 +72,7 @@ public class RulesController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteRules(
+    public ResponseEntity<?> deleteRights(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
             @RequestParam("email") String email
@@ -80,7 +80,7 @@ public class RulesController {
         try {
             currentAccountService.handleRequestFromCurrentAccountNoReturn(
                     request,
-                    username -> rulesService.deleteRules(username, locationId, email)
+                    username -> rightsService.deleteRights(username, locationId, email)
             );
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
