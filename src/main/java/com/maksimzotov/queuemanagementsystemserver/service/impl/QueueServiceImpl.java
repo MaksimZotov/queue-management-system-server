@@ -232,7 +232,7 @@ public class QueueServiceImpl implements QueueService {
                 curOrderNumber,
                 publicCode,
                 code,
-                ClientInQueueStatusEntity.CONFIRMED
+                ClientInQueueStatusEntity.Status.CONFIRMED.name()
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
@@ -243,7 +243,7 @@ public class QueueServiceImpl implements QueueService {
         return ClientInQueue.toModel(clientInQueueEntity);
     }
 
-    @Transactional(propagation = Propagation.NEVER)
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @Override
     public QueueState getQueueStateWithoutTransaction(Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);

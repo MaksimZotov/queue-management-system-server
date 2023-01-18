@@ -4,15 +4,12 @@ import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerAp
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
+import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
@@ -26,7 +23,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -38,7 +38,6 @@ public class ClientServiceImpl implements ClientService {
     private final CleanerService cleanerService;
     private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
     private final JavaMailSender mailSender;
@@ -50,7 +49,6 @@ public class ClientServiceImpl implements ClientService {
             CleanerService cleanerService,
             BoardService boardService,
             SimpMessagingTemplate messagingTemplate,
-            QueueRepo queueRepo,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
             JavaMailSender mailSender,
@@ -61,7 +59,6 @@ public class ClientServiceImpl implements ClientService {
         this.cleanerService = cleanerService;
         this.boardService = boardService;
         this.messagingTemplate = messagingTemplate;
-        this.queueRepo = queueRepo;
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientCodeRepo = clientCodeRepo;
         this.mailSender = mailSender;
@@ -141,7 +138,7 @@ public class ClientServiceImpl implements ClientService {
                 curOrderNumber,
                 publicCode,
                 code,
-                ClientInQueueStatusEntity.RESERVED
+                ClientInQueueStatusEntity.Status.RESERVED.name()
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
@@ -261,7 +258,7 @@ public class ClientServiceImpl implements ClientService {
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         clientInQueueEntity.setAccessKey(clientCodeEntity.getCode());
-        clientInQueueEntity.setStatus(ClientInQueueStatusEntity.CONFIRMED);
+        clientInQueueEntity.setStatus(ClientInQueueStatusEntity.Status.CONFIRMED.name());
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
