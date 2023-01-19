@@ -1,13 +1,15 @@
 package com.maksimzotov.queuemanagementsystemserver.controller.base;
 
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
+import lombok.AllArgsConstructor;
 import org.springframework.context.MessageSource;
 
 import javax.servlet.http.HttpServletRequest;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
-public abstract class BaseController {
+@AllArgsConstructor
+public  class BaseController {
 
     public MessageSource messageSource;
 

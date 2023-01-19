@@ -5,8 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.EqualsAndHashCode;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,11 +14,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/queues")
-@RequiredArgsConstructor
-@Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class ClientController extends BaseController {
 
     private final ClientService clientService;
+
+    public ClientController(MessageSource messageSource, ClientService clientService) {
+        super(messageSource);
+        this.clientService = clientService;
+    }
 
     @GetMapping("/{queue_id}/client")
     public ResponseEntity<?> getQueueStateForClient(

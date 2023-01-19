@@ -6,8 +6,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.EqualsAndHashCode;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,11 +15,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/rights")
-@RequiredArgsConstructor
-@Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class RightsController extends BaseController {
 
     private final RightsService rightsService;
+
+    public RightsController(MessageSource messageSource, RightsService rightsService) {
+        super(messageSource);
+        this.rightsService = rightsService;
+    }
 
     @GetMapping
     public ResponseEntity<?> getRights(

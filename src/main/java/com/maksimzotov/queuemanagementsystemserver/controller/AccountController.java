@@ -10,8 +10,8 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCod
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.EqualsAndHashCode;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,11 +19,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/account")
-@RequiredArgsConstructor
-@Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class AccountController extends BaseController {
 
     private final AccountService accountService;
+
+    public AccountController(MessageSource messageSource, AccountService accountService) {
+        super(messageSource);
+        this.accountService = accountService;
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(

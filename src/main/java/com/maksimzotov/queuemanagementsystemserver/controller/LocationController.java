@@ -7,8 +7,8 @@ import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.EqualsAndHashCode;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,11 +16,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/locations")
-@RequiredArgsConstructor
-@Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class LocationController extends BaseController {
 
     private final LocationService locationService;
+
+    public LocationController(MessageSource messageSource, LocationService locationService) {
+        super(messageSource);
+        this.locationService = locationService;
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> createLocation(
