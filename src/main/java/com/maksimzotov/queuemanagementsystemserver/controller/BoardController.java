@@ -23,7 +23,7 @@ public class BoardController extends BaseController {
     private final BoardService boardService;
 
     @GetMapping()
-    public ResponseEntity<?> getQueueStateForClient(
+    public ResponseEntity<?> getLocationBoard(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
     ) {
