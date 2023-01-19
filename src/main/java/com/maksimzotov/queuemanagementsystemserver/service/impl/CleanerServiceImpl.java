@@ -9,6 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +21,13 @@ import java.util.Optional;
 @AllArgsConstructor
 public class CleanerServiceImpl implements CleanerService {
 
-    private final BoardService boardService;
+    @Lazy
     private final QueueService queueService;
+    private final BoardService boardService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
-    private final QueueRepo queueRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
