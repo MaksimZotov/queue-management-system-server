@@ -4,6 +4,7 @@ import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
@@ -14,14 +15,12 @@ import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -32,8 +31,6 @@ public class ClientServiceImpl implements ClientService {
     private final DelayedJobService delayedJobService;
     private final QueueService queueService;
     private final CleanerService cleanerService;
-    private final BoardService boardService;
-    private final SimpMessagingTemplate messagingTemplate;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
     private final Integer confirmationTimeInSeconds;
@@ -43,8 +40,6 @@ public class ClientServiceImpl implements ClientService {
             DelayedJobService delayedJobService,
             QueueService queueService,
             CleanerService cleanerService,
-            BoardService boardService,
-            SimpMessagingTemplate messagingTemplate,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
@@ -53,8 +48,6 @@ public class ClientServiceImpl implements ClientService {
         this.delayedJobService = delayedJobService;
         this.queueService = queueService;
         this.cleanerService = cleanerService;
-        this.boardService = boardService;
-        this.messagingTemplate = messagingTemplate;
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientCodeRepo = clientCodeRepo;
         this.confirmationTimeInSeconds = confirmationTimeInSeconds;
@@ -104,8 +97,8 @@ public class ClientServiceImpl implements ClientService {
 
         mailService.send(
                 joinQueueRequest.getEmail(),
-                "Подтверждение подключения к очереди",
-                "Код для подтверждения подключения к очереди: " + accessKey
+                localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION_TO_QUEUE),
+                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_CONNECTION_TO_QUEUE, accessKey)
         );
 
         return QueueStateForClient.toModel(queueState, clientInQueueEntity);
@@ -132,7 +125,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient rejoinQueue(Localizer localizer, Long queueId, String email) throws DescriptionException {
         if (!EmailChecker.emailMatches(email)) {
-            throw new DescriptionException("Некорректная почта");
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
 
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
@@ -140,7 +133,13 @@ public class ClientServiceImpl implements ClientService {
                 email
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
+                            email,
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
+                    )
+            );
         }
 
         String code = CodeGenerator.generate();
@@ -156,8 +155,8 @@ public class ClientServiceImpl implements ClientService {
 
         mailService.send(
                 email,
-                "Подтверждение переподключения к очереди",
-                "Код для подтверждения переподключения к очереди: " + code
+                localizer.getMessage(Message.CONFIRMATION_OF_RECONNECTION_TO_QUEUE),
+                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_RECONNECTION_TO_QUEUE, code)
         );
 
         delayedJobService.schedule(
@@ -173,9 +172,7 @@ public class ClientServiceImpl implements ClientService {
     public QueueStateForClient confirmCode(Localizer localizer, Long queueId, String email, String code) throws DescriptionException {
         Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
         if (clientCode.isEmpty()) {
-            throw new DescriptionException(
-                    "Время действия кода истекло. Пожалуйста, попробуйте подключиться заново"
-            );
+            throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED_PLEASE_TRY_AGAIN));
         }
 
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
@@ -183,11 +180,17 @@ public class ClientServiceImpl implements ClientService {
                 email
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
+                            email,
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
+                    )
+            );
         }
         ClientCodeEntity clientCodeEntity = clientCode.get();
         if (!Objects.equals(clientCodeEntity.getCode(), code)) {
-            throw new DescriptionException("Неверный код");
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_CODE));
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
@@ -196,11 +199,9 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
-        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
-        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
-        boardService.updateLocation(curQueueState.getLocationId());
+        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
 
-        return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
+        return QueueStateForClient.toModel(queueState, clientInQueueEntity);
     }
 
     @Override
@@ -210,50 +211,57 @@ public class ClientServiceImpl implements ClientService {
                 email
         );
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
+                            email,
+                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
+                    )
+            );
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
-            throw new DescriptionException("У вас нет прав на то, чтобы покинуть очередь. Пожалуйста, попробуйте переподключиться");
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_LEAVE_QUEUE_PLEASE_TRY_RECONNECT));
         }
 
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByEmail(email);
 
-        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
-        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
-        boardService.updateLocation(curQueueState.getLocationId());
+        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
 
-        return QueueStateForClient.toModel(curQueueState);
+        return QueueStateForClient.toModel(queueState);
     }
 
     private  List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
         if (joinQueueRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException("Имя не может быть пустым");
+            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
         }
         if (joinQueueRequest.getFirstName().length() > 64) {
-            throw new DescriptionException("Имя должно содержать меньше 64 символов");
+            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
         if (joinQueueRequest.getLastName().isEmpty()) {
-            throw new DescriptionException("Фамилия не может быть пустой");
+            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY));
         }
         if (joinQueueRequest.getLastName().length() > 64) {
-            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
+            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
         if (!EmailChecker.emailMatches(joinQueueRequest.getEmail())) {
-            throw new DescriptionException("Некорректная почта");
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         if (clients.isEmpty()) {
-            throw new DescriptionException("Очередь не существует");
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
-        if (clientInQueueRepo.existsByQueueIdAndEmail(
-                queueId,
-                joinQueueRequest.getEmail()
-        )) {
-            throw new DescriptionException("Клиент с почтой " + joinQueueRequest.getEmail() + " уже стоит в очереди");
+        if (clientInQueueRepo.existsByQueueIdAndEmail(queueId, joinQueueRequest.getEmail())) {
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.CLIENT_WITH_EMAIL_STAND_IN_QUEUE_START,
+                            joinQueueRequest.getEmail(),
+                            Message.CLIENT_WITH_EMAIL_STAND_IN_QUEUE_END
+                    )
+            );
         }
 
         return clients.get();
