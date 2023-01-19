@@ -27,7 +27,7 @@ public class RightsController extends BaseController {
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(rightsService.getRights(getToken(request), locationId));
+            return ResponseEntity.ok().body(rightsService.getRights(getLocalizer(request), getToken(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -41,7 +41,7 @@ public class RightsController extends BaseController {
             @RequestParam("email") String email
     ) {
         try {
-            rightsService.addRights(getToken(request), locationId, email);
+            rightsService.addRights(getLocalizer(request), getToken(request), locationId, email);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
@@ -57,7 +57,7 @@ public class RightsController extends BaseController {
             @RequestParam("email") String email
     ) {
         try {
-            rightsService.deleteRights(getToken(request), locationId, email);
+            rightsService.deleteRights(getLocalizer(request), getToken(request), locationId, email);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

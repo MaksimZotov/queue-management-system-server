@@ -3,7 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
@@ -87,7 +86,7 @@ public class AccountServiceImpl implements AccountService {
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         checkSignup(localizer, signupRequest);
 
-        int code = CodeGenerator.generate();
+        String code = CodeGenerator.generate();
         AccountEntity account = new AccountEntity(
                 null,
                 signupRequest.getUsername(),
@@ -100,7 +99,7 @@ public class AccountServiceImpl implements AccountService {
         registrationCodeRepo.save(
                 new RegistrationCodeEntity(
                         account.getUsername(),
-                        Integer.toString(code)
+                        code
                 )
         );
 
