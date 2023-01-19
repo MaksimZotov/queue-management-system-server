@@ -1,10 +1,10 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
-import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,12 +17,9 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/rights")
 @RequiredArgsConstructor
 @Slf4j
-public class RightsController {
-
-    private final CurrentAccountService currentAccountService;
+public class RightsController extends BaseController {
 
     private final RightsService rightsService;
-
 
     @GetMapping
     public ResponseEntity<?> getRights(
@@ -30,20 +27,9 @@ public class RightsController {
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(
-                    currentAccountService.handleRequestFromCurrentAccount(
-                            request,
-                            username -> rightsService.getRights(username, locationId)
-                    )
-            );
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+            return ResponseEntity.ok().body(rightsService.getRights(getToken(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -55,19 +41,12 @@ public class RightsController {
             @RequestParam("email") String email
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccountNoReturn(
-                    request,
-                    username -> rightsService.addRights(username, locationId, email)
-            );
+            rightsService.addRights(getToken(request), locationId, email);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -78,19 +57,12 @@ public class RightsController {
             @RequestParam("email") String email
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccountNoReturn(
-                    request,
-                    username -> rightsService.deleteRights(username, locationId, email)
-            );
+            rightsService.deleteRights(getToken(request), locationId, email);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 }

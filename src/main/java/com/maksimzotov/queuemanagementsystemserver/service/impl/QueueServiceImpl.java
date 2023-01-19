@@ -4,14 +4,18 @@ import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
+import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -26,6 +30,7 @@ import java.util.*;
 @Transactional
 public class QueueServiceImpl implements QueueService {
 
+    private final AccountService accountService;
     private final RightsService rightsService;
     private final BoardService boardService;
     private final SimpMessagingTemplate messagingTemplate;
@@ -38,7 +43,7 @@ public class QueueServiceImpl implements QueueService {
 
     public QueueServiceImpl(
             SimpMessagingTemplate messagingTemplate,
-            AccountRepo accountRepo,
+            AccountService accountService,
             RightsService rightsService,
             BoardService boardService,
             LocationRepo locationRepo,
@@ -49,6 +54,7 @@ public class QueueServiceImpl implements QueueService {
             @Value("${spring.mail.username}") String emailUsernameSender
     ) {
         this.messagingTemplate = messagingTemplate;
+        this.accountService = accountService;
         this.rightsService = rightsService;
         this.boardService = boardService;
         this.locationRepo = locationRepo;
@@ -60,10 +66,17 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public Queue createQueue(String username, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException {
-        if (createQueueRequest.getName().isEmpty()) {
-            throw new DescriptionException("Название очереди не может быть пустым");
+    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
+        if (!rightsService.checkRightsInLocation(accountUsername, locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
+
+        if (createQueueRequest.getName().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_NAME_MUST_NOT_BE_EMPTY));
+        }
+
         QueueEntity entity = queueRepo.save(
                 new QueueEntity(
                         null,
@@ -77,60 +90,56 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void deleteQueue(String username, Long queueId) throws DescriptionException {
+    public void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            throw new DescriptionException("Очереди не существует");
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
 
-        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
-        if (location.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "exists without location");
+        if (!rightsService.checkRightsInLocation(accountUsername, queueEntity.getLocationId())) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
-        LocationEntity locationEntity = location.get();
 
-        if (Objects.equals(locationEntity.getOwnerUsername(), username)) {
-            clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
-            clientInQueueRepo.deleteByQueueId(queueId);
-            queueRepo.deleteById(queueId);
-            boardService.updateLocation(location.get().getId());
-        } else {
-            throw new DescriptionException("У вас нет прав на удаление очереди");
-        }
+        clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
+        clientInQueueRepo.deleteByQueueId(queueId);
+        queueRepo.deleteById(queueId);
+        boardService.updateLocation(queueEntity.getLocationId());
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Long locationId, String username) throws DescriptionException {
+    public ContainerForList<Queue> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
         Optional<List<QueueEntity>> queuesEntities = queueRepo.findAllByLocationId(locationId);
         if (queuesEntities.isEmpty()) {
-            throw new DescriptionException("Локации не существует");
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         return new ContainerForList<>(
                 queuesEntities.get().stream()
-                        .map((item) -> Queue.toModel(item, rightsService.checkRightsInLocation(username, locationId)))
+                        .map((item) -> Queue.toModel(item, rightsService.checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)))
                         .toList()
         );
     }
 
     @Override
-    public QueueState getQueueState(Long queueId) throws DescriptionException {
+    public QueueState getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
-            throw new DescriptionException("Очереди не существует");
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
 
-        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
-        if (location.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo without");
+        if (!rightsService.checkRightsInLocation(accountUsername, queueEntity.getLocationId())) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_VIEW));
         }
+
+        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
-        }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
         return new QueueState(
@@ -147,24 +156,50 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public void serveClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException {
+    public void serveClientInQueue(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
+        QueueEntity queueEntity = queue.get();
+
+        if (!rightsService.checkRightsInLocation(accountUsername, queueEntity.getLocationId())) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент не стоит в очереди");
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
-        QueueState curQueueState = getQueueState(queueId);
+
+        QueueState curQueueState = getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
     }
 
     @Override
-    public void notifyClientInQueue(String username, Long queueId, Long clientId) throws DescriptionException {
+    public void notifyClientInQueue(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
+        QueueEntity queueEntity = queue.get();
+
+        if (!rightsService.checkRightsInLocation(accountUsername, queueEntity.getLocationId())) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException("Клиент с почтой не стоит в очереди");
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
         }
         String email = clientInQueue.get().getEmail();
         if (email == null) {
@@ -179,24 +214,33 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ClientInQueue addClient(Long queueId, AddClientRequest addClientRequest) throws DescriptionException {
+    public ClientInQueue addClient(Localizer localizer, String accessToken, Long queueId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        String accountUsername = accountService.getUsername(accessToken);
+
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
+        QueueEntity queueEntity = queue.get();
+
+        if (!rightsService.checkRightsInLocation(accountUsername, queueEntity.getLocationId())) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+
         if (addClientRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException("Имя не может быть пустым");
+            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
         }
         if (addClientRequest.getFirstName().length() > 64) {
-            throw new DescriptionException("Имя должно содержать меньше 64 символов");
+            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
         if (addClientRequest.getLastName().isEmpty()) {
-            throw new DescriptionException("Фамилия не может быть пустой");
+            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY));
         }
         if (addClientRequest.getLastName().length() > 64) {
-            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
+            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            throw new DescriptionException("Очередь не существует");
-        }
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
         Optional<Integer> maxOrderNumber = clientsEntities.stream()
@@ -234,28 +278,24 @@ public class QueueServiceImpl implements QueueService {
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
-        QueueState curQueueState = getQueueState(queueId);
+        QueueState curQueueState = getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
 
         return ClientInQueue.toModel(clientInQueueEntity);
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @Override
-    public QueueState getQueueStateWithoutTransaction(Long queueId) throws DescriptionException {
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public QueueState getQueueStateWithoutTransaction(Long queueId) {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
-        if (queue.isEmpty()) {
-            throw new DescriptionException("Очередь не существует");
-        }
+        QueueEntity queueEntity = queue.get();
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            throw new IllegalStateException("Queue with id " + queueId + "exists in QueueRepo but does not exist in ClientInQueueRepo");
-        }
-
-        QueueEntity queueEntity = queue.get();
         List<ClientInQueueEntity> clientsEntities = clients.get();
+
+        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
+        LocationEntity locationEntity = location.get();
 
         return new QueueState(
                 queueId,
@@ -266,7 +306,7 @@ public class QueueServiceImpl implements QueueService {
                         .map(ClientInQueue::toModel)
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
-                null
+                locationEntity.getOwnerUsername()
         );
     }
 }

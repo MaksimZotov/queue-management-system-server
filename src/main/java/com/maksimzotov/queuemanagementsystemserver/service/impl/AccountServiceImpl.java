@@ -7,9 +7,10 @@ import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
-import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenFailedException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
@@ -31,6 +32,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
@@ -161,17 +163,19 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public TokensResponse refreshToken(String refreshToken) throws RefreshTokenIsMissingException, TokenExpiredException {
-        if (refreshToken.startsWith("Bearer ")) {
-            String refreshTokenSrc = refreshToken.substring("Bearer ".length());
+    public TokensResponse refreshToken(String refreshToken) throws RefreshTokenFailedException {
+        if (refreshToken == null) {
+            throw new RefreshTokenFailedException();
+        }
+        try {
             Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
             JWTVerifier verifier = JWT.require(algorithm).build();
-            DecodedJWT decodedJWT = verifier.verify(refreshTokenSrc);
+            DecodedJWT decodedJWT = verifier.verify(refreshToken);
             String username = decodedJWT.getSubject();
 
             Optional<AccountEntity> account = accountRepo.findByUsername(username);
             if (account.isEmpty()) {
-                throw new RefreshTokenIsMissingException();
+                throw new RefreshTokenFailedException();
             }
             AccountEntity accountEntity = account.get();
 
@@ -180,9 +184,35 @@ public class AccountServiceImpl implements AccountService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshTokenSrc, username);
-        } else {
-            throw new RefreshTokenIsMissingException();
+            return new TokensResponse(accessToken, refreshToken, username);
+        } catch (Exception ex) {
+            throw new RefreshTokenFailedException();
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String getUsername(String accessToken) throws AccountIsNotAuthorizedException {
+        if (accessToken == null) {
+            throw new AccountIsNotAuthorizedException();
+        }
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
+            JWTVerifier verifier = JWT.require(algorithm).build();
+            DecodedJWT decodedJWT = verifier.verify(accessToken);
+            return decodedJWT.getSubject();
+        } catch (Exception ex) {
+            throw new AccountIsNotAuthorizedException();
+        }
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String getUsernameOrNull(String accessToken) {
+        try {
+            return getUsername(accessToken);
+        } catch (AccountIsNotAuthorizedException ex) {
+            return null;
         }
     }
 

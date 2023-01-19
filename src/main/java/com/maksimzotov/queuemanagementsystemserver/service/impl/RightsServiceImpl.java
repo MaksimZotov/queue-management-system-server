@@ -3,12 +3,14 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RightsEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RightsRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,23 +25,29 @@ import java.util.Optional;
 @AllArgsConstructor
 public class RightsServiceImpl implements RightsService {
 
+    private final AccountService accountService;
     private final RightsRepo rightsRepo;
     private final LocationRepo locationRepo;
     private final AccountRepo accountRepo;
 
     @Override
-    public ContainerForList<RightsModel> getRights(String username, Long locationId) throws DescriptionException {
+    public ContainerForList<RightsModel> getRights(String accessToken, Long locationId) throws DescriptionException {
         Optional<List<RightsEntity>> rights = rightsRepo.findAllByLocationId(locationId);
         if (rights.isEmpty()) {
             throw new DescriptionException("Локации не существует");
         }
+
+        if (checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)) {
+            throw new DescriptionException("У вас нет прав для просмотра");
+        }
+
         return new ContainerForList<>(rights.get().stream().map(RightsModel::toModel).toList());
     }
 
     @Override
     @Transactional
-    public void addRights(String username, Long locationId, String email) throws DescriptionException {
-        checkRightsByEmail(username, locationId, email);
+    public void addRights(String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsByEmail(accountService.getUsername(accessToken), locationId, email);
         RightsEntity rightsEntity = new RightsEntity(locationId, email);
         if (rightsRepo.existsById(rightsEntity)) {
             throw new DescriptionException("У пользователя с почтой " + email + " уже есть права в этой локации");
@@ -49,8 +57,8 @@ public class RightsServiceImpl implements RightsService {
 
     @Override
     @Transactional
-    public void deleteRights(String username, Long locationId, String email) throws DescriptionException {
-        checkRightsByEmail(username, locationId, email);
+    public void deleteRights(String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsByEmail(accountService.getUsername(accessToken), locationId, email);
         RightsEntity rightsEntity = new RightsEntity(locationId, email);
         if (!rightsRepo.existsById(rightsEntity)) {
             throw new DescriptionException("У пользователя с почтой " + email + " уже нет прав в этой локации");

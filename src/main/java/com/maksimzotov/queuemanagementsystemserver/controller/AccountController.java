@@ -1,19 +1,18 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
-import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenIsMissingException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenFailedException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,9 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping("/account")
 @RequiredArgsConstructor
 @Slf4j
-public class AccountController {
-
-    private final MessageSource messageSource;
+public class AccountController extends BaseController {
 
     private final AccountService accountService;
 
@@ -77,15 +74,11 @@ public class AccountController {
             String refreshToken
     ) {
         try {
-            return ResponseEntity.ok().body(accountService.refreshToken(refreshToken));
-        } catch (RefreshTokenIsMissingException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(getLocalizer(request).getMessage(Message.REFRESH_TOKEN_IS_MISSING)));
+            return ResponseEntity.ok().body(accountService.refreshToken(getToken(refreshToken)));
+        } catch (RefreshTokenFailedException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(getLocalizer(request).getMessage(Message.REFRESH_TOKEN_FAILED)));
         }  catch (TokenExpiredException ex) {
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    private Localizer getLocalizer(HttpServletRequest request) {
-        return new Localizer(request.getLocale(), messageSource);
     }
 }
