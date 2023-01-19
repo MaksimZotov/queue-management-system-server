@@ -22,10 +22,10 @@ public class BoardServiceImpl implements BoardService {
     private final ClientInQueueRepo clientInQueueRepo;
 
     @Override
-    public BoardModel updateLocation(Long locationId) throws DescriptionException {
+    public BoardModel updateLocation(Long locationId)  {
         Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
         if (queues.isEmpty()) {
-            throw new DescriptionException("Локации не существует");
+            return null;
         }
         BoardModel boardModel = BoardModel.toModel(
                 clientInQueueRepo,

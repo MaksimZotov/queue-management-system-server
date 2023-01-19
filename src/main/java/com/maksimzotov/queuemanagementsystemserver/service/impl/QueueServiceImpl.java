@@ -205,10 +205,11 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void updateQueueWithoutTransaction(Long queueId) throws DescriptionException {
+    public QueueState updateQueueWithoutTransaction(Long queueId) {
         QueueState queueState = getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
         boardService.updateLocation(queueState.getLocationId());
+        return queueState;
     }
 
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {

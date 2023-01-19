@@ -3,7 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
@@ -16,5 +15,5 @@ public interface QueueService {
     void notifyClientInQueue(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     ClientInQueue addClient(Localizer localizer, String accessToken, Long queueId, AddClientRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     QueueState getQueueStateWithoutTransaction(Long queueId);
-    void updateQueueWithoutTransaction(Long queueId) throws DescriptionException;
+    QueueState updateQueueWithoutTransaction(Long queueId);
 }

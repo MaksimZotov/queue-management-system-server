@@ -109,10 +109,8 @@ public class AccountServiceImpl implements AccountService {
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
         );
 
-        delayedJobService.schedule(() ->
-                cleanerService.deleteNonActivatedUser(
-                        account.getUsername()
-                ),
+        delayedJobService.schedule(
+                () -> cleanerService.deleteNonActivatedUser(account.getUsername()),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );

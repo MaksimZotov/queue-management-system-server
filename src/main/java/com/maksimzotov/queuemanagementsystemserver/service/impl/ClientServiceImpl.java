@@ -10,7 +10,9 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
+import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -59,96 +61,43 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient joinQueue(Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
-        if (joinQueueRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException("Имя не может быть пустым");
-        }
-        if (joinQueueRequest.getFirstName().length() > 64) {
-            throw new DescriptionException("Имя должно содержать меньше 64 символов");
-        }
-        if (joinQueueRequest.getLastName().isEmpty()) {
-            throw new DescriptionException("Фамилия не может быть пустой");
-        }
-        if (joinQueueRequest.getLastName().length() > 64) {
-            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
-        }
-        if (!EmailChecker.emailMatches(joinQueueRequest.getEmail())) {
-            throw new DescriptionException("Некорректная почта");
-        }
-
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        if (clients.isEmpty()) {
-            throw new DescriptionException("Очередь не существует");
-        }
-        List<ClientInQueueEntity> clientsEntities = clients.get();
-
-        if (clientInQueueRepo.existsByQueueIdAndEmail(
-                queueId,
-                joinQueueRequest.getEmail()
-        )) {
-            throw new DescriptionException("Клиент с почтой " + joinQueueRequest.getEmail() + " уже стоит в очереди");
-        }
+    public QueueStateForClient joinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
+        List<ClientInQueueEntity> clientsEntities = checkJoinQueue(localizer, queueId, joinQueueRequest);
 
         Optional<Integer> maxOrderNumber = clientsEntities.stream()
                 .map(ClientInQueueEntity::getOrderNumber)
                 .max(Integer::compare);
 
-        Integer curOrderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
+        Integer orderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
+        Integer publicCode = CodeGenerator.generate(clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList());
+        String accessKey = CodeGenerator.generate();
 
-        String code = Integer.toString(new Random().nextInt(9000) + 1000);
-
-        clientCodeRepo.save(
-                new ClientCodeEntity(
-                        new ClientCodeEntity.PrimaryKey(
-                                queueId,
-                                joinQueueRequest.getEmail()
-                        ),
-                        code
-                )
+        ClientCodeEntity clientCodeEntity = new ClientCodeEntity(
+                new ClientCodeEntity.PrimaryKey(
+                        queueId,
+                        joinQueueRequest.getEmail()
+                ),
+                accessKey
         );
-
-        int publicCode;
-        List<Integer> publicCodes = clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList();
-        Optional<Integer> minOptional = publicCodes.stream().min(Integer::compare);
-        if (minOptional.isEmpty()) {
-            publicCode = 1;
-        } else {
-            int min = minOptional.get();
-            if (min > 1) {
-                publicCode = min - 1;
-            } else {
-                publicCode = publicCodes.stream().max(Integer::compare).get() + 1;
-            }
-        }
-
         ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
                 null,
                 queueId,
                 joinQueueRequest.getEmail(),
                 joinQueueRequest.getFirstName(),
                 joinQueueRequest.getLastName(),
-                curOrderNumber,
+                orderNumber,
                 publicCode,
-                code,
+                accessKey,
                 ClientInQueueStatusEntity.Status.RESERVED.name()
         );
+
+        clientCodeRepo.save(clientCodeEntity);
         clientInQueueRepo.save(clientInQueueEntity);
 
-        clientsEntities.add(clientInQueueEntity);
+        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
 
-        QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
-        messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
-        boardService.updateLocation(curQueueState.getLocationId());
-
-        delayedJobService.schedule(() ->
-                {
-                    try {
-                        cleanerService.deleteJoinClientCode(
-                                queueId,
-                                joinQueueRequest.getEmail()
-                        );
-                    } catch (DescriptionException ignored) {}
-                },
+        delayedJobService.schedule(
+                () -> cleanerService.deleteJoinClientCode(queueId, joinQueueRequest.getEmail()),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );
@@ -156,14 +105,14 @@ public class ClientServiceImpl implements ClientService {
         mailService.send(
                 joinQueueRequest.getEmail(),
                 "Подтверждение подключения к очереди",
-                "Код для подтверждения подключения к очереди: " + code
+                "Код для подтверждения подключения к очереди: " + accessKey
         );
 
-        return QueueStateForClient.toModel(curQueueState, clientInQueueEntity);
+        return QueueStateForClient.toModel(queueState, clientInQueueEntity);
     }
 
     @Override
-    public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) throws DescriptionException {
+    public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) {
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
                 queueId,
                 email
@@ -181,7 +130,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient rejoinQueue(Long queueId, String email) throws DescriptionException {
+    public QueueStateForClient rejoinQueue(Localizer localizer, Long queueId, String email) throws DescriptionException {
         if (!EmailChecker.emailMatches(email)) {
             throw new DescriptionException("Некорректная почта");
         }
@@ -194,7 +143,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException("Клиент с почтой " + email + " не стоит в очереди");
         }
 
-        String code = Integer.toString(new Random().nextInt(9000) + 1000);
+        String code = CodeGenerator.generate();
         clientCodeRepo.save(
                 new ClientCodeEntity(
                         new ClientCodeEntity.PrimaryKey(
@@ -211,11 +160,8 @@ public class ClientServiceImpl implements ClientService {
                 "Код для подтверждения переподключения к очереди: " + code
         );
 
-        delayedJobService.schedule(() ->
-                        cleanerService.deleteRejoinClientCode(
-                                queueId,
-                                email
-                        ),
+        delayedJobService.schedule(
+                () -> cleanerService.deleteRejoinClientCode(queueId, email),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );
@@ -224,7 +170,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient confirmCode(Long queueId, String email, String code) throws DescriptionException {
+    public QueueStateForClient confirmCode(Localizer localizer, Long queueId, String email, String code) throws DescriptionException {
         Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
         if (clientCode.isEmpty()) {
             throw new DescriptionException(
@@ -258,7 +204,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient leaveQueue(Long queueId, String email, String accessKey) throws DescriptionException {
+    public QueueStateForClient leaveQueue(Localizer localizer, Long queueId, String email, String accessKey) throws DescriptionException {
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
                 queueId,
                 email
@@ -280,5 +226,36 @@ public class ClientServiceImpl implements ClientService {
         boardService.updateLocation(curQueueState.getLocationId());
 
         return QueueStateForClient.toModel(curQueueState);
+    }
+
+    private  List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
+        if (joinQueueRequest.getFirstName().isEmpty()) {
+            throw new DescriptionException("Имя не может быть пустым");
+        }
+        if (joinQueueRequest.getFirstName().length() > 64) {
+            throw new DescriptionException("Имя должно содержать меньше 64 символов");
+        }
+        if (joinQueueRequest.getLastName().isEmpty()) {
+            throw new DescriptionException("Фамилия не может быть пустой");
+        }
+        if (joinQueueRequest.getLastName().length() > 64) {
+            throw new DescriptionException("Фамилия должна содержать меньше 64 символов");
+        }
+        if (!EmailChecker.emailMatches(joinQueueRequest.getEmail())) {
+            throw new DescriptionException("Некорректная почта");
+        }
+
+        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
+        if (clients.isEmpty()) {
+            throw new DescriptionException("Очередь не существует");
+        }
+        if (clientInQueueRepo.existsByQueueIdAndEmail(
+                queueId,
+                joinQueueRequest.getEmail()
+        )) {
+            throw new DescriptionException("Клиент с почтой " + joinQueueRequest.getEmail() + " уже стоит в очереди");
+        }
+
+        return clients.get();
     }
 }

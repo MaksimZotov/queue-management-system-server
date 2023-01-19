@@ -37,7 +37,7 @@ public class CleanerServiceImpl implements CleanerService {
     }
 
     @Override
-    public void deleteJoinClientCode(Long queueId, String email) throws DescriptionException {
+    public void deleteJoinClientCode(Long queueId, String email) {
         ClientCodeEntity.PrimaryKey primaryKey = new ClientCodeEntity.PrimaryKey(
                 queueId,
                 email
