@@ -125,7 +125,7 @@ public class QueueServiceImpl implements QueueService {
         clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
 
-        updateQueue(queueId);
+        updateQueueWithoutTransaction(queueId);
     }
 
     @Override
@@ -173,7 +173,7 @@ public class QueueServiceImpl implements QueueService {
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
-        updateQueue(queueId);
+        updateQueueWithoutTransaction(queueId);
 
         return ClientInQueue.toModel(clientInQueueEntity);
     }
@@ -203,6 +203,14 @@ public class QueueServiceImpl implements QueueService {
         );
     }
 
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void updateQueueWithoutTransaction(Long queueId) throws DescriptionException {
+        QueueState queueState = getQueueStateWithoutTransaction(queueId);
+        messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
+        boardService.updateLocation(queueState.getLocationId());
+    }
+
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountUsername = accountService.getUsername(accessToken);
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
@@ -229,11 +237,5 @@ public class QueueServiceImpl implements QueueService {
         if (addClientRequest.getLastName().length() > 64) {
             throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
-    }
-
-    private void updateQueue(Long queueId) throws DescriptionException {
-        QueueState queueState = getQueueStateWithoutTransaction(queueId);
-        messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
-        boardService.updateLocation(queueState.getLocationId());
     }
 }

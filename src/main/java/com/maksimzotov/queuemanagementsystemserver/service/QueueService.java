@@ -16,4 +16,5 @@ public interface QueueService {
     void notifyClientInQueue(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     ClientInQueue addClient(Localizer localizer, String accessToken, Long queueId, AddClientRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     QueueState getQueueStateWithoutTransaction(Long queueId);
+    void updateQueueWithoutTransaction(Long queueId) throws DescriptionException;
 }

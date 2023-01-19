@@ -3,14 +3,14 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
-import com.maksimzotov.queuemanagementsystemserver.repository.*;
-import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
+import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +23,10 @@ public class CleanerServiceImpl implements CleanerService {
 
     @Lazy
     private final QueueService queueService;
-    private final BoardService boardService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
-    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public void deleteNonActivatedUser(String username) {
@@ -57,10 +55,7 @@ public class CleanerServiceImpl implements CleanerService {
                 ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
                 clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
                 clientInQueueRepo.deleteByEmail(email);
-
-                QueueState curQueueState = queueService.getQueueStateWithoutTransaction(queueId);
-                messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
-                boardService.updateLocation(curQueueState.getLocationId());
+                queueService.updateQueueWithoutTransaction(queueId);
             }
         }
     }
