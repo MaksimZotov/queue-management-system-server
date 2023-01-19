@@ -9,7 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
-import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
+import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/verification")
+@RequestMapping("/account")
 @RequiredArgsConstructor
 @Slf4j
-public class VerificationController {
+public class AccountController {
 
     private final MessageSource messageSource;
 
-    private final VerificationService verificationService;
+    private final AccountService accountService;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(
@@ -35,12 +35,10 @@ public class VerificationController {
             @RequestBody SignupRequest signupRequest
     ) {
         try {
-            verificationService.signup(getLocalizer(request), signupRequest);
+            accountService.signup(getLocalizer(request), signupRequest);
             return ResponseEntity.ok().build();
         } catch (FieldsException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -50,12 +48,10 @@ public class VerificationController {
             @RequestBody ConfirmCodeRequest confirmCodeRequest
     ) {
         try {
-            verificationService.confirmRegistrationCode(getLocalizer(request), confirmCodeRequest);
+            accountService.confirmRegistrationCode(getLocalizer(request), confirmCodeRequest);
             return ResponseEntity.ok().build();
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -66,29 +62,26 @@ public class VerificationController {
             @RequestBody LoginRequest loginRequest
     ) {
         try {
-            return ResponseEntity.ok().body(verificationService.login(getLocalizer(request), loginRequest));
+            return ResponseEntity.ok().body(accountService.login(getLocalizer(request), loginRequest));
         } catch (FieldsException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getErrors()));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
     @PostMapping("/token/refresh")
     public ResponseEntity<?> refreshToken(
             HttpServletRequest request,
-            @RequestParam(name = "refresh_token"
-            ) String refreshToken) {
+            @RequestParam(name = "refresh_token")
+            String refreshToken
+    ) {
         try {
-            return ResponseEntity.ok().body(verificationService.refreshToken(refreshToken));
+            return ResponseEntity.ok().body(accountService.refreshToken(refreshToken));
         } catch (RefreshTokenIsMissingException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(getLocalizer(request).getMessage(Message.REFRESH_TOKEN_IS_MISSING)));
         }  catch (TokenExpiredException ex) {
             return ResponseEntity.badRequest().build();
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 

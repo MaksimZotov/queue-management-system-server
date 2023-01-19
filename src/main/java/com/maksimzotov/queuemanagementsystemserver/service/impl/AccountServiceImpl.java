@@ -3,8 +3,8 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerApplication;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
@@ -17,9 +17,10 @@ import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequ
 import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
+import com.maksimzotov.queuemanagementsystemserver.service.DelayedJobService;
 import com.maksimzotov.queuemanagementsystemserver.service.MailService;
-import com.maksimzotov.queuemanagementsystemserver.service.VerificationService;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
@@ -32,14 +33,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
-public class VerificationServiceImpl implements VerificationService {
+public class AccountServiceImpl implements AccountService {
 
     private final MailService mailService;
+    private final DelayedJobService delayedJobService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final CleanerService cleanerService;
@@ -50,8 +55,9 @@ public class VerificationServiceImpl implements VerificationService {
     private final Long refreshTokenExpiration;
     private final Integer confirmationTimeInSeconds;
 
-    public VerificationServiceImpl(
+    public AccountServiceImpl(
             MailService mailService,
+            DelayedJobService delayedJobService,
             AccountRepo accountRepo,
             RegistrationCodeRepo registrationCodeRepo,
             CleanerService cleanerService,
@@ -63,6 +69,7 @@ public class VerificationServiceImpl implements VerificationService {
             @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
     ) {
         this.mailService = mailService;
+        this.delayedJobService = delayedJobService;
         this.accountRepo = accountRepo;
         this.registrationCodeRepo = registrationCodeRepo;
         this.cleanerService = cleanerService;
@@ -101,7 +108,7 @@ public class VerificationServiceImpl implements VerificationService {
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
         );
 
-        QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+        delayedJobService.schedule(() ->
                 cleanerService.deleteNonActivatedUser(
                         account.getUsername()
                 ),
@@ -154,7 +161,7 @@ public class VerificationServiceImpl implements VerificationService {
     }
 
     @Override
-    public TokensResponse refreshToken(String refreshToken) throws RefreshTokenIsMissingException {
+    public TokensResponse refreshToken(String refreshToken) throws RefreshTokenIsMissingException, TokenExpiredException {
         if (refreshToken.startsWith("Bearer ")) {
             String refreshTokenSrc = refreshToken.substring("Bearer ".length());
             Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());

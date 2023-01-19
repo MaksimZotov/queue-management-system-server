@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.QueueManagementSystemServerApplication;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
@@ -28,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientServiceImpl implements ClientService {
 
     private final MailService mailService;
+    private final DelayedJobService delayedJobService;
     private final QueueService queueService;
     private final CleanerService cleanerService;
     private final BoardService boardService;
@@ -38,6 +38,7 @@ public class ClientServiceImpl implements ClientService {
 
     public ClientServiceImpl(
             MailService mailService,
+            DelayedJobService delayedJobService,
             QueueService queueService,
             CleanerService cleanerService,
             BoardService boardService,
@@ -47,6 +48,7 @@ public class ClientServiceImpl implements ClientService {
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
         this.mailService = mailService;
+        this.delayedJobService = delayedJobService;
         this.queueService = queueService;
         this.cleanerService = cleanerService;
         this.boardService = boardService;
@@ -138,16 +140,14 @@ public class ClientServiceImpl implements ClientService {
         messagingTemplate.convertAndSend("/topic/queues/" + queueId, curQueueState);
         boardService.updateLocation(curQueueState.getLocationId());
 
-        QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+        delayedJobService.schedule(() ->
                 {
                     try {
                         cleanerService.deleteJoinClientCode(
                                 queueId,
                                 joinQueueRequest.getEmail()
                         );
-                    } catch (DescriptionException e) {
-                        throw new RuntimeException(e);
-                    }
+                    } catch (DescriptionException ignored) {}
                 },
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
@@ -211,7 +211,7 @@ public class ClientServiceImpl implements ClientService {
                 "Код для подтверждения переподключения к очереди: " + code
         );
 
-        QueueManagementSystemServerApplication.scheduledExecutorService.schedule(() ->
+        delayedJobService.schedule(() ->
                         cleanerService.deleteRejoinClientCode(
                                 queueId,
                                 email
