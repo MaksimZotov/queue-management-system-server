@@ -62,7 +62,7 @@ public class QueueServiceImpl implements QueueService {
                         createQueueRequest.getDescription()
                 )
         );
-        boardService.updateLocation(locationId);
+        boardService.updateLocationBoard(locationId);
 
         return Queue.toModel(entity, true);
     }
@@ -73,7 +73,7 @@ public class QueueServiceImpl implements QueueService {
         clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
         clientInQueueRepo.deleteByQueueId(queueId);
         queueRepo.deleteById(queueId);
-        boardService.updateLocation(queueEntity.getLocationId());
+        boardService.updateLocationBoard(queueEntity.getLocationId());
     }
 
     @Override
@@ -208,7 +208,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueState updateQueueWithoutTransaction(Long queueId) {
         QueueState queueState = getQueueStateWithoutTransaction(queueId);
         messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
-        boardService.updateLocation(queueState.getLocationId());
+        boardService.updateLocationBoard(queueState.getLocationId());
         return queueState;
     }
 
