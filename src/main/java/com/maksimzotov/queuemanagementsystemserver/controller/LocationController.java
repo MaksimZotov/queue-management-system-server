@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;

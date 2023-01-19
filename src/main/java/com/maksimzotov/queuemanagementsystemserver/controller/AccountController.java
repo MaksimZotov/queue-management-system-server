@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
-import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
@@ -77,8 +76,6 @@ public class AccountController extends BaseController {
             return ResponseEntity.ok().body(accountService.refreshToken(getToken(refreshToken)));
         } catch (RefreshTokenFailedException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(getLocalizer(request).getMessage(Message.REFRESH_TOKEN_FAILED)));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.badRequest().build();
         }
     }
 }
