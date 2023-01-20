@@ -122,7 +122,7 @@ public class QueueServiceImpl implements QueueService {
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
 
-        clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
+        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
 
         updateQueueWithoutTransaction(queueId);

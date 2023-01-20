@@ -225,7 +225,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_LEAVE_QUEUE_PLEASE_TRY_RECONNECT));
         }
 
-        clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
+        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByEmail(email);
 
         QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);

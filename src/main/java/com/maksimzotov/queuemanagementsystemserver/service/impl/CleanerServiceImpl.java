@@ -53,7 +53,7 @@ public class CleanerServiceImpl implements CleanerService {
 
             if (clientInQueue.isPresent()) {
                 ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-                clientInQueueRepo.updateClientsOrderNumberInQueue(clientInQueueEntity.getOrderNumber());
+                clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
                 clientInQueueRepo.deleteByEmail(email);
                 queueService.updateQueueWithoutTransaction(queueId);
             }
