@@ -30,6 +30,6 @@ public class Localizer {
                 " " +
                 param +
                 " " +
-                messageEnd;
+                messageSource.getMessage(messageEnd.toMessageId(), null, locale);
     }
 }
