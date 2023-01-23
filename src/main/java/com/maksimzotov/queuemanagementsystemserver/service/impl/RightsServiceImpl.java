@@ -38,7 +38,7 @@ public class RightsServiceImpl implements RightsService {
         if (rights.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
-        if (checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)) {
+        if (!checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_VIEW));
         }
         return new ContainerForList<>(rights.get().stream().map(RightsModel::toModel).toList());
