@@ -1,13 +1,15 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.BoardService;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Slf4j
 @AllArgsConstructor
 public class BoardServiceImpl implements BoardService {
 
@@ -24,19 +25,30 @@ public class BoardServiceImpl implements BoardService {
     private final ClientInQueueRepo clientInQueueRepo;
 
     @Override
-    public BoardModel updateLocation(Long locationId) throws DescriptionException {
+    public BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException {
         Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
         if (queues.isEmpty()) {
-            throw new DescriptionException("Локации не существует");
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        return BoardModel.toModel(
+                clientInQueueRepo,
+                queues.get()
+        );
+    }
+
+    @Override
+    public void updateLocationBoard(Long locationId)  {
+        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
+        if (queues.isEmpty()) {
+            return;
         }
         BoardModel boardModel = BoardModel.toModel(
                 clientInQueueRepo,
                 queues.get()
         );
         messagingTemplate.convertAndSend(
-                "/topic/locations/" + locationId,
+                WebSocketConfig.BOARD_URL + locationId,
                 boardModel
         );
-        return boardModel;
     }
 }

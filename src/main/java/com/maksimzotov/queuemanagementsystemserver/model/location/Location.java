@@ -16,16 +16,16 @@ public class Location {
     private String ownerUsername;
     private String name;
     private String description;
-    @JsonProperty("has_rules")
-    private Boolean hasRules;
+    @JsonProperty("has_rights")
+    private Boolean hasRights;
 
-    public static Location toModel(LocationEntity entity, Boolean hasRules) {
+    public static Location toModel(LocationEntity entity, Boolean hasRights) {
         return new Location(
                 entity.getId(),
                 entity.getOwnerUsername(),
                 entity.getName(),
                 entity.getDescription(),
-                hasRules
+                hasRights
         );
     }
 }

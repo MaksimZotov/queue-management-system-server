@@ -12,8 +12,10 @@ import javax.persistence.*;
 @AllArgsConstructor
 public class ClientInQueueStatusEntity {
 
-    public static String RESERVED = "RESERVED";
-    public static String CONFIRMED = "CONFIRMED";
+    public enum Status {
+        RESERVED,
+        CONFIRMED
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

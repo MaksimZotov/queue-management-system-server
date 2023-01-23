@@ -52,7 +52,7 @@ CREATE TABLE client_code (
     PRIMARY KEY (queue_id, email, code)
 );
 
-CREATE TABLE rules (
+CREATE TABLE rights (
     location_id BIGINT REFERENCES location (id) NOT NULL,
     email VARCHAR(64) REFERENCES account (email) NOT NULL,
     PRIMARY KEY (location_id, email)

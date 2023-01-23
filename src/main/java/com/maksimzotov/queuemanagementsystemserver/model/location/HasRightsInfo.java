@@ -8,7 +8,7 @@ import lombok.extern.jackson.Jacksonized;
 @Jacksonized
 @Value
 @AllArgsConstructor
-public class HasRulesInfo {
-    @JsonProperty("has_rules")
-    Boolean hasRules;
+public class HasRightsInfo {
+    @JsonProperty("has_rights")
+    Boolean hasRights;
 }

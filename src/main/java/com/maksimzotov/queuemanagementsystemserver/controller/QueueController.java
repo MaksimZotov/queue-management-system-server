@@ -1,19 +1,15 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
-import com.auth0.jwt.exceptions.JWTDecodeException;
-import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.Queue;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
-import com.maksimzotov.queuemanagementsystemserver.service.CurrentAccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.EqualsAndHashCode;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,12 +17,15 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/queues")
-@RequiredArgsConstructor
-@Slf4j
-public class QueueController {
+@EqualsAndHashCode(callSuper = true)
+public class QueueController extends BaseController {
 
-    private final CurrentAccountService currentAccountService;
     private final QueueService queueService;
+
+    public QueueController(MessageSource messageSource, QueueService queueService) {
+        super(messageSource);
+        this.queueService = queueService;
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> createQueue(
@@ -35,17 +34,11 @@ public class QueueController {
             @RequestBody CreateQueueRequest createQueueRequest
     ) {
         try {
-            Queue queue = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> queueService.createQueue(username, locationId, createQueueRequest)
-            );
-            return ResponseEntity.ok().body(queue);
+            return ResponseEntity.ok().body(queueService.createQueue(getLocalizer(request), getToken(request), locationId, createQueueRequest));
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
-        }  catch (DescriptionException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -55,45 +48,24 @@ public class QueueController {
             @PathVariable Long id
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccountNoReturn(
-                    request,
-                    username -> queueService.deleteQueue(username, id)
-            );
+            queueService.deleteQueue(getLocalizer(request), getToken(request), id);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
     @GetMapping()
     public ResponseEntity<?> getQueues(
             HttpServletRequest request,
-            @RequestParam String username,
             @RequestParam(name = "location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(
-                    currentAccountService.handleRequestFromCurrentAccount(
-                            request,
-                            profileUsername -> queueService.getQueues(locationId, profileUsername)
-                    )
-            );
-        } catch (AccountIsNotAuthorizedException | TokenExpiredException | JWTDecodeException ex) {
-            try {
-                return ResponseEntity.ok().body(queueService.getQueues(locationId, null));
-            } catch (DescriptionException nestedException) {
-                return ResponseEntity.badRequest().body(new ErrorResult(nestedException.getDescription()));
-            } catch (Exception nestedException) {
-                return ResponseEntity.internalServerError().build();
-            }
+            return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -103,17 +75,11 @@ public class QueueController {
             @PathVariable Long id
     ) {
         try {
-            QueueState state = currentAccountService.handleRequestFromCurrentAccount(
-                    request,
-                    username -> queueService.getQueueState(id)
-            );
-            return ResponseEntity.ok().body(state);
+            return ResponseEntity.ok().body(queueService.getQueueState(getLocalizer(request), getToken(request), id));
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -124,17 +90,12 @@ public class QueueController {
             @RequestParam(name = "client_id") Long clientId
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccountNoReturn(
-                    request,
-                    username -> queueService.serveClientInQueue(username, id, clientId)
-            );
+            queueService.serveClientInQueue(getLocalizer(request), getToken(request), id, clientId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(403).body(new ErrorResult("Аккаунт не авторизован"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -145,17 +106,12 @@ public class QueueController {
             @RequestParam(name = "client_id") Long clientId
     ) {
         try {
-            currentAccountService.handleRequestFromCurrentAccountNoReturn(
-                    request,
-                    username -> queueService.notifyClientInQueue(username, id, clientId)
-            );
+            queueService.notifyClientInQueue(getLocalizer(request), getToken(request), id, clientId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -166,20 +122,11 @@ public class QueueController {
             @RequestBody AddClientRequest addClientRequest
     ) {
         try {
-            return ResponseEntity.ok().body(
-                    currentAccountService.handleRequestFromCurrentAccount(
-                            request,
-                            username -> queueService.addClient(queueId, addClientRequest)
-                    )
-            );
+            return ResponseEntity.ok().body(queueService.addClient(getLocalizer(request), getToken(request), queueId, addClientRequest));
         } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult("Аккаунт не авторизован"));
-        }  catch (TokenExpiredException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult("Время действия токена истекло"));
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        } catch (Exception ex) {
-            return ResponseEntity.internalServerError().build();
         }
     }
 }

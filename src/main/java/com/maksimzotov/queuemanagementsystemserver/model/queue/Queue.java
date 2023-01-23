@@ -14,16 +14,16 @@ public class Queue {
     private Long id;
     private String name;
     private String description;
-    @JsonProperty("has_rules")
-    private Boolean hasRules;
+    @JsonProperty("has_rights")
+    private Boolean hasRights;
 
 
-    public static Queue toModel(QueueEntity entity, Boolean hasRules) {
+    public static Queue toModel(QueueEntity entity, Boolean hasRights) {
         return new Queue(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
-                hasRules
+                hasRights
         );
     }
 }

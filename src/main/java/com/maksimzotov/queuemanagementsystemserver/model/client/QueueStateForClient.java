@@ -50,7 +50,7 @@ public class QueueStateForClient {
 
     public static QueueStateForClient toModel(QueueState queueState, ClientInQueueEntity entity) {
         String accessKey = null;
-        if (Objects.equals(entity.getStatus(), ClientInQueueStatusEntity.CONFIRMED)) {
+        if (Objects.equals(entity.getStatus(), ClientInQueueStatusEntity.Status.CONFIRMED.name())) {
             accessKey = entity.getAccessKey();
         }
         return new QueueStateForClient(

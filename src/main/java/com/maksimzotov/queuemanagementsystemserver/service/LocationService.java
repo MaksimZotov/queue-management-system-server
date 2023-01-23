@@ -1,13 +1,17 @@
 package com.maksimzotov.queuemanagementsystemserver.service;
 
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.location.HasRightsInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
+import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface LocationService {
-    Location createLocation(String username, CreateLocationRequest createLocationRequest) throws DescriptionException;
-    void deleteLocation(String username, Long locationId) throws DescriptionException;
-    Location getLocation(Long locationId, String username) throws DescriptionException;
-    ContainerForList<Location> getLocations(String username, Boolean hasRules) throws DescriptionException;
+    Location createLocation(Localizer localizer, String username, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException;
+    void deleteLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
+    Location getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
+    ContainerForList<Location> getLocations(Localizer localizer, String accessToken, String username) throws DescriptionException;
+    HasRightsInfo checkHasRights(String accessToken, String username);
 }
