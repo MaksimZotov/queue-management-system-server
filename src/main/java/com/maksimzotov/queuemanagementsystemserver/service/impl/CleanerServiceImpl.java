@@ -2,7 +2,6 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
@@ -55,7 +54,7 @@ public class CleanerServiceImpl implements CleanerService {
                 ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
                 clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
                 clientInQueueRepo.deleteByEmail(email);
-                queueService.updateQueueWithoutTransaction(queueId);
+                queueService.updateCurrentQueueState(queueId);
             }
         }
     }

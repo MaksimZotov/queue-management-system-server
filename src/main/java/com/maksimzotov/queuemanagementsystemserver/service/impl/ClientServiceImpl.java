@@ -87,7 +87,7 @@ public class ClientServiceImpl implements ClientService {
         clientCodeRepo.save(clientCodeEntity);
         clientInQueueRepo.save(clientInQueueEntity);
 
-        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
+        QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
         delayedJobService.schedule(
                 () -> cleanerService.deleteJoinClientCode(queueId, joinQueueRequest.getEmail()),
@@ -111,15 +111,15 @@ public class ClientServiceImpl implements ClientService {
                 email
         );
         if (clientInQueue.isEmpty()) {
-            return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
-            return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
         }
 
-        return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId), clientInQueueEntity);
+        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId), clientInQueueEntity);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class ClientServiceImpl implements ClientService {
                 TimeUnit.SECONDS
         );
 
-        return QueueStateForClient.toModel(queueService.getQueueStateWithoutTransaction(queueId));
+        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
     }
 
     @Override
@@ -199,7 +199,7 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
-        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
+        QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
         return QueueStateForClient.toModel(queueState, clientInQueueEntity);
     }
@@ -228,7 +228,7 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByEmail(email);
 
-        QueueState queueState = queueService.updateQueueWithoutTransaction(queueId);
+        QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
         return QueueStateForClient.toModel(queueState);
     }

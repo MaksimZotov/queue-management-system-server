@@ -20,7 +20,6 @@ import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
@@ -125,7 +124,7 @@ public class QueueServiceImpl implements QueueService {
         clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
 
-        updateQueueWithoutTransaction(queueId);
+        updateCurrentQueueState(queueId);
     }
 
     @Override
@@ -173,14 +172,13 @@ public class QueueServiceImpl implements QueueService {
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
-        updateQueueWithoutTransaction(queueId);
+        updateCurrentQueueState(queueId);
 
         return ClientInQueue.toModel(clientInQueueEntity);
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public QueueState getQueueStateWithoutTransaction(Long queueId) {
+    public QueueState getCurrentQueueState(Long queueId) {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         QueueEntity queueEntity = queue.get();
 
@@ -204,9 +202,8 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public QueueState updateQueueWithoutTransaction(Long queueId) {
-        QueueState queueState = getQueueStateWithoutTransaction(queueId);
+    public QueueState updateCurrentQueueState(Long queueId) {
+        QueueState queueState = getCurrentQueueState(queueId);
         messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
         boardService.updateLocationBoard(queueState.getLocationId());
         return queueState;

@@ -31,7 +31,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
@@ -188,7 +187,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public String getUsername(String accessToken) throws AccountIsNotAuthorizedException {
         if (accessToken == null) {
             throw new AccountIsNotAuthorizedException();
@@ -204,7 +202,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public String getUsernameOrNull(String accessToken) {
         try {
             return getUsername(accessToken);
