@@ -48,8 +48,8 @@ public class LocationServiceImpl implements LocationService {
                         null,
                         usernameByToken,
                         createLocationRequest.getName(),
-                        createLocationRequest.getDescription()
-
+                        createLocationRequest.getDescription(),
+                        5
                 )
         );
 
@@ -109,5 +109,22 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public HasRightsInfo checkHasRights(String accessToken, String username) {
         return new HasRightsInfo(Objects.equals(accountService.getUsernameOrNull(accessToken), username));
+    }
+
+    @Override
+    public Location changeMaxColumns(Localizer localizer, String accessToken, Long locationId, Integer maxColumns) throws DescriptionException, AccountIsNotAuthorizedException {
+        if (maxColumns < 0) {
+            throw new DescriptionException(localizer.getMessage(Message.MAX_COLUMNS_MUST_NOT_BE_LESS_THAN_0));
+        }
+        if (!rightsService.checkRightsInLocation(accountService.getUsername(accessToken), locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+        Optional<LocationEntity> location = locationRepo.findById(locationId);
+        if (location.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        LocationEntity locationEntity = location.get();
+        locationEntity.setMaxColumns(maxColumns);
+        return Location.toModel(locationRepo.save(locationEntity), true);
     }
 }

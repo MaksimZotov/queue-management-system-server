@@ -1,4 +1,4 @@
-package com.maksimzotov.queuemanagementsystemserver.model.verification;
+package com.maksimzotov.queuemanagementsystemserver.model.account;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;

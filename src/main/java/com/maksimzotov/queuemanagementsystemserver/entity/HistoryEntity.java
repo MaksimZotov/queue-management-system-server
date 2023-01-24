@@ -5,22 +5,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.Date;
 
-@Entity(name = "location")
+@Entity(name = "history")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocationEntity {
+public class HistoryEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String ownerUsername;
+    private Long serviceId;
 
-    private String name;
+    private Date startTime;
 
-    private String description;
-
-    private Integer maxColumns;
+    private Date endTime;
 }

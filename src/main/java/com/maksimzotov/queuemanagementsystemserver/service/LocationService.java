@@ -14,4 +14,5 @@ public interface LocationService {
     Location getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
     ContainerForList<Location> getLocations(Localizer localizer, String accessToken, String username) throws DescriptionException;
     HasRightsInfo checkHasRights(String accessToken, String username);
+    Location changeMaxColumns(Localizer localizer, String accessToken, Long locationId, Integer maxColumns) throws DescriptionException, AccountIsNotAuthorizedException;
 }

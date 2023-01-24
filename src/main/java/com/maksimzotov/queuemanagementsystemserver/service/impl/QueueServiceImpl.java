@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -58,7 +59,8 @@ public class QueueServiceImpl implements QueueService {
                         null,
                         locationId,
                         createQueueRequest.getName(),
-                        createQueueRequest.getDescription()
+                        createQueueRequest.getDescription(),
+                        true
                 )
         );
         boardService.updateLocationBoard(locationId);
@@ -107,7 +109,8 @@ public class QueueServiceImpl implements QueueService {
                         .map(ClientInQueue::toModel)
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
-                locationEntity.getOwnerUsername()
+                locationEntity.getOwnerUsername(),
+                queueEntity.getPaused()
         );
     }
 
@@ -197,7 +200,8 @@ public class QueueServiceImpl implements QueueService {
                         .map(ClientInQueue::toModel)
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
-                locationEntity.getOwnerUsername()
+                locationEntity.getOwnerUsername(),
+                queueEntity.getPaused()
         );
     }
 
@@ -207,6 +211,58 @@ public class QueueServiceImpl implements QueueService {
         messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
         boardService.updateLocationBoard(queueState.getLocationId());
         return queueState;
+    }
+
+    @Override
+    public void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, queueId);
+        QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
+        queueEntity.setPaused(paused);
+        queueRepo.save(queueEntity);
+        updateCurrentQueueState(queueId);
+    }
+
+    @Override
+    public void changePausedStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
+        Boolean hasRights = rightsService.checkRightsInLocation(
+                accountService.getUsername(accessToken),
+                locationId
+        );
+        if (!hasRights) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
+        if (queues.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        List<QueueEntity> modifiedQueues = queues
+                .get()
+                .stream()
+                .peek(item -> item.setPaused(paused))
+                .toList();
+        queueRepo.saveAll(modifiedQueues);
+        for (QueueEntity entity: modifiedQueues) {
+            updateCurrentQueueState(entity.getId());
+        }
+    }
+
+    @Override
+    public void switchClientLateState(Localizer localizer, String accessToken, Long queueId, Long clientId, Boolean late) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, queueId);
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
+        if (clientInQueue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
+        }
+        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+        if (Objects.equals(clientInQueueEntity.getStatus(), ClientInQueueStatusEntity.Status.RESERVED.name())) {
+            throw new DescriptionException(localizer.getMessage(Message.WAIT_FOR_CONFIRMATION_OF_CODE_BY_CLIENT));
+        }
+        if (late) {
+            clientInQueueEntity.setStatus(ClientInQueueStatusEntity.Status.LATE.name());
+        } else {
+            clientInQueueEntity.setStatus(ClientInQueueStatusEntity.Status.CONFIRMED.name());
+        }
+        updateCurrentQueueState(queueId);
     }
 
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {

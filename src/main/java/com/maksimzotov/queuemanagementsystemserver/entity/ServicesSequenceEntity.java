@@ -6,21 +6,17 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
-@Entity(name = "location")
+@Entity(name = "services_sequence")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocationEntity {
+public class ServicesSequenceEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String ownerUsername;
-
     private String name;
 
     private String description;
-
-    private Integer maxColumns;
 }

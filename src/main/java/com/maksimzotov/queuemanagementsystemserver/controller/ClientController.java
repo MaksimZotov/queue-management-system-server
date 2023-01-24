@@ -1,9 +1,12 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
@@ -82,6 +85,36 @@ public class ClientController extends BaseController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.leaveQueue(getLocalizer(request), queueId, email, accessKey));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/client/add/service")
+    public ResponseEntity<?> addClientToService(
+            HttpServletRequest request,
+            @RequestParam("service_id") Long serviceId,
+            @RequestBody JoinQueueRequest joinQueueRequest
+    ) {
+        try {
+            return ResponseEntity.ok().body(clientService.addClientToService(getLocalizer(request), getToken(request), serviceId, joinQueueRequest));
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/client/add/sequence")
+    public ResponseEntity<?> addClientToServicesSequence(
+            HttpServletRequest request,
+            @RequestParam("services_sequence_id") Long servicesSequenceId,
+            @RequestBody JoinQueueRequest joinQueueRequest
+    ) {
+        try {
+            return ResponseEntity.ok().body(clientService.addClientToSequence(getLocalizer(request), getToken(request), servicesSequenceId, joinQueueRequest));
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

@@ -4,10 +4,10 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.RefreshTokenFailedException;
-import com.maksimzotov.queuemanagementsystemserver.model.verification.ConfirmCodeRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.verification.LoginRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.verification.SignupRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.verification.TokensResponse;
+import com.maksimzotov.queuemanagementsystemserver.model.account.ConfirmCodeRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.account.SignupRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface AccountService {

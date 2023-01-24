@@ -3,6 +3,8 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
@@ -55,6 +57,10 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public QueueStateForClient joinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
+        if (queueService.getCurrentQueueState(queueId).getPaused()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_IS_PAUSED));
+        }
+
         List<ClientInQueueEntity> clientsEntities = checkJoinQueue(localizer, queueId, joinQueueRequest);
 
         Optional<Integer> maxOrderNumber = clientsEntities.stream()
@@ -231,6 +237,18 @@ public class ClientServiceImpl implements ClientService {
         QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
         return QueueStateForClient.toModel(queueState);
+    }
+
+    @Override
+    public QueueStateForClient addClientToService(Localizer localizer, String accessToken, Long serviceId, JoinQueueRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public QueueStateForClient addClientToSequence(Localizer localizer, String accessToken, Long serviceId, JoinQueueRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        // TODO
+        return null;
     }
 
     private  List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {

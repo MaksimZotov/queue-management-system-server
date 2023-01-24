@@ -16,4 +16,7 @@ public interface QueueService {
     ClientInQueue addClient(Localizer localizer, String accessToken, Long queueId, AddClientRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     QueueState getCurrentQueueState(Long queueId);
     QueueState updateCurrentQueueState(Long queueId);
+    void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException;
+    void changePausedStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException;
+    void switchClientLateState(Localizer localizer, String accessToken, Long queueId, Long clientId, Boolean late) throws DescriptionException, AccountIsNotAuthorizedException;
 }

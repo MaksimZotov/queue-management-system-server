@@ -21,4 +21,6 @@ public class QueueEntity {
     private String name;
 
     private String description;
+
+    private Boolean paused;
 }

@@ -18,4 +18,5 @@ public class QueueState {
     private List<ClientInQueue> clients;
     @JsonProperty("owner_username")
     private String ownerUsername;
+    private Boolean paused;
 }

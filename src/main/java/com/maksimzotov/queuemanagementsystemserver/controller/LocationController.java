@@ -86,4 +86,19 @@ public class LocationController extends BaseController {
     ) {
         return ResponseEntity.ok().body(locationService.checkHasRights(getToken(request), username));
     }
+
+    @PostMapping("/{location_id}/change")
+    public ResponseEntity<?> changeMaxColumns(
+            HttpServletRequest request,
+            @PathVariable("location_id") Long locationId,
+            @RequestParam("max_columns") Integer maxColumns
+    ) {
+        try {
+            return ResponseEntity.ok().body(locationService.changeMaxColumns(getLocalizer(request), getToken(request), locationId, maxColumns));
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
 }

@@ -14,7 +14,8 @@ public class ClientInQueueStatusEntity {
 
     public enum Status {
         RESERVED,
-        CONFIRMED
+        CONFIRMED,
+        LATE
     }
 
     @Id

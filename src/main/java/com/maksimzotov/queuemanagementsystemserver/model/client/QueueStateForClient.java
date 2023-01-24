@@ -33,6 +33,9 @@ public class QueueStateForClient {
     String accessKey;
     String status;
 
+    @JsonProperty("is_paused")
+    Boolean isPaused;
+
     public static QueueStateForClient toModel(QueueState queueState) {
         return new QueueStateForClient(
                 false,
@@ -44,7 +47,8 @@ public class QueueStateForClient {
                 null,
                 null,
                 null,
-                null
+                null,
+                queueState.getPaused()
         );
     }
 
@@ -63,7 +67,8 @@ public class QueueStateForClient {
                 entity.getOrderNumber() - 1,
                 entity.getPublicCode(),
                 accessKey,
-                entity.getStatus()
+                entity.getStatus(),
+                queueState.getPaused()
         );
     }
 }
