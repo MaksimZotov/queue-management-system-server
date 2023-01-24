@@ -5,7 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.services.AddOrRemoveServicesRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.services.SetServicesInQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServiceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServicesSequenceRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
@@ -28,7 +28,7 @@ public class ServiceController extends BaseController {
         this.serviceService = serviceService;
     }
 
-    @GetMapping
+    @GetMapping("/location")
     public ResponseEntity<?> getServicesInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
@@ -40,7 +40,7 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @PostMapping("/create")
+    @PostMapping("/location/create")
     public ResponseEntity<?> createServiceInLocation(
             HttpServletRequest request,
             @RequestBody CreateServiceRequest createServiceRequest,
@@ -55,7 +55,7 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @DeleteMapping("/delete")
+    @DeleteMapping("/location/delete")
     public ResponseEntity<?> deleteServiceInLocation(
             HttpServletRequest request,
             @RequestParam("service_id") Long serviceId,
@@ -71,14 +71,26 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addServicesToQueue(
+    @GetMapping("/queue")
+    public ResponseEntity<?> getServicesInQueue(
             HttpServletRequest request,
-            @RequestBody AddOrRemoveServicesRequest addOrRemoveServicesRequest,
             @RequestParam("queue_id") Long queueId
     ) {
         try {
-            return ResponseEntity.ok().body(serviceService.addServicesToQueue(getLocalizer(request), getToken(request), queueId, addOrRemoveServicesRequest));
+            return ResponseEntity.ok().body(serviceService.getServicesInQueue(getLocalizer(request), queueId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PatchMapping("/queue/set")
+    public ResponseEntity<?> setServicesInQueue(
+            HttpServletRequest request,
+            @RequestBody SetServicesInQueueRequest setServicesInQueueRequest,
+            @RequestParam("queue_id") Long queueId
+    ) {
+        try {
+            return ResponseEntity.ok().body(serviceService.setServicesInQueue(getLocalizer(request), getToken(request), queueId, setServicesInQueueRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         }  catch (DescriptionException ex) {
@@ -86,23 +98,7 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @DeleteMapping("/remove")
-    public ResponseEntity<?> removeServicesFromQueue(
-            HttpServletRequest request,
-            @RequestBody AddOrRemoveServicesRequest addOrRemoveServicesRequest,
-            @RequestParam("queue_id") Long queueId
-    ) {
-        try {
-            serviceService.removeServicesFromQueue(getLocalizer(request), getToken(request), queueId, addOrRemoveServicesRequest);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        }  catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @GetMapping("/sequence")
+    @GetMapping("/location/sequence")
     public ResponseEntity<?> getServicesSequencesInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
@@ -114,7 +110,7 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @PostMapping("/sequence/create")
+    @PostMapping("/location/sequence/create")
     public ResponseEntity<?> createServicesSequenceInLocation(
             HttpServletRequest request,
             @RequestBody CreateServicesSequenceRequest createServicesSequenceRequest,
@@ -129,7 +125,7 @@ public class ServiceController extends BaseController {
         }
     }
 
-    @DeleteMapping("/sequence/delete")
+    @DeleteMapping("/location/sequence/delete")
     public ResponseEntity<?> deleteServicesSequenceInLocation(
             HttpServletRequest request,
             @RequestParam("services_sequence_id") Long servicesSequenceId,

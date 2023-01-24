@@ -1,19 +1,14 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.model.services.SetServicesInQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
@@ -36,14 +31,17 @@ public class QueueServiceImpl implements QueueService {
     private final RightsService rightsService;
     private final MailService mailService;
     private final BoardService boardService;
+    private final ServiceService serviceService;
     private final SimpMessagingTemplate messagingTemplate;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
+    private final ServiceInQueueClassRepo serviceInQueueClassRepo;
+    private final QueueClassInLocationRepo queueClassInLocationRepo;
 
     @Override
-    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, Long queueClassId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountUsername = accountService.getUsername(accessToken);
 
         if (!rightsService.checkRightsInLocation(accountUsername, locationId)) {
@@ -54,7 +52,7 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_NAME_MUST_NOT_BE_EMPTY));
         }
 
-        QueueEntity entity = queueRepo.save(
+        QueueEntity queueEntity = queueRepo.save(
                 new QueueEntity(
                         null,
                         locationId,
@@ -63,9 +61,23 @@ public class QueueServiceImpl implements QueueService {
                         true
                 )
         );
+        if (queueClassId != null) {
+            if (!queueClassInLocationRepo.existsById(new QueueClassInLocationEntity(queueClassId, locationId))) {
+                throw new DescriptionException(localizer.getMessage(Message.QUEUE_CLASS_DOES_NOT_EXIST));
+            }
+            Optional<List<ServiceInQueueClassEntity>> services = serviceInQueueClassRepo.findAllByQueueClassId(queueClassId);
+            serviceService.setServicesInQueue(
+                    localizer,
+                    accessToken,
+                    queueEntity.getId(),
+                    new SetServicesInQueueRequest(
+                            services.get().stream().map(ServiceInQueueClassEntity::getServiceId).toList()
+                    )
+            );
+        }
         boardService.updateLocationBoard(locationId);
 
-        return Queue.toModel(entity, true);
+        return Queue.toModel(queueEntity, true);
     }
 
     @Override

@@ -31,10 +31,11 @@ public class QueueController extends BaseController {
     public ResponseEntity<?> createQueue(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
+            @RequestParam("queue_class_id") Long queueClassId,
             @RequestBody CreateQueueRequest createQueueRequest
     ) {
         try {
-            return ResponseEntity.ok().body(queueService.createQueue(getLocalizer(request), getToken(request), locationId, createQueueRequest));
+            return ResponseEntity.ok().body(queueService.createQueue(getLocalizer(request), getToken(request), locationId, queueClassId, createQueueRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {

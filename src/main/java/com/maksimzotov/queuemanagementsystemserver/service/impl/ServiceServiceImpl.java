@@ -32,14 +32,15 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServiceModel> addServicesToQueue(Localizer localizer, String accessToken, Long queueId, AddOrRemoveServicesRequest addOrRemoveServicesRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public ContainerForList<ServiceModel> getServicesInQueue(Localizer localizer, Long queueId) throws DescriptionException {
         // TODO
         return null;
     }
 
     @Override
-    public void removeServicesFromQueue(Localizer localizer, String accessToken, Long queueId, AddOrRemoveServicesRequest addOrRemoveServicesRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public ContainerForList<ServiceModel> setServicesInQueue(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueRequest setServicesInQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
+        return null;
     }
 
     @Override

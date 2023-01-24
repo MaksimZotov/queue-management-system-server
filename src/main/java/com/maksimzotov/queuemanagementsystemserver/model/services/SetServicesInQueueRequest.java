@@ -1,7 +1,10 @@
 package com.maksimzotov.queuemanagementsystemserver.model.services;
 
+import lombok.Value;
+
 import java.util.List;
 
-public class AddOrRemoveServicesRequest {
+@Value
+public class SetServicesInQueueRequest {
     List<Long> ids;
 }

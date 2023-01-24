@@ -11,8 +11,8 @@ public interface ServiceService {
     ContainerForList<QueueClassModel> getServicesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
     QueueClassModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueClassRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException;
-    ContainerForList<ServiceModel> addServicesToQueue(Localizer localizer, String accessToken, Long queueId, AddOrRemoveServicesRequest addOrRemoveServicesRequest) throws DescriptionException, AccountIsNotAuthorizedException;
-    void removeServicesFromQueue(Localizer localizer, String accessToken, Long queueId, AddOrRemoveServicesRequest addOrRemoveServicesRequest) throws DescriptionException, AccountIsNotAuthorizedException;
+    ContainerForList<ServiceModel> getServicesInQueue(Localizer localizer, Long queueId) throws DescriptionException;
+    ContainerForList<ServiceModel> setServicesInQueue(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueRequest setServicesInQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     ServicesSequenceModel getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
     QueueClassModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException;
