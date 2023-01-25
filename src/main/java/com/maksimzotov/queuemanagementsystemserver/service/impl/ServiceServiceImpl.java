@@ -42,15 +42,12 @@ public class ServiceServiceImpl implements ServiceService {
     public ContainerForList<ServiceModel> getServicesInLocation(Localizer localizer, Long locationId) throws DescriptionException {
         Optional<List<ServiceInLocationEntity>> servicesInLocation = serviceInLocationRepo.findAllByLocationId(locationId);
         if (servicesInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         List<ServiceInLocationEntity> serviceInLocationEntities = servicesInLocation.get();
         List<ServiceModel> serviceModels = new ArrayList<>();
         for (ServiceInLocationEntity serviceInLocationEntity : serviceInLocationEntities) {
             Optional<ServiceEntity> service = serviceRepo.findById(serviceInLocationEntity.getServiceId());
-            if (service.isEmpty()) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-            }
             ServiceEntity serviceEntity = service.get();
             serviceModels.add(ServiceModel.toModel(serviceEntity));
         }
@@ -85,12 +82,12 @@ public class ServiceServiceImpl implements ServiceService {
                 new ServiceInLocationEntity(serviceId, locationId)
         );
         if (serviceInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_DOES_NOT_EXIST_IN_LOCATION));
         }
         ServiceInLocationEntity serviceInLocationEntity = serviceInLocation.get();
         Optional<List<QueueTypeInLocationEntity>> queueTypesInLocation = queueTypeInLocationRepo.findAllByLocationId(locationId);
         if (queueTypesInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         List<QueueTypeInLocationEntity> queueTypeInLocationEntities = queueTypesInLocation.get();
         for (QueueTypeInLocationEntity queueTypeInLocationEntity : queueTypeInLocationEntities) {
@@ -100,7 +97,11 @@ public class ServiceServiceImpl implements ServiceService {
                             queueTypeInLocationEntity.getQueueTypeId()
                     )
             )) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+                throw new DescriptionException(
+                        localizer.getMessage(
+                                Message.YOU_ARE_TRYING_TO_DELETE_SERVICE_THAT_IS_REFERENCED_BY_OTHER_QUEUE_TYPES
+                        )
+                );
             }
         }
         serviceInLocationRepo.delete(serviceInLocationEntity);
@@ -117,20 +118,14 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServiceModel> getServicesInQueueType(Localizer localizer, Long queueTypeId) throws DescriptionException {
+    public ContainerForList<ServiceModel> getServicesInQueueType(Localizer localizer, Long queueTypeId) {
         Optional<List<ServiceInQueueTypeEntity>> servicesInQueueType = serviceInQueueTypeRepo.findAllByQueueTypeId(
                 queueTypeId
         );
-        if (servicesInQueueType.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-        }
         List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = servicesInQueueType.get();
         List<ServiceModel> serviceModels = new ArrayList<>();
         for (ServiceInQueueTypeEntity serviceInQueueTypeEntity : serviceInQueueTypeEntities) {
             Optional<ServiceEntity> service = serviceRepo.findById(serviceInQueueTypeEntity.getServiceId());
-            if (service.isEmpty()) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-            }
             ServiceEntity serviceEntity = service.get();
             serviceModels.add(ServiceModel.toModel(serviceEntity));
         }
@@ -138,22 +133,16 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServicesSequenceModel> getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public ContainerForList<ServicesSequenceModel> getServicesSequencesInLocation(Localizer localizer, Long locationId) {
         Optional<List<ServicesSequenceInLocationEntity>> servicesSequenceInLocation =
                 servicesSequenceInLocationRepo.findAllByLocationId(locationId);
 
-        if (servicesSequenceInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-        }
         List<ServicesSequenceInLocationEntity> serviceInLocationEntities = servicesSequenceInLocation.get();
         List<ServicesSequenceModel> servicesSequenceModels = new ArrayList<>();
         for (ServicesSequenceInLocationEntity servicesSequenceInLocationEntity : serviceInLocationEntities) {
             Optional<ServicesSequenceEntity> servicesSequence = servicesSequenceRepo.findById(
                     servicesSequenceInLocationEntity.getServicesSequenceId()
             );
-            if (servicesSequence.isEmpty()) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-            }
             ServicesSequenceEntity servicesSequenceEntity = servicesSequence.get();
             servicesSequenceModels.add(ServicesSequenceModel.toModel(servicesSequenceEntity));
         }
@@ -186,7 +175,11 @@ public class ServiceServiceImpl implements ServiceService {
                 new ServicesSequenceInLocationEntity(servicesSequenceId, locationId)
         );
         if (servicesSequencesInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.YOU_ARE_TRYING_TO_DELETE_SERVICES_SEQUENCE_THAT_IS_NOT_IN_LOCATION
+                    )
+            );
         }
         ServicesSequenceInLocationEntity servicesSequenceInLocationEntity = servicesSequencesInLocation.get();
         servicesSequenceInLocationRepo.delete(servicesSequenceInLocationEntity);

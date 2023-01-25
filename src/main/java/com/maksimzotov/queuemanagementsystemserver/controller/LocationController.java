@@ -176,11 +176,7 @@ public class LocationController extends BaseController {
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
     ) {
-        try {
-            return ResponseEntity.ok().body(serviceService.getServicesSequencesInLocation(getLocalizer(request), getToken(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
+        return ResponseEntity.ok().body(serviceService.getServicesSequencesInLocation(getLocalizer(request), locationId));
     }
 
     @PostMapping("/{location_id}/sequence/create")

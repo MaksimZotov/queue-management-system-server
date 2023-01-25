@@ -43,15 +43,12 @@ public class QueueTypeServiceImpl implements QueueTypeService {
     public ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, Long locationId) throws DescriptionException {
         Optional<List<QueueTypeInLocationEntity>> queueTypesInLocation = queueTypeInLocationRepo.findAllByLocationId(locationId);
         if (queueTypesInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         List<QueueTypeInLocationEntity> queueTypeInLocationEntities = queueTypesInLocation.get();
         List<QueueTypeModel> queueTypeModels = new ArrayList<>();
         for (QueueTypeInLocationEntity queueTypeInLocationEntity : queueTypeInLocationEntities) {
             Optional<QueueTypeEntity> queueType = queueTypeRepo.findById(queueTypeInLocationEntity.getQueueTypeId());
-            if (queueType.isEmpty()) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
-            }
             QueueTypeEntity queueTypeEntity = queueType.get();
             queueTypeModels.add(QueueTypeModel.toModel(queueTypeEntity));
         }
@@ -70,7 +67,11 @@ public class QueueTypeServiceImpl implements QueueTypeService {
         );
         for (Long serviceId : createQueueTypeRequest.getServiceIds()) {
             if (!serviceInLocationRepo.existsById(new ServiceInLocationEntity(serviceId, locationId))) {
-                throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+                throw new DescriptionException(
+                        localizer.getMessage(
+                                Message.YOU_ARE_TRYING_TO_CREATE_QUEUE_TYPES_WITH_SERVICES_THAT_ARE_NOT_IN_LOCATION
+                        )
+                );
             }
             serviceInQueueTypeRepo.save(
                     new ServiceInQueueTypeEntity(
@@ -89,7 +90,7 @@ public class QueueTypeServiceImpl implements QueueTypeService {
                 new QueueTypeInLocationEntity(queueTypeId, locationId)
         );
         if (queueTypeInLocation.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_TYPE_DOES_NOT_EXIST_IN_LOCATION));
         }
         QueueTypeInLocationEntity queueTypeInLocationEntity = queueTypeInLocation.get();
         queueTypeInLocationRepo.delete(queueTypeInLocationEntity);
