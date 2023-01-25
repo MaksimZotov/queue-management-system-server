@@ -10,5 +10,5 @@ import java.util.Optional;
 
 public interface QueueRepo extends JpaRepository<QueueEntity, Long> {
     Optional<List<QueueEntity>> findAllByLocationId(Long locationId);
-    void deleteByLocationId(Long locationId);
+    void deleteAllByLocationId(Long locationId);
 }

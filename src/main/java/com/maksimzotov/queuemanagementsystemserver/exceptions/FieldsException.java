@@ -1,12 +1,14 @@
 package com.maksimzotov.queuemanagementsystemserver.exceptions;
 
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 import java.util.Map;
 
 @AllArgsConstructor
 @Value
+@EqualsAndHashCode(callSuper = false)
 public class FieldsException extends Exception {
     public static final String USERNAME = "USERNAME";
     public static final String EMAIL = "EMAIL";

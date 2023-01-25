@@ -1,9 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
@@ -12,6 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForCli
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ClientRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
@@ -35,6 +33,7 @@ public class ClientServiceImpl implements ClientService {
     private final CleanerService cleanerService;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
+    private final ClientRepo clientRepo;
     private final Integer confirmationTimeInSeconds;
 
     public ClientServiceImpl(
@@ -44,6 +43,7 @@ public class ClientServiceImpl implements ClientService {
             CleanerService cleanerService,
             ClientInQueueRepo clientInQueueRepo,
             ClientCodeRepo clientCodeRepo,
+            ClientRepo clientRepo,
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
         this.mailService = mailService;
@@ -52,12 +52,14 @@ public class ClientServiceImpl implements ClientService {
         this.cleanerService = cleanerService;
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientCodeRepo = clientCodeRepo;
+        this.clientRepo = clientRepo;
         this.confirmationTimeInSeconds = confirmationTimeInSeconds;
     }
 
     @Override
     public QueueStateForClient joinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
-        if (queueService.getCurrentQueueState(queueId).getPaused()) {
+        QueueState queueState = queueService.getCurrentQueueState(queueId);
+        if (queueState.getPaused()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_IS_PAUSED));
         }
 
@@ -78,22 +80,29 @@ public class ClientServiceImpl implements ClientService {
                 ),
                 accessKey
         );
+        ClientEntity clientEntity = clientRepo.save(
+                new ClientEntity(
+                        null,
+                        queueState.getLocationId(),
+                        joinQueueRequest.getEmail(),
+                        joinQueueRequest.getFirstName(),
+                        joinQueueRequest.getLastName(),
+                        accessKey
+                )
+        );
         ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
                 null,
+                clientEntity.getId(),
                 queueId,
-                joinQueueRequest.getEmail(),
-                joinQueueRequest.getFirstName(),
-                joinQueueRequest.getLastName(),
                 orderNumber,
                 publicCode,
-                accessKey,
                 ClientInQueueStatusEntity.Status.RESERVED.name()
         );
 
         clientCodeRepo.save(clientCodeEntity);
         clientInQueueRepo.save(clientInQueueEntity);
 
-        QueueState queueState = queueService.updateCurrentQueueState(queueId);
+        queueState = queueService.updateCurrentQueueState(queueId);
 
         delayedJobService.schedule(
                 () -> cleanerService.deleteJoinClientCode(queueId, joinQueueRequest.getEmail()),
@@ -107,25 +116,30 @@ public class ClientServiceImpl implements ClientService {
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_CONNECTION_TO_QUEUE, accessKey)
         );
 
-        return QueueStateForClient.toModel(queueState, clientInQueueEntity);
+        return QueueStateForClient.toModel(queueState, clientInQueueEntity, clientEntity);
     }
 
     @Override
     public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) {
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+        ClientEntity clientEntity = checkClientByEmail(email);
+        if (clientEntity == null) {
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
+        }
+
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
                 queueId,
-                email
+                clientEntity.getId()
         );
         if (clientInQueue.isEmpty()) {
             return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
+        if (!Objects.equals(clientEntity.getAccessKey(), accessKey)) {
             return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
         }
 
-        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId), clientInQueueEntity);
+        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId), clientInQueueEntity, clientEntity);
     }
 
     @Override
@@ -134,9 +148,14 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
 
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+        ClientEntity clientEntity = checkClientByEmail(email);
+        if (clientEntity == null) {
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
+        }
+
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
                 queueId,
-                email
+                clientEntity.getId()
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException(
@@ -181,9 +200,14 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED_PLEASE_TRY_AGAIN));
         }
 
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+        ClientEntity clientEntity = checkClientByEmail(email);
+        if (clientEntity == null) {
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
+        }
+
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
                 queueId,
-                email
+                clientEntity.getId()
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException(
@@ -200,21 +224,27 @@ public class ClientServiceImpl implements ClientService {
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        clientInQueueEntity.setAccessKey(clientCodeEntity.getCode());
+        clientEntity.setAccessKey(clientCodeEntity.getCode());
         clientInQueueEntity.setStatus(ClientInQueueStatusEntity.Status.CONFIRMED.name());
+        clientRepo.save(clientEntity);
         clientInQueueRepo.save(clientInQueueEntity);
         clientCodeRepo.delete(clientCodeEntity);
 
         QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
-        return QueueStateForClient.toModel(queueState, clientInQueueEntity);
+        return QueueStateForClient.toModel(queueState, clientInQueueEntity, clientEntity);
     }
 
     @Override
     public QueueStateForClient leaveQueue(Localizer localizer, Long queueId, String email, String accessKey) throws DescriptionException {
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
+        ClientEntity clientEntity = checkClientByEmail(email);
+        if (clientEntity == null) {
+            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
+        }
+
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
                 queueId,
-                email
+                clientEntity.getId()
         );
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException(
@@ -227,12 +257,12 @@ public class ClientServiceImpl implements ClientService {
         }
 
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        if (!Objects.equals(clientInQueueEntity.getAccessKey(), accessKey)) {
+        if (!Objects.equals(clientEntity.getAccessKey(), accessKey)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_LEAVE_QUEUE_PLEASE_TRY_RECONNECT));
         }
 
         clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
-        clientInQueueRepo.deleteByEmail(email);
+        clientInQueueRepo.deleteByClientId(clientEntity.getId());
 
         QueueState queueState = queueService.updateCurrentQueueState(queueId);
 
@@ -251,7 +281,7 @@ public class ClientServiceImpl implements ClientService {
         return null;
     }
 
-    private  List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
+    private List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
         if (joinQueueRequest.getFirstName().isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
         }
@@ -272,7 +302,9 @@ public class ClientServiceImpl implements ClientService {
         if (clients.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
-        if (clientInQueueRepo.existsByQueueIdAndEmail(queueId, joinQueueRequest.getEmail())) {
+
+        ClientEntity clientEntity = checkClientByEmail(joinQueueRequest.getEmail());
+        if (clientInQueueRepo.existsByQueueIdAndClientId(queueId, clientEntity.getId())) {
             throw new DescriptionException(
                     localizer.getMessage(
                             Message.CLIENT_WITH_EMAIL_STAND_IN_QUEUE_START,
@@ -283,5 +315,13 @@ public class ClientServiceImpl implements ClientService {
         }
 
         return clients.get();
+    }
+
+    private ClientEntity checkClientByEmail(String email) {
+        Optional<ClientEntity> client = clientRepo.findByEmail(email);
+        if (client.isEmpty()) {
+            return null;
+        }
+        return client.get();
     }
 }

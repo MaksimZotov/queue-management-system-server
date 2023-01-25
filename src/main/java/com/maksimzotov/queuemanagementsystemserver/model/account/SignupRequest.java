@@ -2,10 +2,8 @@ package com.maksimzotov.queuemanagementsystemserver.model.account;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
 
 @Value
-@Jacksonized
 public class SignupRequest {
     String username;
     String email;

@@ -9,16 +9,16 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import java.io.Serializable;
 
-@Entity(name = "service_in_queue")
-@IdClass(ServiceInQueueEntity.class)
+@Entity(name = "client_in_queue_to_chosen_service")
+@IdClass(ClientInQueueToChosenService.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceInQueueEntity implements Serializable {
+public class ClientInQueueToChosenService implements Serializable {
+
+    @Id
+    private Long clientInQueueId;
 
     @Id
     private Long serviceId;
-
-    @Id
-    private Long queueId;
 }

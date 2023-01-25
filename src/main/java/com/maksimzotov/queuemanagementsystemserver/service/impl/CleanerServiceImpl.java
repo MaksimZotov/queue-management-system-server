@@ -1,11 +1,9 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.AllArgsConstructor;
@@ -26,6 +24,7 @@ public class CleanerServiceImpl implements CleanerService {
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
+    private final ClientRepo clientRepo;
 
     @Override
     public void deleteNonActivatedUser(String username) {
@@ -41,22 +40,26 @@ public class CleanerServiceImpl implements CleanerService {
                 queueId,
                 email
         );
-
-        if (clientCodeRepo.existsById(primaryKey)) {
-            clientCodeRepo.deleteById(primaryKey);
-
-            Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndEmail(
-                    queueId,
-                    email
-            );
-
-            if (clientInQueue.isPresent()) {
-                ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-                clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
-                clientInQueueRepo.deleteByEmail(email);
-                queueService.updateCurrentQueueState(queueId);
-            }
+        if (!clientCodeRepo.existsById(primaryKey)) {
+            return;
         }
+        clientCodeRepo.deleteById(primaryKey);
+        Optional<ClientEntity> client = clientRepo.findByEmail(email);
+        if (client.isEmpty()) {
+            return;
+        }
+        ClientEntity clientEntity = client.get();
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
+                queueId,
+                clientEntity.getId()
+        );
+        if (clientInQueue.isEmpty()) {
+            return;
+        }
+        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
+        clientInQueueRepo.deleteByClientId(clientEntity.getId());
+        queueService.updateCurrentQueueState(queueId);
     }
 
     @Override

@@ -5,10 +5,10 @@ import lombok.*;
 import javax.persistence.*;
 import java.io.Serializable;
 
-@Entity(name = "client_chosen_service")
+@Entity(name = "client_to_chosen_service")
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientChosenServiceEntity implements Serializable {
+public class ClientToChosenServiceEntity implements Serializable {
 
     @Embeddable
     @Data

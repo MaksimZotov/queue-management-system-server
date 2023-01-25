@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
@@ -34,6 +35,7 @@ public class LocationServiceImpl implements LocationService {
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
+    private final ClientRepo clientRepo;
 
     @Override
     public Location createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -68,14 +70,11 @@ public class LocationServiceImpl implements LocationService {
         if (!Objects.equals(locationEntity.getOwnerUsername(), usernameByToken)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_HAVE_NOT_RIGHTS_TO_DELETE_LOCATION));
         }
-        Optional<List<QueueEntity>> queueEntities = queueRepo.findAllByLocationId(locationId);
-
-        for (QueueEntity queueEntity : queueEntities.get()) {
-            clientCodeRepo.deleteByPrimaryKeyQueueId(queueEntity.getId());
-            clientInQueueRepo.deleteByQueueId(queueEntity.getId());
+        if (clientRepo.existsByLocationId(locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_CONTAINS_CLIENTS));
         }
-        rightsRepo.deleteByLocationId(locationId);
-        queueRepo.deleteByLocationId(locationId);
+        rightsRepo.deleteAllByLocationId(locationId);
+        queueRepo.deleteAllByLocationId(locationId);
         locationRepo.deleteById(locationId);
     }
 

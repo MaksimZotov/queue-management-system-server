@@ -36,7 +36,7 @@ public class QueueServiceImpl implements QueueService {
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
-    private final ClientCodeRepo clientCodeRepo;
+    private final ClientRepo clientRepo;
     private final ServiceInQueueTypeRepo serviceInQueueTypeRepo;
     private final QueueTypeInLocationRepo queueTypeInLocationRepo;
 
@@ -55,6 +55,7 @@ public class QueueServiceImpl implements QueueService {
         QueueEntity queueEntity = queueRepo.save(
                 new QueueEntity(
                         null,
+                        queueTypeId,
                         locationId,
                         createQueueRequest.getName(),
                         createQueueRequest.getDescription(),
@@ -83,8 +84,9 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
         QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
-        clientCodeRepo.deleteByPrimaryKeyQueueId(queueId);
-        clientInQueueRepo.deleteByQueueId(queueId);
+        if (clientInQueueRepo.existsByQueueId(queueId)) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_CONTAINS_CLIENTS));
+        }
         queueRepo.deleteById(queueId);
         boardService.updateLocationBoard(queueEntity.getLocationId());
     }
@@ -118,7 +120,10 @@ public class QueueServiceImpl implements QueueService {
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 clientsEntities.stream()
-                        .map(ClientInQueue::toModel)
+                        .map(clientInQueueEntity -> {
+                            ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
+                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
+                        })
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
                 locationEntity.getOwnerUsername(),
@@ -150,17 +155,18 @@ public class QueueServiceImpl implements QueueService {
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
         }
-        String email = clientInQueue.get().getEmail();
-        if (email == null) {
+        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+        ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
+        if (clientEntity.getEmail() == null) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_HAVE_EMAIL));
         }
 
-        mailService.send(email, localizer.getMessage(Message.QUEUE), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
+        mailService.send(clientEntity.getEmail(), localizer.getMessage(Message.QUEUE), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
     }
 
     @Override
     public ClientInQueue addClient(Localizer localizer, String accessToken, Long queueId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        checkRightsInQueue(localizer, accessToken, queueId);
+        QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
         checkAddClient(localizer, addClientRequest);
 
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
@@ -174,22 +180,30 @@ public class QueueServiceImpl implements QueueService {
         Integer publicCode = CodeGenerator.generate(clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList());
         String accessKey = CodeGenerator.generate();
 
+
+        ClientEntity clientEntity = clientRepo.save(
+                new ClientEntity(
+                        null,
+                        queueEntity.getLocationId(),
+                        null,
+                        addClientRequest.getFirstName(),
+                        addClientRequest.getLastName(),
+                        accessKey
+                )
+        );
         ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
                 null,
+                clientEntity.getId(),
                 queueId,
-                null,
-                addClientRequest.getFirstName(),
-                addClientRequest.getLastName(),
                 orderNumber,
                 publicCode,
-                accessKey,
                 ClientInQueueStatusEntity.Status.CONFIRMED.name()
         );
         clientInQueueRepo.save(clientInQueueEntity);
 
         updateCurrentQueueState(queueId);
 
-        return ClientInQueue.toModel(clientInQueueEntity);
+        return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
     }
 
     @Override
@@ -209,7 +223,10 @@ public class QueueServiceImpl implements QueueService {
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 clientsEntities.stream()
-                        .map(ClientInQueue::toModel)
+                        .map(clientInQueueEntity -> {
+                            ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
+                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
+                        })
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
                 locationEntity.getOwnerUsername(),

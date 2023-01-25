@@ -1,14 +1,13 @@
 package com.maksimzotov.queuemanagementsystemserver.model.queue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
 import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
 
 @Value
 @AllArgsConstructor
-@Jacksonized
 public class ClientInQueue {
     Long id;
     @JsonProperty("email")
@@ -26,16 +25,16 @@ public class ClientInQueue {
     String status;
 
 
-    public static ClientInQueue toModel(ClientInQueueEntity entity) {
+    public static ClientInQueue toModel(ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
         return new ClientInQueue(
-                entity.getId(),
-                entity.getEmail(),
-                entity.getFirstName(),
-                entity.getLastName(),
-                entity.getOrderNumber(),
-                entity.getPublicCode(),
-                entity.getAccessKey(),
-                entity.getStatus()
+                clientInQueueEntity.getId(),
+                clientEntity.getEmail(),
+                clientEntity.getFirstName(),
+                clientEntity.getLastName(),
+                clientInQueueEntity.getOrderNumber(),
+                clientInQueueEntity.getPublicCode(),
+                clientEntity.getAccessKey(),
+                clientInQueueEntity.getStatus()
         );
     }
 }

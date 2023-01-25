@@ -4,11 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.extern.jackson.Jacksonized;
 
 @Data
 @AllArgsConstructor
-@Jacksonized
 public class Queue {
 
     private Long id;

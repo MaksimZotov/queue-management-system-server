@@ -17,7 +17,7 @@ public class ClientCodeEntity implements Serializable {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PrimaryKey implements Serializable {
-        private Long queueId;
+        private Long clientId;
         private String email;
     }
 
