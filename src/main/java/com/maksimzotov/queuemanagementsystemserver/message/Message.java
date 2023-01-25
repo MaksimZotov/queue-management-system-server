@@ -59,7 +59,7 @@ public enum Message {
     QUEUE_IS_PAUSED,
     WAIT_FOR_CONFIRMATION_OF_CODE_BY_CLIENT,
     MAX_COLUMNS_MUST_NOT_BE_LESS_THAN_0,
-    QUEUE_CLASS_DOES_NOT_EXIST;
+    QUEUE_TYPE_DOES_NOT_EXIST;
 
     public String toMessageId() {
         return name().toLowerCase();

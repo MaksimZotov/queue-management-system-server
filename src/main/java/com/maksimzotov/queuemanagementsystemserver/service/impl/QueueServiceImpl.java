@@ -63,7 +63,7 @@ public class QueueServiceImpl implements QueueService {
         );
         if (queueTypeId != null) {
             if (!queueTypeInLocationRepo.existsById(new QueueTypeInLocationEntity(queueTypeId, locationId))) {
-                throw new DescriptionException(localizer.getMessage(Message.QUEUE_CLASS_DOES_NOT_EXIST));
+                throw new DescriptionException(localizer.getMessage(Message.QUEUE_TYPE_DOES_NOT_EXIST));
             }
             Optional<List<ServiceInQueueTypeEntity>> services = serviceInQueueTypeRepo.findAllByQueueTypeId(queueTypeId);
             serviceService.setServicesInQueue(
