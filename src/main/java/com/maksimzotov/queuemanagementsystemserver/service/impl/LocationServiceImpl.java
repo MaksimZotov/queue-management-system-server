@@ -127,7 +127,9 @@ public class LocationServiceImpl implements LocationService {
         }
         LocationEntity locationEntity = location.get();
         locationEntity.setMaxColumns(maxColumns);
-        return Location.toModel(locationRepo.save(locationEntity), true);
+        locationRepo.save(locationEntity);
+        updateLocationBoard(locationEntity.getId());
+        return Location.toModel(locationEntity, true);
     }
 
     @Override
