@@ -10,5 +10,5 @@ public class ServicesSequenceModel {
     String name;
     String description;
     @JsonProperty("service_models_to_order_numbers")
-    Map<ServiceModel, Long> serviceModelsToOrderNumbers;
+    Map<ServiceModel, Integer> serviceModelsToOrderNumbers;
 }

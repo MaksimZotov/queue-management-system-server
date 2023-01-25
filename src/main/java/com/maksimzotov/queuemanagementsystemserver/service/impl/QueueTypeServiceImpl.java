@@ -32,10 +32,4 @@ public class QueueTypeServiceImpl implements QueueTypeService {
     public void deleteQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
     }
-
-    @Override
-    public ContainerForList<ServiceModel> setServicesInQueueType(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueTypeRequest setServicesInQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        // TODO
-        return null;
-    }
 }

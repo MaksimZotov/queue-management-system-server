@@ -7,7 +7,6 @@ import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface RightsService {
-
     ContainerForList<RightsModel> getRights(Localizer localizer, String username, Long locationId) throws DescriptionException;
     void addRights(Localizer localizer, String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteRights(Localizer localizer, String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException;

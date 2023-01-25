@@ -13,6 +13,5 @@ public interface QueueTypeService {
     ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
     QueueTypeModel createQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, CreateQueueTypeRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException;
-    ContainerForList<ServiceModel> setServicesInQueueType(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueTypeRequest setServicesInQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
 
 }

@@ -5,7 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/queues")
+@RequestMapping("/client")
 @EqualsAndHashCode(callSuper = true)
 public class ClientController extends BaseController {
 
@@ -26,77 +26,71 @@ public class ClientController extends BaseController {
         this.clientService = clientService;
     }
 
-    @GetMapping("/{queue_id}/client")
+    @GetMapping
     public ResponseEntity<?> getQueueStateForClient(
-            @PathVariable("queue_id") Long queueId,
-            @RequestParam String email,
+            @RequestParam("email") String email,
             @RequestParam("access_key") String accessKey
     ) {
-        return ResponseEntity.ok().body(clientService.getQueueStateForClient(queueId, email, accessKey));
+        return ResponseEntity.ok().body(clientService.getQueueStateForClient(email, accessKey));
     }
 
-    @PostMapping("/{queue_id}/client/join")
-    public ResponseEntity<?> joinQueue(
+    @PostMapping("/join")
+    public ResponseEntity<?> joinByClient(
             HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId,
-            @RequestBody JoinQueueRequest joinQueueRequest
+            @RequestBody AddClientRequst addClientRequst
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.joinQueue(getLocalizer(request), queueId, joinQueueRequest));
+            return ResponseEntity.ok().body(clientService.joinByClient(getLocalizer(request), addClientRequst));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/{queue_id}/client/rejoin")
-    public ResponseEntity<?> rejoinQueue(
+    @PostMapping("/rejoin")
+    public ResponseEntity<?> rejoinByClient(
             HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId,
             @RequestParam String email
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.rejoinQueue(getLocalizer(request), queueId, email));
+            return ResponseEntity.ok().body(clientService.rejoinByClient(getLocalizer(request), email));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/{queue_id}/client/confirm")
-    public ResponseEntity<?> confirmCode(
+    @PostMapping("/confirm")
+    public ResponseEntity<?> confirmCodeByClient(
             HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId,
             @RequestParam String email,
             @RequestParam String code
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.confirmCode(getLocalizer(request), queueId, email, code));
+            return ResponseEntity.ok().body(clientService.confirmCodeByClient(getLocalizer(request), email, code));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/{queue_id}/client/leave")
-    public ResponseEntity<?> leaveQueue(
+    @PostMapping("/leave")
+    public ResponseEntity<?> leaveByClient(
             HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId,
             @RequestParam String email,
             @RequestParam("access_key") String accessKey
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.leaveQueue(getLocalizer(request), queueId, email, accessKey));
+            return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), email, accessKey));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/client/add/service")
-    public ResponseEntity<?> addClientToService(
+    @PostMapping("/add/service")
+    public ResponseEntity<?> addClientToServicesByEmployee(
             HttpServletRequest request,
-            @RequestParam("service_id") Long serviceId,
-            @RequestBody JoinQueueRequest joinQueueRequest
+            @RequestBody AddClientRequst addClientRequst
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.addClientToService(getLocalizer(request), getToken(request), serviceId, joinQueueRequest));
+            return ResponseEntity.ok().body(clientService.addClientToServicesByEmployee(getLocalizer(request), getToken(request), addClientRequst));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
@@ -104,14 +98,13 @@ public class ClientController extends BaseController {
         }
     }
 
-    @PostMapping("/client/add/sequence")
-    public ResponseEntity<?> addClientToServicesSequence(
+    @PostMapping("/add/sequence")
+    public ResponseEntity<?> addClientToServicesSequenceByEmployee(
             HttpServletRequest request,
-            @RequestParam("services_sequence_id") Long servicesSequenceId,
-            @RequestBody JoinQueueRequest joinQueueRequest
+            @RequestBody AddClientRequst addClientRequst
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.addClientToSequence(getLocalizer(request), getToken(request), servicesSequenceId, joinQueueRequest));
+            return ResponseEntity.ok().body(clientService.addClientToServicesSequenceByEmployee(getLocalizer(request), getToken(request), addClientRequst));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {

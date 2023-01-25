@@ -4,27 +4,20 @@ import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.ClientInQueue;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
-import com.maksimzotov.queuemanagementsystemserver.repository.ClientCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientInQueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ClientRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
-import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
@@ -33,280 +26,75 @@ public class ClientServiceImpl implements ClientService {
     private final AccountService accountService;
     private final RightsService rightsService;
     private final MailService mailService;
-    private final DelayedJobService delayedJobService;
     private final QueueService queueService;
-    private final CleanerService cleanerService;
     private final ClientInQueueRepo clientInQueueRepo;
-    private final ClientCodeRepo clientCodeRepo;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
-    private final Integer confirmationTimeInSeconds;
 
     public ClientServiceImpl(
             AccountService accountService,
             RightsService rightsService,
             MailService mailService,
-            DelayedJobService delayedJobService,
             QueueService queueService,
-            CleanerService cleanerService,
             ClientInQueueRepo clientInQueueRepo,
-            ClientCodeRepo clientCodeRepo,
             ClientRepo clientRepo,
-            QueueRepo queueRepo,
-            @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
+            QueueRepo queueRepo
     ) {
         this.accountService = accountService;
         this.rightsService = rightsService;
         this.mailService = mailService;
-        this.delayedJobService = delayedJobService;
         this.queueService = queueService;
-        this.cleanerService = cleanerService;
         this.clientInQueueRepo = clientInQueueRepo;
-        this.clientCodeRepo = clientCodeRepo;
         this.clientRepo = clientRepo;
         this.queueRepo = queueRepo;
-        this.confirmationTimeInSeconds = confirmationTimeInSeconds;
     }
 
     @Override
-    public QueueStateForClient joinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
-        QueueState queueState = queueService.getCurrentQueueState(queueId);
-        if (queueState.getPaused()) {
-            throw new DescriptionException(localizer.getMessage(Message.QUEUE_IS_PAUSED));
-        }
-
-        List<ClientInQueueEntity> clientsEntities = checkJoinQueue(localizer, queueId, joinQueueRequest);
-
-        Optional<Integer> maxOrderNumber = clientsEntities.stream()
-                .map(ClientInQueueEntity::getOrderNumber)
-                .max(Integer::compare);
-
-        Integer orderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
-        Integer publicCode = CodeGenerator.generate(clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList());
-        String accessKey = CodeGenerator.generate();
-
-        ClientCodeEntity clientCodeEntity = new ClientCodeEntity(
-                new ClientCodeEntity.PrimaryKey(
-                        queueId,
-                        joinQueueRequest.getEmail()
-                ),
-                accessKey
-        );
-        ClientEntity clientEntity = clientRepo.save(
-                new ClientEntity(
-                        null,
-                        queueState.getLocationId(),
-                        joinQueueRequest.getEmail(),
-                        joinQueueRequest.getFirstName(),
-                        joinQueueRequest.getLastName(),
-                        accessKey
-                )
-        );
-        ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
-                null,
-                clientEntity.getId(),
-                queueId,
-                orderNumber,
-                publicCode,
-                ClientInQueueStatusEntity.Status.RESERVED.name()
-        );
-
-        clientCodeRepo.save(clientCodeEntity);
-        clientInQueueRepo.save(clientInQueueEntity);
-
-        queueState = queueService.updateCurrentQueueState(queueId);
-
-        delayedJobService.schedule(
-                () -> cleanerService.deleteJoinClientCode(queueId, joinQueueRequest.getEmail()),
-                confirmationTimeInSeconds,
-                TimeUnit.SECONDS
-        );
-
-        mailService.send(
-                joinQueueRequest.getEmail(),
-                localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION_TO_QUEUE),
-                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_CONNECTION_TO_QUEUE, accessKey)
-        );
-
-        return QueueStateForClient.toModel(queueState, clientInQueueEntity, clientEntity);
-    }
-
-    @Override
-    public QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey) {
-        ClientEntity clientEntity = checkClientByEmail(email);
-        if (clientEntity == null) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
-                queueId,
-                clientEntity.getId()
-        );
-        if (clientInQueue.isEmpty()) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        if (!Objects.equals(clientEntity.getAccessKey(), accessKey)) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId), clientInQueueEntity, clientEntity);
-    }
-
-    @Override
-    public QueueStateForClient rejoinQueue(Localizer localizer, Long queueId, String email) throws DescriptionException {
-        if (!EmailChecker.emailMatches(email)) {
-            throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
-        }
-
-        ClientEntity clientEntity = checkClientByEmail(email);
-        if (clientEntity == null) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
-                queueId,
-                clientEntity.getId()
-        );
-        if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(
-                    localizer.getMessage(
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
-                            email,
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
-                    )
-            );
-        }
-
-        String code = CodeGenerator.generate();
-        clientCodeRepo.save(
-                new ClientCodeEntity(
-                        new ClientCodeEntity.PrimaryKey(
-                                queueId,
-                                email
-                        ),
-                        code
-                )
-        );
-
-        mailService.send(
-                email,
-                localizer.getMessage(Message.CONFIRMATION_OF_RECONNECTION_TO_QUEUE),
-                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_RECONNECTION_TO_QUEUE, code)
-        );
-
-        delayedJobService.schedule(
-                () -> cleanerService.deleteRejoinClientCode(queueId, email),
-                confirmationTimeInSeconds,
-                TimeUnit.SECONDS
-        );
-
-        return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-    }
-
-    @Override
-    public QueueStateForClient confirmCode(Localizer localizer, Long queueId, String email, String code) throws DescriptionException {
-        Optional<ClientCodeEntity> clientCode = clientCodeRepo.findById(new ClientCodeEntity.PrimaryKey(queueId, email));
-        if (clientCode.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED_PLEASE_TRY_AGAIN));
-        }
-
-        ClientEntity clientEntity = checkClientByEmail(email);
-        if (clientEntity == null) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
-                queueId,
-                clientEntity.getId()
-        );
-        if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(
-                    localizer.getMessage(
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
-                            email,
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
-                    )
-            );
-        }
-        ClientCodeEntity clientCodeEntity = clientCode.get();
-        if (!Objects.equals(clientCodeEntity.getCode(), code)) {
-            throw new DescriptionException(localizer.getMessage(Message.WRONG_CODE));
-        }
-
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        clientEntity.setAccessKey(clientCodeEntity.getCode());
-        clientInQueueEntity.setStatus(ClientInQueueStatusEntity.Status.CONFIRMED.name());
-        clientRepo.save(clientEntity);
-        clientInQueueRepo.save(clientInQueueEntity);
-        clientCodeRepo.delete(clientCodeEntity);
-
-        QueueState queueState = queueService.updateCurrentQueueState(queueId);
-
-        return QueueStateForClient.toModel(queueState, clientInQueueEntity, clientEntity);
-    }
-
-    @Override
-    public QueueStateForClient leaveQueue(Localizer localizer, Long queueId, String email, String accessKey) throws DescriptionException {
-        ClientEntity clientEntity = checkClientByEmail(email);
-        if (clientEntity == null) {
-            return QueueStateForClient.toModel(queueService.getCurrentQueueState(queueId));
-        }
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
-                queueId,
-                clientEntity.getId()
-        );
-        if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(
-                    localizer.getMessage(
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_START,
-                            email,
-                            Message.CLIENT_WITH_EMAIL_DOES_NOT_STAND_IN_QUEUE_END
-                    )
-            );
-        }
-
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        if (!Objects.equals(clientEntity.getAccessKey(), accessKey)) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_LEAVE_QUEUE_PLEASE_TRY_RECONNECT));
-        }
-
-        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
-        clientInQueueRepo.deleteByClientId(clientEntity.getId());
-
-        QueueState queueState = queueService.updateCurrentQueueState(queueId);
-
-        return QueueStateForClient.toModel(queueState);
-    }
-
-    @Override
-    public QueueStateForClient addClientToService(Localizer localizer, String accessToken, Long serviceId, JoinQueueRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueStateForClient joinByClient(Localizer localizer, AddClientRequst addClientRequst) throws DescriptionException {
         // TODO
         return null;
     }
 
     @Override
-    public QueueStateForClient addClientToSequence(Localizer localizer, String accessToken, Long serviceId, JoinQueueRequest joinQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueStateForClient getQueueStateForClient(String email, String accessKey) {
         // TODO
         return null;
     }
 
-    private List<ClientInQueueEntity> checkJoinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException {
-        if (joinQueueRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
-        }
-        if (joinQueueRequest.getFirstName().length() > 64) {
-            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
-        }
-        if (joinQueueRequest.getLastName().isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY));
-        }
-        if (joinQueueRequest.getLastName().length() > 64) {
-            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
-        }
-        if (!EmailChecker.emailMatches(joinQueueRequest.getEmail())) {
+    @Override
+    public QueueStateForClient rejoinByClient(Localizer localizer, String email) throws DescriptionException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public QueueStateForClient confirmCodeByClient(Localizer localizer, String email, String code) throws DescriptionException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public QueueStateForClient leaveByClient(Localizer localizer, String email, String accessKey) throws DescriptionException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public QueueStateForClient addClientToServicesByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException {
+        // TODO
+        return null;
+    }
+
+    @Override
+    public QueueStateForClient addClientToServicesSequenceByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException {
+        // TODO
+        return null;
+    }
+
+    private List<ClientInQueueEntity> checkJoinByClient(Localizer localizer, Long queueId, AddClientRequst addClientRequst) throws DescriptionException {
+        checkAddClientRequest(localizer, addClientRequst);
+
+        if (!EmailChecker.emailMatches(addClientRequst.getEmail())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
 
@@ -315,12 +103,12 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
 
-        ClientEntity clientEntity = checkClientByEmail(joinQueueRequest.getEmail());
+        ClientEntity clientEntity = checkClientByEmail(addClientRequst.getEmail());
         if (clientInQueueRepo.existsByQueueIdAndClientId(queueId, clientEntity.getId())) {
             throw new DescriptionException(
                     localizer.getMessage(
                             Message.CLIENT_WITH_EMAIL_STAND_IN_QUEUE_START,
-                            joinQueueRequest.getEmail(),
+                            addClientRequst.getEmail(),
                             Message.CLIENT_WITH_EMAIL_STAND_IN_QUEUE_END
                     )
             );
@@ -371,48 +159,6 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public ClientInQueue addClientByEmployee(Localizer localizer, String accessToken, Long queueId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
-        checkAddClient(localizer, addClientRequest);
-
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        List<ClientInQueueEntity> clientsEntities = clients.get();
-
-        Optional<Integer> maxOrderNumber = clientsEntities.stream()
-                .map(ClientInQueueEntity::getOrderNumber)
-                .max(Integer::compare);
-
-        Integer orderNumber = maxOrderNumber.isEmpty() ? 1 : maxOrderNumber.get() + 1;
-        Integer publicCode = CodeGenerator.generate(clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList());
-        String accessKey = CodeGenerator.generate();
-
-
-        ClientEntity clientEntity = clientRepo.save(
-                new ClientEntity(
-                        null,
-                        queueEntity.getLocationId(),
-                        null,
-                        addClientRequest.getFirstName(),
-                        addClientRequest.getLastName(),
-                        accessKey
-                )
-        );
-        ClientInQueueEntity clientInQueueEntity = new ClientInQueueEntity(
-                null,
-                clientEntity.getId(),
-                queueId,
-                orderNumber,
-                publicCode,
-                ClientInQueueStatusEntity.Status.CONFIRMED.name()
-        );
-        clientInQueueRepo.save(clientInQueueEntity);
-
-        queueService.updateCurrentQueueState(queueId);
-
-        return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
-    }
-
-    @Override
     public void switchClientLateStateByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId, Boolean late) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, queueId);
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
@@ -444,7 +190,7 @@ public class ClientServiceImpl implements ClientService {
         return queueEntity;
     }
 
-    private void checkAddClient(Localizer localizer, AddClientRequest addClientRequest) throws DescriptionException {
+    private void checkAddClientRequest(Localizer localizer, AddClientRequst addClientRequest) throws DescriptionException {
         if (addClientRequest.getFirstName().isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
         }
