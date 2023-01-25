@@ -14,6 +14,6 @@ public class AddClientRequst {
     String lastName;
     @JsonProperty("service_ids")
     List<Long> serviceIds;
-    @JsonProperty("sequence_ids")
+    @JsonProperty("sequence_id")
     Integer sequenceId;
 }
