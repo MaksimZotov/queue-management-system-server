@@ -3,17 +3,17 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.services.ServiceModel;
-import com.maksimzotov.queuemanagementsystemserver.model.services.SetServicesInQueueTypeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.type.CreateQueueTypeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueTypeService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
+@Transactional
 @AllArgsConstructor
 public class QueueTypeServiceImpl implements QueueTypeService {
     @Override

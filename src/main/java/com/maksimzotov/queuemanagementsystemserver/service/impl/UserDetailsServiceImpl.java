@@ -3,8 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,8 +16,8 @@ import java.util.Collection;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
 @Transactional
+@AllArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final AccountRepo accountRepo;

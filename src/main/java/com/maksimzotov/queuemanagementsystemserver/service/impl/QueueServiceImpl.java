@@ -23,8 +23,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
 @Transactional
+@AllArgsConstructor
 public class QueueServiceImpl implements QueueService {
 
     private final AccountService accountService;

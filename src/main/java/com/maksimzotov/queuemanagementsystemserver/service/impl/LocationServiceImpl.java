@@ -27,8 +27,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
 @Transactional
+@AllArgsConstructor
 public class LocationServiceImpl implements LocationService {
 
     private final AccountService accountService;
