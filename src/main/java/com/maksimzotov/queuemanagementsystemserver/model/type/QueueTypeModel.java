@@ -1,11 +1,11 @@
-package com.maksimzotov.queuemanagementsystemserver.model.template;
+package com.maksimzotov.queuemanagementsystemserver.model.type;
 
 import lombok.Value;
 
 import java.util.List;
 
 @Value
-public class QueueClassModel {
+public class QueueTypeModel {
     Long id;
     String name;
     String description;

@@ -4,7 +4,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.services.*;
-import com.maksimzotov.queuemanagementsystemserver.model.template.QueueClassModel;
+import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
 import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class ServiceServiceImpl implements ServiceService {
     @Override
-    public ContainerForList<QueueClassModel> getServicesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public ContainerForList<QueueTypeModel> getServicesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
         // TODO
         return null;
     }
 
     @Override
-    public QueueClassModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueClassRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueTypeModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
         return null;
     }
@@ -50,7 +50,7 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public QueueClassModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueTypeModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
         return null;
     }

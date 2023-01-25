@@ -8,10 +8,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 
-@Entity(name = "queue_class")
+@Entity(name = "queue_type")
 @NoArgsConstructor
 @AllArgsConstructor
-public class QueueClassEntity {
+public class QueueTypeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

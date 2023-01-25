@@ -37,11 +37,11 @@ public class QueueServiceImpl implements QueueService {
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientCodeRepo clientCodeRepo;
-    private final ServiceInQueueClassRepo serviceInQueueClassRepo;
-    private final QueueClassInLocationRepo queueClassInLocationRepo;
+    private final ServiceInQueueTypeRepo serviceInQueueTypeRepo;
+    private final QueueTypeInLocationRepo queueTypeInLocationRepo;
 
     @Override
-    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, Long queueClassId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, Long queueTypeId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountUsername = accountService.getUsername(accessToken);
 
         if (!rightsService.checkRightsInLocation(accountUsername, locationId)) {
@@ -61,17 +61,17 @@ public class QueueServiceImpl implements QueueService {
                         true
                 )
         );
-        if (queueClassId != null) {
-            if (!queueClassInLocationRepo.existsById(new QueueClassInLocationEntity(queueClassId, locationId))) {
+        if (queueTypeId != null) {
+            if (!queueTypeInLocationRepo.existsById(new QueueTypeInLocationEntity(queueTypeId, locationId))) {
                 throw new DescriptionException(localizer.getMessage(Message.QUEUE_CLASS_DOES_NOT_EXIST));
             }
-            Optional<List<ServiceInQueueClassEntity>> services = serviceInQueueClassRepo.findAllByQueueClassId(queueClassId);
+            Optional<List<ServiceInQueueTypeEntity>> services = serviceInQueueTypeRepo.findAllByQueueTypeId(queueTypeId);
             serviceService.setServicesInQueue(
                     localizer,
                     accessToken,
                     queueEntity.getId(),
                     new SetServicesInQueueRequest(
-                            services.get().stream().map(ServiceInQueueClassEntity::getServiceId).toList()
+                            services.get().stream().map(ServiceInQueueTypeEntity::getServiceId).toList()
                     )
             );
         }

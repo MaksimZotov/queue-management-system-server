@@ -5,8 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.template.CreateQueueClassRequest;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueClassService;
+import com.maksimzotov.queuemanagementsystemserver.model.type.CreateQueueTypeRequest;
+import com.maksimzotov.queuemanagementsystemserver.service.QueueTypeService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
@@ -15,24 +15,24 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/class")
+@RequestMapping("/type")
 @EqualsAndHashCode(callSuper = true)
-public class QueueClassController extends BaseController {
+public class QueueTypeController extends BaseController {
 
-    private final QueueClassService queueClassService;
+    private final QueueTypeService queueTypeService;
 
-    public QueueClassController(MessageSource messageSource, QueueClassService queueClassService) {
+    public QueueTypeController(MessageSource messageSource, QueueTypeService queueTypeService) {
         super(messageSource);
-        this.queueClassService = queueClassService;
+        this.queueTypeService = queueTypeService;
     }
 
     @GetMapping
-    public ResponseEntity<?> getQueueClassesInLocation(
+    public ResponseEntity<?> getQueueTypesInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(queueClassService.getQueueClassesInLocation(getLocalizer(request), getToken(request), locationId));
+            return ResponseEntity.ok().body(queueTypeService.getQueueTypesInLocation(getLocalizer(request), getToken(request), locationId));
         }  catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
@@ -41,13 +41,13 @@ public class QueueClassController extends BaseController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createQueueClassInLocation(
+    public ResponseEntity<?> createQueueTypeInLocation(
             HttpServletRequest request,
-            @RequestBody CreateQueueClassRequest createQueueClassRequest,
+            @RequestBody CreateQueueTypeRequest createQueueTypeRequest,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(queueClassService.createQueueClassesInLocation(getLocalizer(request), getToken(request), locationId, createQueueClassRequest));
+            return ResponseEntity.ok().body(queueTypeService.createQueueTypesInLocation(getLocalizer(request), getToken(request), locationId, createQueueTypeRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         }  catch (DescriptionException ex) {
@@ -56,13 +56,13 @@ public class QueueClassController extends BaseController {
     }
 
     @DeleteMapping("/delete")
-    public ResponseEntity<?> deleteQueueClassInLocation(
+    public ResponseEntity<?> deleteQueueTypeInLocation(
             HttpServletRequest request,
-            @RequestParam("queue_class_id") Long queueClassId,
+            @RequestParam("queue_type_id") Long queueTypeId,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            queueClassService.deleteQueueClassesInLocation(getLocalizer(request), getToken(request), locationId, queueClassId);
+            queueTypeService.deleteQueueTypesInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

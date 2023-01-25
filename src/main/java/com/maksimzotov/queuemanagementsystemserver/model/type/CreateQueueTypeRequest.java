@@ -1,10 +1,12 @@
-package com.maksimzotov.queuemanagementsystemserver.model.template;
+package com.maksimzotov.queuemanagementsystemserver.model.type;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Value;
 
 import java.util.List;
 
-public class CreateQueueClassRequest {
+@Value
+public class CreateQueueTypeRequest {
     String name;
     String description;
     @JsonProperty("service_ids")

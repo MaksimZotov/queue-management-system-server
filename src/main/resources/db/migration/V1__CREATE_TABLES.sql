@@ -86,22 +86,22 @@ CREATE TABLE service_in_queue (
     PRIMARY KEY (service_id, queue_id)
 );
 
-CREATE TABLE queue_class (
+CREATE TABLE queue_type (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(256) NOT NULL,
     description VARCHAR(2048)
 );
 
-CREATE TABLE queue_class_in_location (
-    queue_class_id BIGINT REFERENCES queue_class (id) NOT NULL,
+CREATE TABLE queue_type_in_location (
+    queue_type_id BIGINT REFERENCES queue_type (id) NOT NULL,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    PRIMARY KEY (queue_class_id, location_id)
+    PRIMARY KEY (queue_type_id, location_id)
 );
 
-CREATE TABLE service_in_queue_class (
+CREATE TABLE service_in_queue_type (
     service_id BIGINT REFERENCES service (id) NOT NULL,
-    queue_class_id BIGINT REFERENCES queue_class (id) NOT NULL,
-    PRIMARY KEY (service_id, queue_class_id)
+    queue_type_id BIGINT REFERENCES queue_type (id) NOT NULL,
+    PRIMARY KEY (service_id, queue_type_id)
 );
 
 CREATE TABLE client_chosen_service (
