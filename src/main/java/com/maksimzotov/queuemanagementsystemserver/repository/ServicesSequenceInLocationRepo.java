@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface ServicesSequenceInLocationRepo extends JpaRepository<ServicesSequenceInLocationEntity, ServicesSequenceInLocationEntity> {
     Optional<List<ServicesSequenceInLocationEntity>> findAllByLocationId(Long locationId);
-    void deleteByServiceSequenceId(Long serviceSequenceId);
+    Boolean existsByServicesSequenceId(Long servicesSequenceId);
 }

@@ -184,5 +184,8 @@ public class ServiceServiceImpl implements ServiceService {
         }
         ServicesSequenceInLocationEntity servicesSequenceInLocationEntity = servicesSequencesInLocation.get();
         servicesSequenceInLocationRepo.delete(servicesSequenceInLocationEntity);
+        if (!servicesSequenceInLocationRepo.existsByServicesSequenceId(servicesSequenceId)) {
+            servicesSequenceRepo.deleteById(servicesSequenceId);
+        }
     }
 }
