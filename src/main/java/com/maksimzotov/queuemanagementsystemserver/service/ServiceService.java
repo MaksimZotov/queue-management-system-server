@@ -8,11 +8,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface ServiceService {
-    ContainerForList<QueueTypeModel> getServicesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
-    QueueTypeModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
+    ContainerForList<ServiceModel> getServicesInLocation(Localizer localizer, Long locationId) throws DescriptionException;
+    ServiceModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException;
     ContainerForList<ServiceModel> getServicesInQueue(Localizer localizer, Long queueId) throws DescriptionException;
-    ServicesSequenceModel getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
-    QueueTypeModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException;
+    ContainerForList<ServicesSequenceModel> getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
+    ServicesSequenceModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException;
 }

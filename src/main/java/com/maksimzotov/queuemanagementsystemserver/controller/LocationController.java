@@ -134,7 +134,7 @@ public class LocationController extends BaseController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(serviceService.getServicesInLocation(getLocalizer(request), getToken(request), locationId));
+            return ResponseEntity.ok().body(serviceService.getServicesInLocation(getLocalizer(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

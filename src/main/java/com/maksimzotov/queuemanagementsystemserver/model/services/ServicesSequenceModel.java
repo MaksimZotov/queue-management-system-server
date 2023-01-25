@@ -1,14 +1,19 @@
 package com.maksimzotov.queuemanagementsystemserver.model.services;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.maksimzotov.queuemanagementsystemserver.entity.ServicesSequenceEntity;
 import lombok.Value;
-
-import java.util.Map;
 
 @Value
 public class ServicesSequenceModel {
+    Long id;
     String name;
     String description;
-    @JsonProperty("service_models_to_order_numbers")
-    Map<ServiceModel, Integer> serviceModelsToOrderNumbers;
+
+    public static ServicesSequenceModel toModel(ServicesSequenceEntity servicesSequenceEntity) {
+        return new ServicesSequenceModel(
+                servicesSequenceEntity.getId(),
+                servicesSequenceEntity.getName(),
+                servicesSequenceEntity.getDescription()
+        );
+    }
 }
