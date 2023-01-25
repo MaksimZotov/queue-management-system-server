@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class QueueTypeServiceImpl implements QueueTypeService {
     @Override
-    public ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, Long locationId) throws DescriptionException {
         // TODO
         return null;
     }

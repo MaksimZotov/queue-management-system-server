@@ -220,9 +220,7 @@ public class LocationController extends BaseController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(queueTypeService.getQueueTypesInLocation(getLocalizer(request), getToken(request), locationId));
-        }  catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+            return ResponseEntity.ok().body(queueTypeService.getQueueTypesInLocation(getLocalizer(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

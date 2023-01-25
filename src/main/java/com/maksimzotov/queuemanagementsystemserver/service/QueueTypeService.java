@@ -10,7 +10,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface QueueTypeService {
-    ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
+    ContainerForList<QueueTypeModel> getQueueTypesInLocation(Localizer localizer, Long locationId) throws DescriptionException;
     QueueTypeModel createQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, CreateQueueTypeRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException;
 
