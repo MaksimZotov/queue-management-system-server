@@ -5,11 +5,12 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.services.*;
-import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
+import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServiceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServicesSequenceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.services.ServiceModel;
+import com.maksimzotov.queuemanagementsystemserver.model.services.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueTypeService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
@@ -112,8 +113,13 @@ public class ServiceServiceImpl implements ServiceService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
+        return getServicesInQueueType(localizer, queueEntity.getQueueTypeId());
+    }
+
+    @Override
+    public ContainerForList<ServiceModel> getServicesInQueueType(Localizer localizer, Long queueTypeId) throws DescriptionException {
         Optional<List<ServiceInQueueTypeEntity>> servicesInQueueType = serviceInQueueTypeRepo.findAllByQueueTypeId(
-                queueEntity.getQueueTypeId()
+                queueTypeId
         );
         if (servicesInQueueType.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.ERROR_OCCURRED));
