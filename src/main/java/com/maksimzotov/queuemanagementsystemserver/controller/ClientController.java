@@ -84,27 +84,14 @@ public class ClientController extends BaseController {
         }
     }
 
-    @PostMapping("/add/service")
-    public ResponseEntity<?> addClientToServicesByEmployee(
+    @PostMapping("/add")
+    public ResponseEntity<?> addClientByEmployee(
             HttpServletRequest request,
             @RequestBody AddClientRequst addClientRequst
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.addClientToServicesByEmployee(getLocalizer(request), getToken(request), addClientRequst));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/add/sequence")
-    public ResponseEntity<?> addClientToServicesSequenceByEmployee(
-            HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst
-    ) {
-        try {
-            return ResponseEntity.ok().body(clientService.addClientToServicesSequenceByEmployee(getLocalizer(request), getToken(request), addClientRequst));
+            clientService.addClientByEmployee(getLocalizer(request), getToken(request), addClientRequst);
+            return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {

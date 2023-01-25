@@ -80,15 +80,8 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient addClientToServicesByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void addClientByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
-        return null;
-    }
-
-    @Override
-    public QueueStateForClient addClientToServicesSequenceByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException {
-        // TODO
-        return null;
     }
 
     private List<ClientInQueueEntity> checkJoinByClient(Localizer localizer, Long queueId, AddClientRequst addClientRequst) throws DescriptionException {
