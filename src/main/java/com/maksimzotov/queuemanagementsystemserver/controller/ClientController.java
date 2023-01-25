@@ -6,7 +6,6 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.AddClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;

@@ -3,6 +3,7 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.HasRightsInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
@@ -15,4 +16,6 @@ public interface LocationService {
     ContainerForList<Location> getLocations(Localizer localizer, String accessToken, String username) throws DescriptionException;
     HasRightsInfo checkHasRights(String accessToken, String username);
     Location changeMaxColumns(Localizer localizer, String accessToken, Long locationId, Integer maxColumns) throws DescriptionException, AccountIsNotAuthorizedException;
+    BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException;
+    void updateLocationBoard(Long locationId);
 }

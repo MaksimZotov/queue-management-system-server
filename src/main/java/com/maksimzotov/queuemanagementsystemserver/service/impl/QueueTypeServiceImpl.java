@@ -3,6 +3,8 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.model.services.ServiceModel;
+import com.maksimzotov.queuemanagementsystemserver.model.services.SetServicesInQueueTypeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.type.CreateQueueTypeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.type.QueueTypeModel;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueTypeService;
@@ -29,5 +31,11 @@ public class QueueTypeServiceImpl implements QueueTypeService {
     @Override
     public void deleteQueueTypesInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
         // TODO
+    }
+
+    @Override
+    public ContainerForList<ServiceModel> setServicesInQueueType(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueTypeRequest setServicesInQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        // TODO
+        return null;
     }
 }

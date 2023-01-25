@@ -12,7 +12,6 @@ public interface ServiceService {
     QueueTypeModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createQueueTypeRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException;
     ContainerForList<ServiceModel> getServicesInQueue(Localizer localizer, Long queueId) throws DescriptionException;
-    ContainerForList<ServiceModel> setServicesInQueue(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueRequest setServicesInQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     ServicesSequenceModel getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
     QueueTypeModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException;

@@ -38,12 +38,6 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServiceModel> setServicesInQueue(Localizer localizer, String accessToken, Long queueId, SetServicesInQueueRequest setServicesInQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        // TODO
-        return null;
-    }
-
-    @Override
     public ServicesSequenceModel getServicesSequencesInLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
         // TODO
         return null;

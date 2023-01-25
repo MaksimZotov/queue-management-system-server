@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
@@ -7,6 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
+import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.HasRightsInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
@@ -16,6 +18,7 @@ import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +37,8 @@ public class LocationServiceImpl implements LocationService {
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
-    private final ClientCodeRepo clientCodeRepo;
     private final ClientRepo clientRepo;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public Location createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -125,5 +128,37 @@ public class LocationServiceImpl implements LocationService {
         LocationEntity locationEntity = location.get();
         locationEntity.setMaxColumns(maxColumns);
         return Location.toModel(locationRepo.save(locationEntity), true);
+    }
+
+    @Override
+    public BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException {
+        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
+        if (queues.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        LocationEntity locationEntity = locationRepo.findById(locationId).get();
+        return BoardModel.toModel(
+                clientInQueueRepo,
+                queues.get(),
+                locationEntity
+        );
+    }
+
+    @Override
+    public void updateLocationBoard(Long locationId)  {
+        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
+        if (queues.isEmpty()) {
+            return;
+        }
+        LocationEntity locationEntity = locationRepo.findById(locationId).get();
+        BoardModel boardModel = BoardModel.toModel(
+                clientInQueueRepo,
+                queues.get(),
+                locationEntity
+        );
+        messagingTemplate.convertAndSend(
+                WebSocketConfig.BOARD_URL + locationId,
+                boardModel
+        );
     }
 }
