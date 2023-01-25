@@ -233,7 +233,7 @@ public class LocationController extends BaseController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(queueTypeService.createQueueTypesInLocation(getLocalizer(request), getToken(request), locationId, createQueueTypeRequest));
+            return ResponseEntity.ok().body(queueTypeService.createQueueTypeInLocation(getLocalizer(request), getToken(request), locationId, createQueueTypeRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
@@ -248,7 +248,7 @@ public class LocationController extends BaseController {
             @PathVariable("queue_type_id") Long queueTypeId
     ) {
         try {
-            queueTypeService.deleteQueueTypesInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
+            queueTypeService.deleteQueueTypeInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

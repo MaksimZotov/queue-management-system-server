@@ -61,7 +61,8 @@ public enum Message {
     MAX_COLUMNS_MUST_NOT_BE_LESS_THAN_0,
     QUEUE_TYPE_DOES_NOT_EXIST,
     LOCATION_CONTAINS_CLIENTS,
-    QUEUE_CONTAINS_CLIENTS;
+    QUEUE_CONTAINS_CLIENTS,
+    ERROR_OCCURRED;
 
     public String toMessageId() {
         return name().toLowerCase();

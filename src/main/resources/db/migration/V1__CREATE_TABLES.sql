@@ -136,6 +136,7 @@ CREATE TABLE rights (
 CREATE TABLE history (
     id BIGSERIAL PRIMARY KEY,
     service_id BIGINT REFERENCES service (id) NOT NULL,
+    client_id BIGINT REFERENCES client (id) NOT NULL,
     start_time TIMESTAMP,
     end_time TIMESTAMP
 );

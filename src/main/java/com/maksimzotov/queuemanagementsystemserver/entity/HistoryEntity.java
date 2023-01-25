@@ -19,6 +19,8 @@ public class HistoryEntity {
 
     private Long serviceId;
 
+    private Long clientId;
+
     private Date startTime;
 
     private Date endTime;
