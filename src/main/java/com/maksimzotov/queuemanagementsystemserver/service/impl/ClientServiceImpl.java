@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -68,7 +69,7 @@ public class ClientServiceImpl implements ClientService {
         }
         Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
         ClientEntity clientEntity = clientRepo.save(getClientToAdd(localizer, locationId, addClientRequest, ClientStatusEntity.Status.RESERVED));
-
+        distributeClient(localizer, clientEntity, serviceIdsToOrderNumbers);
         return null;
     }
 
@@ -120,6 +121,31 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private void distributeClient(Localizer localizer, ClientEntity clientEntity, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
+        int minOrderNumber = Integer.MAX_VALUE;
+        Collection<Integer> orderNumbers = serviceIdsToOrderNumbers.values();
+        for (Integer orderNumber : orderNumbers) {
+            if (orderNumber < minOrderNumber) {
+                minOrderNumber = orderNumber;
+            }
+        }
+        List<Long> serviceIds = new ArrayList<>();
+        for (Map.Entry<Long, Integer> serviceIdTpOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
+            if (serviceIdTpOrderNumber.getValue() == minOrderNumber) {
+                serviceIds.add(serviceIdTpOrderNumber.getKey());
+            }
+        }
+        QueueEntity curQueueEntity = getCurrentQueue(localizer, serviceIds);
+        List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = serviceInQueueTypeRepo.findAllByQueueTypeId(curQueueEntity.getQueueTypeId());
+        List<Long> serviceIdsInQueueType = serviceInQueueTypeEntities.stream().map(ServiceInQueueTypeEntity::getServiceId).toList();
+
+        List<Long> servicesWithKnownQueue = serviceIds.stream()
+                .distinct()
+                .filter(serviceIdsInQueueType::contains)
+                .toList();
+
+        List<Long> servicesWithUnknownQueue = serviceIds;
+        servicesWithUnknownQueue.removeAll(servicesWithKnownQueue);
+
 
     }
 
@@ -147,10 +173,6 @@ public class ClientServiceImpl implements ClientService {
         return chosenQueueEntity;
     }
 
-    private void switchToNextQueue() {
-
-    }
-
     private Long estimateQueueWaitTime(QueueEntity queueEntity) {
         List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities =
                 clientInQueueToChosenServiceRepo.findAllByQueueId(queueEntity.getId());
@@ -162,7 +184,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private Long estimateServiceDuration(Long serviceId) {
-        return 0L;
+        // TODO
+        return 1000L;
+    }
+
+    private void switchToNextQueue() {
+        // TODO
     }
 
     @Override

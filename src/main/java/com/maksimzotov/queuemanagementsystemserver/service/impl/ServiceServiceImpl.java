@@ -119,10 +119,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ContainerForList<ServiceModel> getServicesInQueueType(Localizer localizer, Long queueTypeId) {
-        Optional<List<ServiceInQueueTypeEntity>> servicesInQueueType = serviceInQueueTypeRepo.findAllByQueueTypeId(
-                queueTypeId
-        );
-        List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = servicesInQueueType.get();
+        List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = serviceInQueueTypeRepo.findAllByQueueTypeId(queueTypeId);
         List<ServiceModel> serviceModels = new ArrayList<>();
         for (ServiceInQueueTypeEntity serviceInQueueTypeEntity : serviceInQueueTypeEntities) {
             Optional<ServiceEntity> service = serviceRepo.findById(serviceInQueueTypeEntity.getServiceId());

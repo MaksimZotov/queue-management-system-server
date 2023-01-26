@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ServiceInQueueTypeRepo extends JpaRepository<ServiceInQueueTypeEntity, ServiceInQueueTypeEntity> {
-    Optional<List<ServiceInQueueTypeEntity>> findAllByQueueTypeId(Long queueTypeId);
+    List<ServiceInQueueTypeEntity> findAllByQueueTypeId(Long queueTypeId);
     void deleteAllByQueueTypeId(Long queueTypeId);
     List<ServiceInQueueTypeEntity> findAllByServiceId(Long serviceId);
 }
