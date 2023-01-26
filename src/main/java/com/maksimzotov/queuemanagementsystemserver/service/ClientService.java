@@ -7,12 +7,12 @@ import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForCli
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface ClientService {
-    QueueStateForClient joinByClient(Localizer localizer, AddClientRequst addClientRequst) throws DescriptionException;
+    QueueStateForClient joinByClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest) throws DescriptionException;
     QueueStateForClient getQueueStateForClient(String email, String accessKey);
     QueueStateForClient rejoinByClient(Localizer localizer, String email) throws DescriptionException;
     QueueStateForClient confirmCodeByClient(Localizer localizer, String email, String code) throws DescriptionException;
     QueueStateForClient leaveByClient(Localizer localizer, String email, String accessKey) throws DescriptionException;
-    void addClientByEmployee(Localizer localizer, String accessToken, AddClientRequst addClientRequst) throws DescriptionException, AccountIsNotAuthorizedException;
+    void addClientByEmployee(Localizer localizer, String accessToken, Long locationId, AddClientRequst addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void serveClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     void notifyClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     void switchClientLateStateByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId, Boolean late) throws DescriptionException, AccountIsNotAuthorizedException;

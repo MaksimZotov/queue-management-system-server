@@ -34,7 +34,7 @@ public class ClientInQueue {
                 clientInQueueEntity.getOrderNumber(),
                 clientInQueueEntity.getPublicCode(),
                 clientEntity.getAccessKey(),
-                clientInQueueEntity.getStatus()
+                clientEntity.getStatus()
         );
     }
 }

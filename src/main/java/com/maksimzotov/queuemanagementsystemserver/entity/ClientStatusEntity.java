@@ -6,11 +6,11 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
-@Entity(name = "client_in_queue_status")
+@Entity(name = "client_status")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientInQueueStatusEntity {
+public class ClientStatusEntity {
 
     public enum Status {
         RESERVED,

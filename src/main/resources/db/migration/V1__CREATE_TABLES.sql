@@ -81,22 +81,23 @@ CREATE TABLE queue (
 );
 
 -- Client
+CREATE TABLE client_status (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(64) NOT NULL UNIQUE
+);
+INSERT INTO client_status VALUES
+    (1, 'RESERVED'),
+    (2, 'CONFIRMED'),
+    (3, 'LATE');
 CREATE TABLE client (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     email VARCHAR(64),
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR(64) NOT NULL,
-    access_key VARCHAR(4) NOT NULL
+    access_key VARCHAR(4) NOT NULL,
+    status VARCHAR(64) REFERENCES client_status (name) NOT NULL
 );
-CREATE TABLE client_in_queue_status (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL UNIQUE
-);
-INSERT INTO client_in_queue_status VALUES
-    (1, 'RESERVED'),
-    (2, 'CONFIRMED'),
-    (3, 'LATE');
 CREATE TABLE client_code (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     email VARCHAR(64) NOT NULL,
@@ -109,7 +110,6 @@ CREATE TABLE client_in_queue (
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
     order_number INTEGER,
     public_code INTEGER NOT NULL,
-    status VARCHAR(64) REFERENCES client_in_queue_status (name) NOT NULL,
     UNIQUE (queue_id, order_number)
 );
 CREATE TABLE client_to_chosen_service (
@@ -122,7 +122,8 @@ CREATE TABLE client_to_chosen_service (
 CREATE TABLE client_in_queue_to_chosen_service (
     client_in_queue_id BIGINT REFERENCES client_in_queue (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
-    PRIMARY KEY (client_in_queue_id, service_id)
+    queue_id BIGINT REFERENCES queue (id) NOT NULL,
+    PRIMARY KEY (client_in_queue_id, service_id, queue_id)
 );
 
 -- Rights

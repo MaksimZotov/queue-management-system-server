@@ -37,10 +37,11 @@ public class ClientController extends BaseController {
     @PostMapping("/join")
     public ResponseEntity<?> joinByClient(
             HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst
+            @RequestBody AddClientRequst addClientRequst,
+            @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.joinByClient(getLocalizer(request), addClientRequst));
+            return ResponseEntity.ok().body(clientService.joinByClient(getLocalizer(request), locationId, addClientRequst));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -87,10 +88,11 @@ public class ClientController extends BaseController {
     @PostMapping("/add")
     public ResponseEntity<?> addClientByEmployee(
             HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst
+            @RequestBody AddClientRequst addClientRequst,
+            @RequestParam("location_id") Long locationId
     ) {
         try {
-            clientService.addClientByEmployee(getLocalizer(request), getToken(request), addClientRequst);
+            clientService.addClientByEmployee(getLocalizer(request), getToken(request), locationId, addClientRequst);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

@@ -28,4 +28,6 @@ public class ClientEntity {
     private String lastName;
 
     private String accessKey;
+
+    private String status;
 }

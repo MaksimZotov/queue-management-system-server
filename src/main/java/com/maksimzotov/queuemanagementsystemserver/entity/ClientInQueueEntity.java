@@ -24,6 +24,4 @@ public class ClientInQueueEntity {
     private Integer orderNumber;
 
     private Integer publicCode;
-
-    private String status;
 }
