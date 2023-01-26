@@ -6,6 +6,7 @@ import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity(name = "client_to_chosen_service")
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClientToChosenServiceEntity implements Serializable {
@@ -23,6 +24,4 @@ public class ClientToChosenServiceEntity implements Serializable {
     private PrimaryKey primaryKey;
 
     private Integer orderNumber;
-
-    private Boolean queueIsKnown;
 }

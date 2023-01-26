@@ -14,9 +14,6 @@ import java.io.Serializable;
 public class ClientInQueueEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     private Long clientId;
 
     private Long queueId;

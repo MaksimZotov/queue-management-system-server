@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -33,6 +32,7 @@ public class ClientServiceImpl implements ClientService {
     private final ServiceInLocationRepo serviceInLocationRepo;
     private final ServiceInQueueTypeRepo serviceInQueueTypeRepo;
     private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
+    private final ClientToChosenServiceRepo clientToChosenServiceRepo;
 
     public ClientServiceImpl(
             AccountService accountService,
@@ -46,7 +46,8 @@ public class ClientServiceImpl implements ClientService {
             ServicesSequenceInLocationRepo servicesSequenceInLocationRepo,
             ServiceInLocationRepo serviceInLocationRepo,
             ServiceInQueueTypeRepo serviceInQueueTypeRepo,
-            ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo
+            ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo,
+            ClientToChosenServiceRepo clientToChosenServiceRepo
     ) {
         this.accountService = accountService;
         this.rightsService = rightsService;
@@ -60,6 +61,7 @@ public class ClientServiceImpl implements ClientService {
         this.serviceInLocationRepo = serviceInLocationRepo;
         this.serviceInQueueTypeRepo = serviceInQueueTypeRepo;
         this.clientInQueueToChosenServiceRepo = clientInQueueToChosenServiceRepo;
+        this.clientToChosenServiceRepo = clientToChosenServiceRepo;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class ClientServiceImpl implements ClientService {
         }
         Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
         ClientEntity clientEntity = clientRepo.save(getClientToAdd(localizer, locationId, addClientRequest, ClientStatusEntity.Status.RESERVED));
-        distributeClient(localizer, clientEntity, serviceIdsToOrderNumbers);
+        distributeClient(clientEntity.getId(), serviceIdsToOrderNumbers);
         return null;
     }
 
@@ -102,7 +104,7 @@ public class ClientServiceImpl implements ClientService {
         rightsService.checkRightsInLocation(accountService.getUsername(accessToken), locationId);
         Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
         ClientEntity clientEntity = clientRepo.save(getClientToAdd(localizer, locationId, addClientRequest, ClientStatusEntity.Status.CONFIRMED));
-        distributeClient(localizer, clientEntity, serviceIdsToOrderNumbers);
+        distributeClient(clientEntity.getId(), serviceIdsToOrderNumbers);
     }
 
     private ClientEntity getClientToAdd(Localizer localizer, Long locationId, AddClientRequst addClientRequest, ClientStatusEntity.Status status) throws DescriptionException {
@@ -120,7 +122,7 @@ public class ClientServiceImpl implements ClientService {
         );
     }
 
-    private void distributeClient(Localizer localizer, ClientEntity clientEntity, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
+    private void distributeClient(Long clientId, Map<Long, Integer> serviceIdsToOrderNumbers) {
         int minOrderNumber = Integer.MAX_VALUE;
         Collection<Integer> orderNumbers = serviceIdsToOrderNumbers.values();
         for (Integer orderNumber : orderNumbers) {
@@ -134,22 +136,49 @@ public class ClientServiceImpl implements ClientService {
                 serviceIds.add(serviceIdTpOrderNumber.getKey());
             }
         }
-        QueueEntity curQueueEntity = getCurrentQueue(localizer, serviceIds);
+        QueueEntity curQueueEntity = getCurrentQueue(serviceIds);
         List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = serviceInQueueTypeRepo.findAllByQueueTypeId(curQueueEntity.getQueueTypeId());
         List<Long> serviceIdsInQueueType = serviceInQueueTypeEntities.stream().map(ServiceInQueueTypeEntity::getServiceId).toList();
 
-        List<Long> servicesWithKnownQueue = serviceIds.stream()
+        List<Long> serviceIdsWithKnownQueue = serviceIds.stream()
                 .distinct()
                 .filter(serviceIdsInQueueType::contains)
                 .toList();
 
-        List<Long> servicesWithUnknownQueue = serviceIds;
-        servicesWithUnknownQueue.removeAll(servicesWithKnownQueue);
+        List<Long> serviceIdsWithUnknownQueue = serviceIds;
+        serviceIdsWithUnknownQueue.removeAll(serviceIdsWithKnownQueue);
 
-
+        clientInQueueRepo.save(
+                new ClientInQueueEntity(
+                        clientId,
+                        curQueueEntity.getId(),
+                        null,
+                        null
+                )
+        );
+        for (Long serviceId : serviceIdsWithUnknownQueue) {
+            clientToChosenServiceRepo.save(
+                    new ClientToChosenServiceEntity(
+                            new ClientToChosenServiceEntity.PrimaryKey(
+                                    clientId,
+                                    serviceId
+                            ),
+                            serviceIdsToOrderNumbers.get(serviceId)
+                    )
+            );
+        }
+        for (Long serviceId : serviceIdsWithKnownQueue) {
+            clientInQueueToChosenServiceRepo.save(
+                    new ClientInQueueToChosenServiceEntity(
+                            clientId,
+                            serviceId,
+                            curQueueEntity.getId()
+                    )
+            );
+        }
     }
 
-    private QueueEntity getCurrentQueue(Localizer localizer, List<Long> serviceIds) throws DescriptionException {
+    private QueueEntity getCurrentQueue(List<Long> serviceIds) {
         Set<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = new HashSet<>();
         for (Long serviceId : serviceIds) {
             serviceInQueueTypeEntities.addAll(serviceInQueueTypeRepo.findAllByServiceId(serviceId));
@@ -188,8 +217,22 @@ public class ClientServiceImpl implements ClientService {
         return 1000L;
     }
 
-    private void switchToNextQueue() {
-        // TODO
+    private void switchToNextQueue(Long clientId) {
+        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
+        clientInQueueRepo.deleteByClientId(clientId);
+        if (clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
+            Map<Long, Integer> serviceIdsToOrderNumbers = getCurrentServiceIdsToOrderNumbers(clientId);
+            distributeClient(clientId, serviceIdsToOrderNumbers);
+        }
+    }
+
+    private Map<Long, Integer> getCurrentServiceIdsToOrderNumbers(Long clientId) {
+        Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();
+        List<ClientToChosenServiceEntity> services = clientToChosenServiceRepo.findAllByClientId(clientId);
+        for (ClientToChosenServiceEntity service : services) {
+            serviceIdsToOrderNumbers.put(service.getPrimaryKey().getServiceId(), service.getOrderNumber());
+        }
+        return serviceIdsToOrderNumbers;
     }
 
     @Override

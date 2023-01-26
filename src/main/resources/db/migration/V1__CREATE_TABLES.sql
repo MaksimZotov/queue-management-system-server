@@ -105,12 +105,12 @@ CREATE TABLE client_code (
     PRIMARY KEY (client_id, email)
 );
 CREATE TABLE client_in_queue (
-    id BIGSERIAL PRIMARY KEY,
     client_id BIGINT REFERENCES client (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
     order_number INTEGER,
     public_code INTEGER NOT NULL,
-    UNIQUE (queue_id, order_number)
+    UNIQUE (queue_id, order_number),
+    PRIMARY KEY (client_id)
 );
 CREATE TABLE client_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
@@ -120,7 +120,7 @@ CREATE TABLE client_to_chosen_service (
     PRIMARY KEY (client_id, service_id)
 );
 CREATE TABLE client_in_queue_to_chosen_service (
-    client_in_queue_id BIGINT REFERENCES client_in_queue (id) NOT NULL,
+    client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
     PRIMARY KEY (client_in_queue_id, service_id, queue_id)

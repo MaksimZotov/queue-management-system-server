@@ -17,7 +17,7 @@ import java.io.Serializable;
 public class ClientInQueueToChosenServiceEntity implements Serializable {
 
     @Id
-    private Long clientInQueueId;
+    private Long clientId;
 
     @Id
     private Long serviceId;
