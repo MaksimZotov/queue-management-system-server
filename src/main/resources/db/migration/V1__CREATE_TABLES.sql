@@ -138,5 +138,6 @@ CREATE TABLE history (
     service_id BIGINT REFERENCES service (id) NOT NULL,
     client_id BIGINT REFERENCES client (id) NOT NULL,
     start_time TIMESTAMP,
-    end_time TIMESTAMP
+    end_time TIMESTAMP,
+    UNIQUE (service_id, client_id, start_time, end_time)
 );
