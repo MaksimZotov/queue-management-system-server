@@ -32,25 +32,6 @@ public class QueueStateForClient {
     String accessKey;
     String status;
 
-    @JsonProperty("is_paused")
-    Boolean isPaused;
-
-    public static QueueStateForClient toModel(QueueState queueState) {
-        return new QueueStateForClient(
-                false,
-                queueState.getName(),
-                queueState.getClients().size(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                queueState.getPaused()
-        );
-    }
-
     public static QueueStateForClient toModel(QueueState queueState, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
         String accessKey = null;
         if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
@@ -66,8 +47,7 @@ public class QueueStateForClient {
                 clientInQueueEntity.getOrderNumber() - 1,
                 clientInQueueEntity.getPublicCode(),
                 accessKey,
-                clientEntity.getStatus(),
-                queueState.getPaused()
+                clientEntity.getStatus()
         );
     }
 }

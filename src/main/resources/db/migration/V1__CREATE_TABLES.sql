@@ -98,12 +98,6 @@ CREATE TABLE client (
     access_key VARCHAR(4) NOT NULL,
     status VARCHAR(64) REFERENCES client_status (name) NOT NULL
 );
-CREATE TABLE client_code (
-    client_id BIGINT REFERENCES client (id) NOT NULL,
-    email VARCHAR(64) NOT NULL,
-    code VARCHAR(4) NOT NULL,
-    PRIMARY KEY (client_id, email)
-);
 CREATE TABLE client_in_queue (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
@@ -123,7 +117,7 @@ CREATE TABLE client_in_queue_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
-    PRIMARY KEY (client_in_queue_id, service_id, queue_id)
+    PRIMARY KEY (client_id, service_id, queue_id)
 );
 
 -- Rights

@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ClientToChosenServiceRepo extends JpaRepository<ClientToChosenServiceEntity, ClientToChosenServiceEntity.PrimaryKey> {
-    List<ClientToChosenServiceEntity> findAllByClientId(Long clientId);
+    List<ClientToChosenServiceEntity> findAllByPrimaryKeyClientId(Long clientId);
     Boolean existsByPrimaryKeyClientId(Long clientId);
+    void deleteByPrimaryKeyServiceId(Long serviceId);
+    void deleteByPrimaryKeyClientId(Long clientId);
 }

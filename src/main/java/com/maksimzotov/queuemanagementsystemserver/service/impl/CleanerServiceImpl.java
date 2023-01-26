@@ -1,8 +1,8 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -23,11 +24,12 @@ public class CleanerServiceImpl implements CleanerService {
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final ClientInQueueRepo clientInQueueRepo;
-    private final ClientCodeRepo clientCodeRepo;
     private final ClientRepo clientRepo;
+    private final ClientToChosenServiceRepo clientToChosenServiceRepo;
+    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
 
     @Override
-    public void deleteNonActivatedUser(String username) {
+    public void deleteNonConfirmedUser(String username) {
         if (registrationCodeRepo.existsByUsername(username)) {
             registrationCodeRepo.deleteById(username);
             accountRepo.deleteByUsername(username);
@@ -35,41 +37,22 @@ public class CleanerServiceImpl implements CleanerService {
     }
 
     @Override
-    public void deleteJoinClientCode(Long queueId, String email) {
-        ClientCodeEntity.PrimaryKey primaryKey = new ClientCodeEntity.PrimaryKey(
-                queueId,
-                email
-        );
-        if (!clientCodeRepo.existsById(primaryKey)) {
-            return;
-        }
-        clientCodeRepo.deleteById(primaryKey);
+    public void deleteNonConfirmedClient(Long clientId, String email) {
         Optional<ClientEntity> client = clientRepo.findByEmail(email);
         if (client.isEmpty()) {
             return;
         }
         ClientEntity clientEntity = client.get();
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByQueueIdAndClientId(
-                queueId,
-                clientEntity.getId()
-        );
-        if (clientInQueue.isEmpty()) {
+        if (!Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.RESERVED.name())) {
             return;
         }
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
+        clientInQueueRepo.updateClientsOrderNumberInQueue(clientId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByClientId(clientEntity.getId());
-        queueService.updateCurrentQueueState(queueId);
-    }
-
-    @Override
-    public void deleteRejoinClientCode(Long queueId, String email) {
-        ClientCodeEntity.PrimaryKey primaryKey = new ClientCodeEntity.PrimaryKey(
-                queueId,
-                email
-        );
-        if (clientCodeRepo.existsById(primaryKey)) {
-            clientCodeRepo.deleteById(primaryKey);
-        }
+        clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
+        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
+        clientRepo.deleteById(clientId);
+        queueService.updateCurrentQueueState(clientId);
     }
 }

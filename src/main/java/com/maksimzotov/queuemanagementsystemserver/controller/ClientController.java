@@ -1,9 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
-import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
@@ -26,34 +24,28 @@ public class ClientController extends BaseController {
         this.clientService = clientService;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getQueueStateForClient(
-            @RequestParam("email") String email,
-            @RequestParam("access_key") String accessKey
-    ) {
-        return ResponseEntity.ok().body(clientService.getQueueStateForClient(email, accessKey));
-    }
-
-    @PostMapping("/join")
-    public ResponseEntity<?> joinByClient(
+    @PostMapping("/add")
+    public ResponseEntity<?> addClient(
             HttpServletRequest request,
             @RequestBody AddClientRequst addClientRequst,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.joinByClient(getLocalizer(request), locationId, addClientRequst));
+            clientService.addClient(getLocalizer(request), locationId, addClientRequst);
+            return ResponseEntity.ok().build();
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/rejoin")
-    public ResponseEntity<?> rejoinByClient(
+    @GetMapping
+    public ResponseEntity<?> getQueueStateForClient(
             HttpServletRequest request,
-            @RequestParam String email
+            @RequestParam("client_id") Long clientId,
+            @RequestParam("access_key") String accessKey
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.rejoinByClient(getLocalizer(request), email));
+            return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId, accessKey));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -62,11 +54,11 @@ public class ClientController extends BaseController {
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmCodeByClient(
             HttpServletRequest request,
-            @RequestParam String email,
-            @RequestParam String code
+            @RequestParam("client_id") Long clientId,
+            @RequestParam("access_key") String accessKey
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.confirmCodeByClient(getLocalizer(request), email, code));
+            return ResponseEntity.ok().body(clientService.confirmAccessKeyByClient(getLocalizer(request), clientId, accessKey));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -75,27 +67,11 @@ public class ClientController extends BaseController {
     @PostMapping("/leave")
     public ResponseEntity<?> leaveByClient(
             HttpServletRequest request,
-            @RequestParam String email,
+            @RequestParam("client_id") Long clientId,
             @RequestParam("access_key") String accessKey
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), email, accessKey));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/add")
-    public ResponseEntity<?> addClientByEmployee(
-            HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst,
-            @RequestParam("location_id") Long locationId
-    ) {
-        try {
-            clientService.addClientByEmployee(getLocalizer(request), getToken(request), locationId, addClientRequst);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+            return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), clientId, accessKey));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

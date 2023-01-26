@@ -27,7 +27,7 @@ public class ClientInQueue {
 
     public static ClientInQueue toModel(ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
         return new ClientInQueue(
-                clientInQueueEntity.getId(),
+                clientEntity.getId(),
                 clientEntity.getEmail(),
                 clientEntity.getFirstName(),
                 clientEntity.getLastName(),

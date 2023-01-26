@@ -109,7 +109,7 @@ public class AccountServiceImpl implements AccountService {
         );
 
         delayedJobService.schedule(
-                () -> cleanerService.deleteNonActivatedUser(account.getUsername()),
+                () -> cleanerService.deleteNonConfirmedUser(account.getUsername()),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
         );
