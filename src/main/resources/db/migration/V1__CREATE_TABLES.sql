@@ -128,11 +128,15 @@ CREATE TABLE rights (
 );
 
 -- Distribution
-CREATE TABLE history (
+CREATE TABLE history_item (
     id BIGSERIAL PRIMARY KEY,
-    service_id BIGINT REFERENCES service (id) NOT NULL,
     client_id BIGINT REFERENCES client (id) NOT NULL,
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    UNIQUE (service_id, client_id, start_time, end_time)
+    UNIQUE (client_id, start_time, end_time)
+);
+CREATE TABLE services_in_history_item (
+    id BIGSERIAL PRIMARY KEY,
+    history_item_id BIGINT REFERENCES history_item (id) NOT NULL,
+    service_id BIGINT REFERENCES service (id) NOT NULL
 );

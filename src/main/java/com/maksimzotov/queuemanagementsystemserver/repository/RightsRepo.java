@@ -8,6 +8,5 @@ import java.util.Optional;
 
 public interface RightsRepo extends JpaRepository<RightsEntity, RightsEntity> {
     Optional<List<RightsEntity>> findAllByLocationId(Long locationId);
-
     void deleteAllByLocationId(Long locationId);
 }

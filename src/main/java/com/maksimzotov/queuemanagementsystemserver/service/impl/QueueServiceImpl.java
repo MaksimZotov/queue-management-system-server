@@ -95,8 +95,7 @@ public class QueueServiceImpl implements QueueService {
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        List<ClientInQueueEntity> clientsEntities = clients.get();
+        List<ClientInQueueEntity> clientsEntities = clientInQueueRepo.findAllByQueueId(queueId);
 
         return new QueueStateModel(
                 queueId,
@@ -120,8 +119,7 @@ public class QueueServiceImpl implements QueueService {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         QueueEntity queueEntity = queue.get();
 
-        Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
-        List<ClientInQueueEntity> clientsEntities = clients.get();
+        List<ClientInQueueEntity> clientsEntities = clientInQueueRepo.findAllByQueueId(queueId);
 
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();

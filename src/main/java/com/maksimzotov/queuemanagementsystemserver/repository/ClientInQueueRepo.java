@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ClientInQueueRepo extends JpaRepository<ClientInQueueEntity, Long> {
-    Optional<List<ClientInQueueEntity>> findAllByQueueId(Long queueId);
+
+    List<ClientInQueueEntity> findAllByQueueId(Long queueId);
 
     @Modifying
     @Query("UPDATE client_in_queue SET orderNumber = orderNumber - 1 WHERE queue_id = :p_queue_id AND order_number > :p_order_number")
@@ -18,11 +19,7 @@ public interface ClientInQueueRepo extends JpaRepository<ClientInQueueEntity, Lo
 
     Optional<ClientInQueueEntity> findByClientId(Long clientId);
 
-    Boolean existsByQueueIdAndClientId(Long queueId, Long clientId);
-
     Boolean existsByQueueId(Long queueId);
-
-    void deleteAllByQueueId(Long queueId);
 
     void deleteByClientId(Long clientId);
 }
