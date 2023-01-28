@@ -331,6 +331,14 @@ public class ClientServiceImpl implements ClientService {
                 )
         );
 
+        HistoryItemEntity historyItemEntity = historyItemRepo.save(
+                new HistoryItemEntity(
+                        null,
+                        clientId,
+                        new Date(),
+                        null
+                )
+        );
         List<ServiceInQueueTypeEntity> serviceInQueueTypeEntities = serviceInQueueTypeRepo.findAllByQueueTypeId(queueToAssign.getQueueTypeId());
         List<Long> serviceIdsInQueueType = serviceInQueueTypeEntities.stream().map(ServiceInQueueTypeEntity::getServiceId).toList();
         List<Long> serviceIdsWithKnownQueue = serviceIds.stream().distinct().filter(serviceIdsInQueueType::contains).toList();
@@ -340,6 +348,13 @@ public class ClientServiceImpl implements ClientService {
                             clientId,
                             serviceId,
                             queueToAssign.getId()
+                    )
+            );
+            servicesInHistoryItemRepo.save(
+                    new ServicesInHistoryItemEntity(
+                            null,
+                            historyItemEntity.getId(),
+                            serviceId
                     )
             );
         }
@@ -430,6 +445,11 @@ public class ClientServiceImpl implements ClientService {
         }
         clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
         clientInQueueRepo.deleteByClientId(clientId);
+
+        HistoryItemEntity historyItemEntity = historyItemRepo.findByClientIdAndEndTimeIsNull(clientId).get();
+        historyItemEntity.setEndTime(new Date());
+        historyItemRepo.save(historyItemEntity);
+
         ClientEntity clientEntity = clientRepo.findById(clientId).get();
         if (clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
             Map<Long, Integer> serviceIdsToOrderNumbers = getServiceIdsToOrderNumbersForClient(clientId);
