@@ -37,6 +37,18 @@ public class QueueController extends BaseController {
         this.clientService = clientService;
     }
 
+    @GetMapping()
+    public ResponseEntity<?> getQueues(
+            HttpServletRequest request,
+            @RequestParam(name = "location_id") Long locationId
+    ) {
+        try {
+            return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
     @PostMapping("/create")
     public ResponseEntity<?> createQueue(
             HttpServletRequest request,
@@ -62,18 +74,6 @@ public class QueueController extends BaseController {
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @GetMapping()
-    public ResponseEntity<?> getQueues(
-            HttpServletRequest request,
-            @RequestParam(name = "location_id") Long locationId
-    ) {
-        try {
-            return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -123,36 +123,6 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/pause")
-    public ResponseEntity<?> pauseAll(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            queueService.changePausedStateInLocation(getLocalizer(request), getToken(request), locationId, true);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/start")
-    public ResponseEntity<?> startAll(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            queueService.changePausedStateInLocation(getLocalizer(request), getToken(request), locationId, false);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
     @PostMapping("/{queue_id}/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
@@ -172,8 +142,8 @@ public class QueueController extends BaseController {
     @PostMapping("/{queue_id}/notify")
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
-            @PathVariable(name = "queue_id") Long queueId,
-            @RequestParam(name = "client_id") Long clientId
+            @PathVariable("queue_id") Long queueId,
+            @RequestParam("client_id") Long clientId
     ) {
         try {
             clientService.notifyClientInQueueByEmployee(getLocalizer(request), getToken(request), queueId, clientId);
@@ -189,7 +159,7 @@ public class QueueController extends BaseController {
     public ResponseEntity<?> switchClientLateState(
             HttpServletRequest request,
             @PathVariable("queue_id") Long queueId,
-            @RequestParam(name = "client_id") Long clientId,
+            @RequestParam("client_id") Long clientId,
             @RequestParam Boolean late
     ) {
         try {

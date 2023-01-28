@@ -7,10 +7,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
-import com.maksimzotov.queuemanagementsystemserver.model.services.SetServicesInQueueTypeRequest;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
-import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -19,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -38,7 +35,7 @@ public class QueueServiceImpl implements QueueService {
     private final QueueTypeInLocationRepo queueTypeInLocationRepo;
 
     @Override
-    public Queue createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountUsername = accountService.getUsername(accessToken);
 
         if (!rightsService.checkRightsInLocation(accountUsername, locationId)) {
@@ -65,7 +62,7 @@ public class QueueServiceImpl implements QueueService {
         );
         locationService.updateLocationBoard(locationId);
 
-        return Queue.toModel(queueEntity, true);
+        return QueueModel.toModel(queueEntity, true);
     }
 
     @Override
@@ -79,20 +76,20 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ContainerForList<Queue> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
         Optional<List<QueueEntity>> queuesEntities = queueRepo.findAllByLocationId(locationId);
         if (queuesEntities.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         return new ContainerForList<>(
                 queuesEntities.get().stream()
-                        .map((item) -> Queue.toModel(item, rightsService.checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)))
+                        .map((item) -> QueueModel.toModel(item, rightsService.checkRightsInLocation(accountService.getUsernameOrNull(accessToken), locationId)))
                         .toList()
         );
     }
 
     @Override
-    public QueueState getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
         QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
 
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
@@ -101,7 +98,7 @@ public class QueueServiceImpl implements QueueService {
         Optional<List<ClientInQueueEntity>> clients = clientInQueueRepo.findAllByQueueId(queueId);
         List<ClientInQueueEntity> clientsEntities = clients.get();
 
-        return new QueueState(
+        return new QueueStateModel(
                 queueId,
                 queueEntity.getLocationId(),
                 queueEntity.getName(),
@@ -119,7 +116,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueState getCurrentQueueState(Long queueId) {
+    public QueueStateModel getCurrentQueueState(Long queueId) {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         QueueEntity queueEntity = queue.get();
 
@@ -129,7 +126,7 @@ public class QueueServiceImpl implements QueueService {
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
 
-        return new QueueState(
+        return new QueueStateModel(
                 queueId,
                 queueEntity.getLocationId(),
                 queueEntity.getName(),
@@ -147,11 +144,11 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueState updateCurrentQueueState(Long queueId) {
-        QueueState queueState = getCurrentQueueState(queueId);
-        messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueState);
-        locationService.updateLocationBoard(queueState.getLocationId());
-        return queueState;
+    public QueueStateModel updateCurrentQueueState(Long queueId) {
+        QueueStateModel queueStateModel = getCurrentQueueState(queueId);
+        messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueStateModel);
+        locationService.updateLocationBoard(queueStateModel.getLocationId());
+        return queueStateModel;
     }
 
     @Override
@@ -161,30 +158,6 @@ public class QueueServiceImpl implements QueueService {
         queueEntity.setPaused(paused);
         queueRepo.save(queueEntity);
         updateCurrentQueueState(queueId);
-    }
-
-    @Override
-    public void changePausedStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
-        Boolean hasRights = rightsService.checkRightsInLocation(
-                accountService.getUsername(accessToken),
-                locationId
-        );
-        if (!hasRights) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        }
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
-        List<QueueEntity> modifiedQueues = queues
-                .get()
-                .stream()
-                .peek(item -> item.setPaused(paused))
-                .toList();
-        queueRepo.saveAll(modifiedQueues);
-        for (QueueEntity entity: modifiedQueues) {
-            updateCurrentQueueState(entity.getId());
-        }
     }
 
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {

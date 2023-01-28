@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientStatusEntity;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
 import lombok.Value;
 
 import java.util.Objects;
@@ -32,15 +32,15 @@ public class QueueStateForClient {
     String accessKey;
     String status;
 
-    public static QueueStateForClient toModel(QueueState queueState, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
+    public static QueueStateForClient toModel(QueueStateModel queueStateModel, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
         String accessKey = null;
         if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
             accessKey = clientEntity.getAccessKey();
         }
         return new QueueStateForClient(
                 true,
-                queueState.getName(),
-                queueState.getClients().size(),
+                queueStateModel.getName(),
+                queueStateModel.getClients().size(),
                 clientEntity.getEmail(),
                 clientEntity.getFirstName(),
                 clientEntity.getLastName(),

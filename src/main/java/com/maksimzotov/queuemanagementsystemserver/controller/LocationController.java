@@ -5,10 +5,12 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServiceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.services.CreateServicesSequenceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.type.CreateQueueTypeRequest;
+import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueTypeService;
 import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
@@ -27,17 +29,20 @@ public class LocationController extends BaseController {
     private final LocationService locationService;
     private final ServiceService serviceService;
     private final QueueTypeService queueTypeService;
+    private final ClientService clientService;
 
     public LocationController(
             MessageSource messageSource,
             LocationService locationService,
             ServiceService serviceService,
-            QueueTypeService queueTypeService
+            QueueTypeService queueTypeService,
+            ClientService clientService
     ) {
         super(messageSource);
         this.locationService = locationService;
         this.serviceService = serviceService;
         this.queueTypeService = queueTypeService;
+        this.clientService = clientService;
     }
 
     @GetMapping()
@@ -128,7 +133,37 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/{location_id}/service")
+    @PostMapping("/{location_id}/pause")
+    public ResponseEntity<?> pause(
+            HttpServletRequest request,
+            @PathVariable("location_id") Long locationId
+    ) {
+        try {
+            locationService.changePausedStateInLocation(getLocalizer(request), getToken(request), locationId, true);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{location_id}/start")
+    public ResponseEntity<?> start(
+            HttpServletRequest request,
+            @PathVariable("location_id") Long locationId
+    ) {
+        try {
+            locationService.changePausedStateInLocation(getLocalizer(request), getToken(request), locationId, false);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @GetMapping("/{location_id}/services")
     public ResponseEntity<?> getServicesInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
@@ -140,7 +175,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @PostMapping("/{location_id}/service/create")
+    @PostMapping("/{location_id}/services/create")
     public ResponseEntity<?> createServiceInLocation(
             HttpServletRequest request,
             @RequestBody CreateServiceRequest createServiceRequest,
@@ -155,7 +190,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @DeleteMapping("/{location_id}/service/{service_id}/delete")
+    @DeleteMapping("/{location_id}/services/{service_id}/delete")
     public ResponseEntity<?> deleteServiceInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId,
@@ -171,7 +206,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/{location_id}/sequence")
+    @GetMapping("/{location_id}/sequences")
     public ResponseEntity<?> getServicesSequencesInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
@@ -179,7 +214,7 @@ public class LocationController extends BaseController {
         return ResponseEntity.ok().body(serviceService.getServicesSequencesInLocation(getLocalizer(request), locationId));
     }
 
-    @PostMapping("/{location_id}/sequence/create")
+    @PostMapping("/{location_id}/sequences/create")
     public ResponseEntity<?> createServicesSequenceInLocation(
             HttpServletRequest request,
             @RequestBody CreateServicesSequenceRequest createServicesSequenceRequest,
@@ -194,7 +229,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @DeleteMapping("/{location_id}/sequence/{services_sequence_id}/delete")
+    @DeleteMapping("/{location_id}/sequences/{services_sequence_id}/delete")
     public ResponseEntity<?> deleteServicesSequenceInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId,
@@ -210,7 +245,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/{location_id}/type")
+    @GetMapping("/{location_id}/types")
     public ResponseEntity<?> getQueueTypesInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
@@ -222,7 +257,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @PostMapping("/{location_id}/type/create")
+    @PostMapping("/{location_id}/types/create")
     public ResponseEntity<?> createQueueTypeInLocation(
             HttpServletRequest request,
             @RequestBody CreateQueueTypeRequest createQueueTypeRequest,
@@ -237,7 +272,7 @@ public class LocationController extends BaseController {
         }
     }
 
-    @DeleteMapping("/{location_id}/type/{queue_type_id}/delete")
+    @DeleteMapping("/{location_id}/types/{queue_type_id}/delete")
     public ResponseEntity<?> deleteQueueTypeInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId,
@@ -249,6 +284,20 @@ public class LocationController extends BaseController {
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         }  catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{location_id}/clients/add")
+    public ResponseEntity<?> addClient(
+            HttpServletRequest request,
+            @RequestBody AddClientRequst addClientRequst,
+            @PathVariable("location_id") Long locationId
+    ) {
+        try {
+            clientService.addClient(getLocalizer(request), locationId, addClientRequst);
+            return ResponseEntity.ok().build();
+        } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }

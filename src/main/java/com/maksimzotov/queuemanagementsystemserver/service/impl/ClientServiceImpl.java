@@ -6,13 +6,14 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +45,7 @@ public class ClientServiceImpl implements ClientService {
             AccountService accountService,
             RightsService rightsService,
             MailService mailService,
-            QueueService queueService,
+            @Lazy QueueService queueService,
             DelayedJobService delayedJobService,
             CleanerService cleanerService,
             ClientInQueueRepo clientInQueueRepo,
@@ -90,8 +91,8 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        QueueState queueState = queueService.getCurrentQueueState(clientInQueueEntity.getQueueId());
-        return QueueStateForClient.toModel(queueState, clientInQueueEntity, clientEntity);
+        QueueStateModel queueStateModel = queueService.getCurrentQueueState(clientInQueueEntity.getQueueId());
+        return QueueStateForClient.toModel(queueStateModel, clientInQueueEntity, clientEntity);
     }
 
     @Override

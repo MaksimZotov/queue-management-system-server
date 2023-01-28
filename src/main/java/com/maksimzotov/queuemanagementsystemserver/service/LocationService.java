@@ -18,4 +18,5 @@ public interface LocationService {
     Location changeMaxColumns(Localizer localizer, String accessToken, Long locationId, Integer maxColumns) throws DescriptionException, AccountIsNotAuthorizedException;
     BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException;
     void updateLocationBoard(Long locationId);
+    void changePausedStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException;
 }

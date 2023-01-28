@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class QueueState {
+public class QueueStateModel {
     private Long id;
     private Long locationId;
     private String name;

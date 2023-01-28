@@ -15,9 +15,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
+import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,8 @@ public class LocationServiceImpl implements LocationService {
 
     private final AccountService accountService;
     private final RightsService rightsService;
+    @Lazy
+    private final QueueService queueService;
     private final LocationRepo locationRepo;
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
@@ -162,5 +166,29 @@ public class LocationServiceImpl implements LocationService {
                 WebSocketConfig.BOARD_URL + locationId,
                 boardModel
         );
+    }
+
+    @Override
+    public void changePausedStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
+        Boolean hasRights = rightsService.checkRightsInLocation(
+                accountService.getUsername(accessToken),
+                locationId
+        );
+        if (!hasRights) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
+        if (queues.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        List<QueueEntity> modifiedQueues = queues
+                .get()
+                .stream()
+                .peek(item -> item.setPaused(paused))
+                .toList();
+        queueRepo.saveAll(modifiedQueues);
+        for (QueueEntity entity: modifiedQueues) {
+            queueService.updateCurrentQueueState(entity.getId());
+        }
     }
 }

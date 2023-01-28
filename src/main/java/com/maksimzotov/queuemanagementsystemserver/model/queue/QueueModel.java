@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Queue {
+public class QueueModel {
 
     private Long id;
     private String name;
@@ -17,8 +17,8 @@ public class Queue {
     private Boolean paused;
 
 
-    public static Queue toModel(QueueEntity entity, Boolean hasRights) {
-        return new Queue(
+    public static QueueModel toModel(QueueEntity entity, Boolean hasRights) {
+        return new QueueModel(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),

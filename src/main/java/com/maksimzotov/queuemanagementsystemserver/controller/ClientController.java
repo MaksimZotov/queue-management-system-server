@@ -3,7 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.controller;
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
@@ -24,20 +23,6 @@ public class ClientController extends BaseController {
         this.clientService = clientService;
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addClient(
-            HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst,
-            @RequestParam("location_id") Long locationId
-    ) {
-        try {
-            clientService.addClient(getLocalizer(request), locationId, addClientRequst);
-            return ResponseEntity.ok().build();
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
     @GetMapping
     public ResponseEntity<?> getQueueStateForClient(
             HttpServletRequest request,
@@ -52,7 +37,7 @@ public class ClientController extends BaseController {
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmCodeByClient(
+    public ResponseEntity<?> confirmAccessKeyByClient(
             HttpServletRequest request,
             @RequestParam("client_id") Long clientId,
             @RequestParam("access_key") String accessKey
