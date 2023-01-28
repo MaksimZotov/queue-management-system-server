@@ -387,6 +387,11 @@ public class ClientServiceImpl implements ClientService {
 
         List<ServicesInHistoryItemEntity> servicesInHistoryItemEntities = servicesInHistoryItemRepo.findAll();
 
+        long maxDuration = serviceRepo.findAllById(serviceIds)
+                .stream()
+                .map(ServiceEntity::getMaxDuration)
+                .reduce(0L, Long::sum);
+
         List<Long> durations = new ArrayList<>();
 
         for (HistoryItemEntity historyItemEntity : historyItemEntities) {
@@ -397,7 +402,10 @@ public class ClientServiceImpl implements ClientService {
                     .collect(Collectors.toSet());
 
             if (serviceIdsInHistory.equals(serviceIds)) {
-                durations.add(historyItemEntity.getEndTime().getTime() - historyItemEntity.getStartTime().getTime());
+                long duration = historyItemEntity.getEndTime().getTime() - historyItemEntity.getStartTime().getTime();
+                if (duration < maxDuration) {
+                    durations.add(duration);
+                }
             }
         }
 
