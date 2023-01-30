@@ -65,6 +65,12 @@ public class QueueTypeServiceImpl implements QueueTypeService {
                         createQueueTypeRequest.getDescription()
                 )
         );
+        queueTypeInLocationRepo.save(
+                new QueueTypeInLocationEntity(
+                        queueTypeEntity.getId(),
+                        locationId
+                )
+        );
         for (Long serviceId : createQueueTypeRequest.getServiceIds()) {
             if (!serviceInLocationRepo.existsById(new ServiceInLocationEntity(serviceId, locationId))) {
                 throw new DescriptionException(
