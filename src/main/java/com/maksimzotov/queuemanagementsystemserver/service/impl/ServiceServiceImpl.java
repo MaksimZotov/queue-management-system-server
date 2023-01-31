@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -36,6 +37,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final QueueTypeInLocationRepo queueTypeInLocationRepo;
     private final ServicesSequenceInLocationRepo servicesSequenceInLocationRepo;
     private final ServicesSequenceRepo servicesSequenceRepo;
+    private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
     private final QueueRepo queueRepo;
 
     @Override
@@ -162,6 +164,24 @@ public class ServiceServiceImpl implements ServiceService {
                         locationId
                 )
         );
+        for (Map.Entry<Long, Integer> serviceIdToOrderNumber : createServicesSequenceRequest.getServiceIdsToOrderNumbers().entrySet()) {
+            if (!serviceInLocationRepo.existsById(new ServiceInLocationEntity(serviceIdToOrderNumber.getKey(), locationId))) {
+                throw new DescriptionException(
+                        localizer.getMessage(
+                                Message.YOU_ARE_TRYING_TO_CREATE_SERVICES_SEQUENCE_WITH_SERVICES_THAT_ARE_NOT_IN_LOCATION
+                        )
+                );
+            }
+            serviceInServicesSequenceRepo.save(
+                    new ServicesInServicesSequenceEntity(
+                            new ServicesInServicesSequenceEntity.PrimaryKey(
+                                    servicesSequenceEntity.getId(),
+                                    serviceIdToOrderNumber.getKey()
+                            ),
+                            serviceIdToOrderNumber.getValue()
+                    )
+            );
+        }
         return ServicesSequenceModel.toModel(servicesSequenceEntity);
     }
 
