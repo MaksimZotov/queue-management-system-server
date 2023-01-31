@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
+import com.maksimzotov.queuemanagementsystemserver.Constants;
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
@@ -34,6 +35,7 @@ public class ClientServiceImpl implements ClientService {
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
+    private final LocationRepo locationRepo;
     private final ServiceRepo serviceRepo;
     private final HistoryItemRepo historyItemRepo;
     private final ServicesInHistoryItemRepo servicesInHistoryItemRepo;
@@ -55,6 +57,7 @@ public class ClientServiceImpl implements ClientService {
             ClientInQueueRepo clientInQueueRepo,
             ClientRepo clientRepo,
             QueueRepo queueRepo,
+            LocationRepo locationRepo,
             ServiceRepo serviceRepo,
             HistoryItemRepo historyItemRepo,
             ServicesInHistoryItemRepo servicesInHistoryItemRepo,
@@ -75,6 +78,7 @@ public class ClientServiceImpl implements ClientService {
         this.clientInQueueRepo = clientInQueueRepo;
         this.clientRepo = clientRepo;
         this.queueRepo = queueRepo;
+        this.locationRepo = locationRepo;
         this.serviceRepo = serviceRepo;
         this.historyItemRepo = historyItemRepo;
         this.servicesInHistoryItemRepo = servicesInHistoryItemRepo;
@@ -108,7 +112,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
-        distributeClient(clientId, clientEntity.getLocationId(), getServiceIdsToOrderNumbersForClient(clientId));
+        distributeClient(localizer, clientEntity, clientEntity.getLocationId(), getServiceIdsToOrderNumbersForClient(clientId));
         return getQueueStateForClient(localizer, clientId, accessKey);
     }
 
@@ -142,7 +146,7 @@ public class ClientServiceImpl implements ClientService {
         clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
 
-        switchToNextQueue(clientId);
+        switchToNextQueue(localizer, clientId);
 
         queueService.updateCurrentQueueState(queueId);
     }
@@ -259,6 +263,26 @@ public class ClientServiceImpl implements ClientService {
         return clientEntity;
     }
 
+    private String getLinkForClient(Localizer localizer, ClientEntity clientEntity, Long locationId) throws DescriptionException {
+        Optional<LocationEntity> location = locationRepo.findById(locationId);
+        if (location.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        LocationEntity locationEntity = location.get();
+        return new StringBuilder()
+                .append(Constants.CLIENT_URL)
+                .append("/")
+                .append(locationEntity.getOwnerUsername())
+                .append("client")
+                .append("?")
+                .append("client_id=")
+                .append(clientEntity.getId())
+                .append("&")
+                .append("access_key=")
+                .append(clientEntity.getAccessKey())
+                .toString();
+    }
+
     private void createClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
         if (addClientRequest.getEmail() != null && clientRepo.findByEmail(addClientRequest.getEmail()).isPresent()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_EMAIL_ALREADY_EXIST));
@@ -296,12 +320,12 @@ public class ClientServiceImpl implements ClientService {
 
         mailService.send(
                 addClientRequest.getEmail(),
-                localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION_TO_QUEUE),
-                localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_CONNECTION_TO_QUEUE, clientEntity.getAccessKey())
+                localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION),
+                localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
         );
     }
 
-    private void distributeClient(Long clientId, Long locationId, Map<Long, Integer> serviceIdsToOrderNumbers) {
+    private void distributeClient(Localizer localizer, ClientEntity clientEntity, Long locationId, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
         int minOrderNumber = Integer.MAX_VALUE;
         Collection<Integer> orderNumbers = serviceIdsToOrderNumbers.values();
         for (Integer orderNumber : orderNumbers) {
@@ -324,7 +348,7 @@ public class ClientServiceImpl implements ClientService {
         Integer publicCode = CodeGenerator.generate(clientsEntities.stream().map(ClientInQueueEntity::getPublicCode).toList());
         clientInQueueRepo.save(
                 new ClientInQueueEntity(
-                        clientId,
+                        clientEntity.getId(),
                         queueToAssign.getId(),
                         orderNumber,
                         publicCode
@@ -334,7 +358,7 @@ public class ClientServiceImpl implements ClientService {
         HistoryItemEntity historyItemEntity = historyItemRepo.save(
                 new HistoryItemEntity(
                         null,
-                        clientId,
+                        clientEntity.getId(),
                         new Date(),
                         null
                 )
@@ -345,7 +369,7 @@ public class ClientServiceImpl implements ClientService {
         for (Long serviceId : serviceIdsWithKnownQueue) {
             clientInQueueToChosenServiceRepo.save(
                     new ClientInQueueToChosenServiceEntity(
-                            clientId,
+                            clientEntity.getId(),
                             serviceId,
                             queueToAssign.getId()
                     )
@@ -358,6 +382,16 @@ public class ClientServiceImpl implements ClientService {
                     )
             );
         }
+
+        mailService.send(
+                clientEntity.getEmail(),
+                localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
+                localizer.getMessageForClientCheckStatus(
+                        queueToAssign.getName(),
+                        publicCode.toString(),
+                        getLinkForClient(localizer, clientEntity, locationId)
+                )
+        );
     }
 
     private QueueEntity getQueueToAssign(List<Long> serviceIds, Long locationId) {
@@ -438,7 +472,7 @@ public class ClientServiceImpl implements ClientService {
         }
     }
 
-    private void switchToNextQueue(Long clientId) {
+    private void switchToNextQueue(Localizer localizer, Long clientId) throws DescriptionException {
         List<ClientInQueueToChosenServiceEntity> services = clientInQueueToChosenServiceRepo.findAllByClientId(clientId);
         for (ClientInQueueToChosenServiceEntity service : services) {
             clientToChosenServiceRepo.deleteByPrimaryKeyServiceId(service.getServiceId());
@@ -453,7 +487,7 @@ public class ClientServiceImpl implements ClientService {
         ClientEntity clientEntity = clientRepo.findById(clientId).get();
         if (clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
             Map<Long, Integer> serviceIdsToOrderNumbers = getServiceIdsToOrderNumbersForClient(clientId);
-            distributeClient(clientId, clientEntity.getLocationId(), serviceIdsToOrderNumbers);
+            distributeClient(localizer, clientEntity, clientEntity.getLocationId(), serviceIdsToOrderNumbers);
         } else {
             clientRepo.delete(clientEntity);
         }
