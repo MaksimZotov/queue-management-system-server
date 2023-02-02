@@ -57,7 +57,7 @@ public class QueueServiceImpl implements QueueService {
                         locationId,
                         createQueueRequest.getName(),
                         createQueueRequest.getDescription(),
-                        true
+                        false
                 )
         );
         locationService.updateLocationBoard(locationId);

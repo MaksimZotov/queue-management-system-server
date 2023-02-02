@@ -79,7 +79,7 @@ public class QueueController extends BaseController {
         }
     }
 
-    @GetMapping("/{queueId}")
+    @GetMapping("/{queue_id}")
     public ResponseEntity<?> getQueueState(
             HttpServletRequest request,
             @PathVariable(name = "queue_id") Long queueId

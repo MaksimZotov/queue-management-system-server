@@ -67,7 +67,8 @@ public enum Message {
     YOUR_QUEUE,
     PUBLIC_CODE,
     YOU_CAN_CHECK_YOUR_STATUS_HERE,
-    PLEASE_GO_TO_LINK_TO_CONFIRM_CONNECTION;
+    PLEASE_GO_TO_LINK_TO_CONFIRM_CONNECTION,
+    CLIENT_ALREADY_CONFIRMED;
 
     public String toMessageId() {
         return name().toLowerCase();

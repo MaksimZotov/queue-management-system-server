@@ -112,6 +112,11 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
+        if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_CONFIRMED));
+        }
+        clientEntity.setStatus(ClientStatusEntity.Status.CONFIRMED.name());
+        clientRepo.save(clientEntity);
         distributeClient(localizer, clientEntity, clientEntity.getLocationId(), getServiceIdsToOrderNumbersForClient(clientId));
         return getQueueStateForClient(localizer, clientId, accessKey);
     }
@@ -229,7 +234,7 @@ public class ClientServiceImpl implements ClientService {
         if (servicesChosen) {
             List<Long> serviceIds = addClientRequest.getServiceIds();
             for (Long serviceId : serviceIds) {
-                if (serviceInLocationRepo.existsById(new ServiceInLocationEntity(serviceId, locationId))) {
+                if (!serviceInLocationRepo.existsById(new ServiceInLocationEntity(serviceId, locationId))) {
                     throw new DescriptionException(localizer.getMessage(Message.ONE_OR_MORE_OF_CHOSEN_SERVICES_DO_NOT_EXIST_IN_LOCATION));
                 }
                 serviceIdsToOrderNumbers.put(serviceId, 1);
@@ -273,12 +278,11 @@ public class ClientServiceImpl implements ClientService {
                 .append(Constants.CLIENT_URL)
                 .append("/")
                 .append(locationEntity.getOwnerUsername())
-                .append("client")
-                .append("?")
-                .append("client_id=")
+                .append("/locations/")
+                .append(locationId)
+                .append("/client?client_id=")
                 .append(clientEntity.getId())
-                .append("&")
-                .append("access_key=")
+                .append("&access_key=")
                 .append(clientEntity.getAccessKey())
                 .toString();
     }

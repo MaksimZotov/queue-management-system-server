@@ -103,14 +103,13 @@ CREATE TABLE client_in_queue (
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
     order_number INTEGER,
     public_code INTEGER NOT NULL,
-    UNIQUE (queue_id, order_number),
+    UNIQUE (client_id, queue_id, order_number),
     PRIMARY KEY (client_id)
 );
 CREATE TABLE client_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
     order_number INTEGER NOT NULL,
-    queue_is_known BOOLEAN NOT NULL,
     PRIMARY KEY (client_id, service_id)
 );
 CREATE TABLE client_in_queue_to_chosen_service (
@@ -130,7 +129,7 @@ CREATE TABLE rights (
 -- Distribution
 CREATE TABLE history_item (
     id BIGSERIAL PRIMARY KEY,
-    client_id BIGINT REFERENCES client (id) NOT NULL,
+    client_id BIGINT NOT NULL,
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     UNIQUE (client_id, start_time, end_time)
