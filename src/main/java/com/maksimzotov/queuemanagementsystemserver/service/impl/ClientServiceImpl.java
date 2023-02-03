@@ -345,6 +345,9 @@ public class ClientServiceImpl implements ClientService {
         }
 
         QueueEntity queueToAssign = getQueueToAssign(serviceIds, locationId);
+        if (queueToAssign == null) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_NOT_FOUND_FOR_CLIENT));
+        }
 
         List<ClientInQueueEntity> clientsEntities = clientInQueueRepo.findAllByQueueId(queueToAssign.getId());
         Optional<Integer> maxOrderNumber = clientsEntities.stream().map(ClientInQueueEntity::getOrderNumber).max(Integer::compare);
