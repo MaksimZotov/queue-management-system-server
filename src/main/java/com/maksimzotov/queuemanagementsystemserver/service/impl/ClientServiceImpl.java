@@ -399,6 +399,8 @@ public class ClientServiceImpl implements ClientService {
                         getLinkForClient(localizer, clientEntity, locationId)
                 )
         );
+
+        queueService.updateCurrentQueueState(queueToAssign.getId());
     }
 
     private QueueEntity getQueueToAssign(List<Long> serviceIds, Long locationId) {
