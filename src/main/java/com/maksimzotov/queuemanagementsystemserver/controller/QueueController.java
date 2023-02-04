@@ -93,8 +93,8 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/{queue_id}/pause")
-    public ResponseEntity<?> pause(
+    @PostMapping("/{queue_id}/enable")
+    public ResponseEntity<?> enable(
             HttpServletRequest request,
             @PathVariable("queue_id") Long queueId
     ) {
@@ -108,8 +108,8 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/{queue_id}/start")
-    public ResponseEntity<?> start(
+    @PostMapping("/{queue_id}/disable")
+    public ResponseEntity<?> disable(
             HttpServletRequest request,
             @PathVariable("queue_id") Long queueId
     ) {
@@ -147,23 +147,6 @@ public class QueueController extends BaseController {
     ) {
         try {
             clientService.notifyClientInQueueByEmployee(getLocalizer(request), getToken(request), queueId, clientId);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/{queue_id}/switch")
-    public ResponseEntity<?> switchClientLateState(
-            HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId,
-            @RequestParam("client_id") Long clientId,
-            @RequestParam Boolean late
-    ) {
-        try {
-            clientService.switchClientLateStateByEmployee(getLocalizer(request), getToken(request), queueId, clientId, late);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

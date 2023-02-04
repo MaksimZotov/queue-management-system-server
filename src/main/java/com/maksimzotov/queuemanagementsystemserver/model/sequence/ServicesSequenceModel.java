@@ -1,4 +1,4 @@
-package com.maksimzotov.queuemanagementsystemserver.model.services;
+package com.maksimzotov.queuemanagementsystemserver.model.sequence;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.ServicesSequenceEntity;
 import lombok.Value;

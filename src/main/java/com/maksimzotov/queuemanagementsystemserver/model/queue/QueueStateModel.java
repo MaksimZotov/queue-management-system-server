@@ -3,18 +3,18 @@ package com.maksimzotov.queuemanagementsystemserver.model.queue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Value;
 
 import java.util.List;
 
-@Data
-@AllArgsConstructor
+@Value
 public class QueueStateModel {
-    private Long id;
-    private Long locationId;
-    private String name;
-    private String description;
-    private List<ClientInQueue> clients;
-    @JsonProperty("owner_username")
-    private String ownerUsername;
-    private Boolean paused;
+    Long id;
+    Long locationId;
+    String name;
+    String description;
+    List<ClientInQueue> clients;
+    @JsonProperty("owner_email")
+    String ownerEmail;
+    Boolean enabled;
 }

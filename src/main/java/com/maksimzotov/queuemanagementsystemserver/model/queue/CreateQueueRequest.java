@@ -5,8 +5,8 @@ import lombok.Value;
 
 @Value
 public class CreateQueueRequest {
-    @JsonProperty("queue_type_id")
-    Long queueTypeId;
+    @JsonProperty("specialist_id")
+    Long specialistId;
     String name;
     String description;
 }

@@ -16,7 +16,11 @@ public class ServicesSequenceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long locationId;
+
     private String name;
 
     private String description;
+
+    private Boolean enabled;
 }

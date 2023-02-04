@@ -13,20 +13,15 @@ public class BoardModel {
 
     List<BoardQueue> queues;
 
-    @JsonProperty("max_columns")
-    Integer maxColumns;
-
 
     public static BoardModel toModel(
             ClientInQueueRepo clientInQueueRepo,
-            List<QueueEntity> queues,
-            LocationEntity locationEntity
+            List<QueueEntity> queues
     ) {
         return new BoardModel(
                 queues.stream()
                         .map((queue) -> BoardQueue.toModel(clientInQueueRepo, queue))
-                        .toList(),
-                locationEntity.getMaxColumns()
+                        .toList()
         );
     }
 }

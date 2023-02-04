@@ -12,8 +12,8 @@ public class RightsModel {
 
     public static RightsModel toModel(RightsEntity entity) {
         return new RightsModel(
-                entity.getLocationId(),
-                entity.getEmail()
+                entity.getPrimaryKey().getLocationId(),
+                entity.getPrimaryKey().getEmail()
         );
     }
 }

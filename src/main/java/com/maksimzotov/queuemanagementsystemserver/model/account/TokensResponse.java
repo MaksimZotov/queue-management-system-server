@@ -6,5 +6,5 @@ import lombok.Value;
 public class TokensResponse {
    String access;
    String refresh;
-   String username;
+   String email;
 }

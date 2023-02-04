@@ -16,13 +16,13 @@ public class QueueEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long queueTypeId;
-
     private Long locationId;
+
+    private Long specialistId;
 
     private String name;
 
     private String description;
 
-    private Boolean paused;
+    private Boolean enabled;
 }

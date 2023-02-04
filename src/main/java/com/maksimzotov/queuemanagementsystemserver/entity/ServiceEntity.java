@@ -19,6 +19,8 @@ public class ServiceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Long locationId;
+
     private String name;
 
     private String description;
@@ -26,4 +28,6 @@ public class ServiceEntity {
     private Long supposedDuration;
 
     private Long maxDuration;
+
+    private Boolean enabled;
 }

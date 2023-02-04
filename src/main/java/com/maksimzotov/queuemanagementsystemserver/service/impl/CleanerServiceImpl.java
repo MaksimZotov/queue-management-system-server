@@ -29,10 +29,10 @@ public class CleanerServiceImpl implements CleanerService {
     private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
 
     @Override
-    public void deleteNonConfirmedUser(String username) {
-        if (registrationCodeRepo.existsByUsername(username)) {
-            registrationCodeRepo.deleteById(username);
-            accountRepo.deleteByUsername(username);
+    public void deleteNonConfirmedUser(String email) {
+        if (registrationCodeRepo.existsByEmail(email)) {
+            registrationCodeRepo.deleteByEmail(email);
+            accountRepo.deleteByEmail(email);
         }
     }
 

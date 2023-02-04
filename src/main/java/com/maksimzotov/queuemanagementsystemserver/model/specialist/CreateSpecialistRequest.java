@@ -1,4 +1,4 @@
-package com.maksimzotov.queuemanagementsystemserver.model.type;
+package com.maksimzotov.queuemanagementsystemserver.model.specialist;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
@@ -6,7 +6,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-public class CreateQueueTypeRequest {
+public class CreateSpecialistRequest {
     String name;
     String description;
     @JsonProperty("service_ids")

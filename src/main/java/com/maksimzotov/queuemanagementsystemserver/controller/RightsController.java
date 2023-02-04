@@ -5,6 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
@@ -42,10 +43,10 @@ public class RightsController extends BaseController {
     public ResponseEntity<?> addRights(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
-            @RequestParam("email") String email
+            @RequestBody AddRightsRequest addRightsRequest
     ) {
         try {
-            rightsService.addRights(getLocalizer(request), getToken(request), locationId, email);
+            rightsService.addRights(getLocalizer(request), getToken(request), locationId, addRightsRequest);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

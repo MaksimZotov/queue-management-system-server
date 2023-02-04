@@ -10,19 +10,19 @@ import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import java.io.Serializable;
 
-@Entity(name = "services_in_services_sequence")
+@Entity(name = "service_in_services_sequence")
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServicesInServicesSequenceEntity implements Serializable {
+public class ServiceInServicesSequenceEntity implements Serializable {
 
     @Embeddable
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PrimaryKey implements Serializable {
-        private Long servicesSequenceId;
         private Long serviceId;
+        private Long servicesSequenceId;
     }
 
     @EmbeddedId

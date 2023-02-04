@@ -12,7 +12,7 @@ import javax.persistence.Id;
 public class RegistrationCodeEntity {
 
     @Id
-    private String username;
+    private String email;
 
     private String code;
 }

@@ -10,5 +10,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LocationRepo extends JpaRepository<LocationEntity, Long> {
-    Optional<List<LocationEntity>> findByOwnerUsernameContaining(String ownerUsername);
+    Optional<List<LocationEntity>> findByOwnerEmailContaining(String email);
 }

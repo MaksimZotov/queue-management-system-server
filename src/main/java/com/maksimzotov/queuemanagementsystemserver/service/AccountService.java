@@ -15,6 +15,6 @@ public interface AccountService {
     void confirmRegistrationCode(Localizer localizer, ConfirmCodeRequest confirmCodeRequest) throws DescriptionException;
     TokensResponse login(Localizer localizer, LoginRequest loginRequest) throws FieldsException, DescriptionException;
     TokensResponse refreshToken(String refreshToken) throws RefreshTokenFailedException;
-    String getUsername(String accessToken) throws AccountIsNotAuthorizedException;
-    String getUsernameOrNull(String accessToken);
+    String getEmail(String accessToken) throws AccountIsNotAuthorizedException;
+    String getEmailOrNull(String accessToken);
 }

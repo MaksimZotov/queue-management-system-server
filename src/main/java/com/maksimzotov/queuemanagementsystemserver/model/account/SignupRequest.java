@@ -5,7 +5,6 @@ import lombok.Value;
 
 @Value
 public class SignupRequest {
-    String username;
     String email;
     @JsonProperty("first_name")
     String firstName;

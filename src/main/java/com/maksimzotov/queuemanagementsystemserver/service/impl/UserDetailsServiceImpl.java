@@ -23,13 +23,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final AccountRepo accountRepo;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<AccountEntity> account = accountRepo.findByUsername(username);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Optional<AccountEntity> account = accountRepo.findByEmail(email);
         if (account.isEmpty()) {
             throw new UsernameNotFoundException("User not found in the database");
         }
         AccountEntity accountEntity = account.get();
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        return new User(accountEntity.getUsername(), accountEntity.getPassword(), authorities);
+        return new User(accountEntity.getEmail(), accountEntity.getPassword(), authorities);
     }
 }

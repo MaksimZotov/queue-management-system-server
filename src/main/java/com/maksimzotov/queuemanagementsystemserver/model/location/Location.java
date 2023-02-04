@@ -10,8 +10,8 @@ import lombok.Data;
 public class Location {
 
     private Long id;
-    @JsonProperty("owner_username")
-    private String ownerUsername;
+    @JsonProperty("owner_email")
+    private String ownerEmail;
     private String name;
     private String description;
     @JsonProperty("has_rights")
@@ -20,7 +20,7 @@ public class Location {
     public static Location toModel(LocationEntity entity, Boolean hasRights) {
         return new Location(
                 entity.getId(),
-                entity.getOwnerUsername(),
+                entity.getOwnerEmail(),
                 entity.getName(),
                 entity.getDescription(),
                 hasRights

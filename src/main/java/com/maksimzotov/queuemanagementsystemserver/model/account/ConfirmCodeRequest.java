@@ -4,6 +4,6 @@ import lombok.Value;
 
 @Value
 public class ConfirmCodeRequest {
-    String username;
+    String email;
     String code;
 }

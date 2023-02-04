@@ -5,13 +5,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Date;
 
-@Entity(name = "services_in_history_item")
+@Entity(name = "service_in_history_item")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServicesInHistoryItemEntity {
+public class ServiceInHistoryItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
