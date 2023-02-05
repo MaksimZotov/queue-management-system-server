@@ -38,7 +38,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountEmail = accountService.getEmail(accessToken);
 
-        if (!rightsService.checkRightsInLocation(accountEmail, locationId)) {
+        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
 
@@ -83,7 +83,15 @@ public class QueueServiceImpl implements QueueService {
         }
         return new ContainerForList<>(
                 queuesEntities.get().stream()
-                        .map((item) -> QueueModel.toModel(item, rightsService.checkRightsInLocation(accountService.getEmailOrNull(accessToken), locationId)))
+                        .map((item) ->
+                                QueueModel.toModel(
+                                        item,
+                                        rightsService.checkEmployeeRightsInLocation(
+                                                accountService.getEmailOrNull(accessToken),
+                                                locationId
+                                        )
+                                )
+                        )
                         .toList()
         );
     }
@@ -165,7 +173,7 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
-        if (!rightsService.checkRightsInLocation(accountEmail, queueEntity.getLocationId())) {
+        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, queueEntity.getLocationId())) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
         return queueEntity;

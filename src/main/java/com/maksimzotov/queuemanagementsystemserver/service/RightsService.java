@@ -8,8 +8,8 @@ import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface RightsService {
-    ContainerForList<RightsModel> getRights(Localizer localizer, String email, Long locationId) throws DescriptionException;
+    ContainerForList<RightsModel> getRights(Localizer localizer, String email, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
     void addRights(Localizer localizer, String accessToken, Long locationId, AddRightsRequest addRightsRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteRights(Localizer localizer, String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException;
-    Boolean checkRightsInLocation(String email, Long locationId);
+    Boolean checkEmployeeRightsInLocation(String email, Long locationId);
 }

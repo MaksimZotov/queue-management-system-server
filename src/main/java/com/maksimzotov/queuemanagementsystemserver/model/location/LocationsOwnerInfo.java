@@ -6,7 +6,7 @@ import lombok.Value;
 
 @Value
 @AllArgsConstructor
-public class HasRightsInfo {
-    @JsonProperty("has_rights")
-    Boolean hasRights;
+public class LocationsOwnerInfo {
+    @JsonProperty("is_owner")
+    Boolean isOwner;
 }

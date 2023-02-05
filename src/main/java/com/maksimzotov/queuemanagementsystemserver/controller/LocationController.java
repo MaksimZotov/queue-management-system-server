@@ -58,11 +58,11 @@ public class LocationController extends BaseController {
     }
 
     @GetMapping("/check")
-    public ResponseEntity<?> checkHasRights(
+    public ResponseEntity<?> checkIsOwner(
             HttpServletRequest request,
             @RequestParam String email
     ) {
-        return ResponseEntity.ok().body(locationService.checkHasRights(getToken(request), email));
+        return ResponseEntity.ok().body(locationService.checkIsOwner(getToken(request), email));
     }
 
     @PostMapping("/create")

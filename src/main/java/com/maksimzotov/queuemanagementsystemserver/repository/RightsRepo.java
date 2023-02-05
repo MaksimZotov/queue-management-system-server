@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RightsRepo extends JpaRepository<RightsEntity, RightsEntity.PrimaryKey> {
-    Optional<List<RightsEntity>> findAllByPrimaryKeyLocationId(Long locationId);
+    List<RightsEntity> findAllByPrimaryKeyLocationId(Long locationId);
+    Boolean existsByPrimaryKeyAndStatus(RightsEntity.PrimaryKey primaryKey, String status);
     void deleteAllByPrimaryKeyLocationId(Long locationId);
 }

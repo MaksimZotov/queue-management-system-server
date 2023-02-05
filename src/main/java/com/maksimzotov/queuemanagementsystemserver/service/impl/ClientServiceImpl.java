@@ -177,7 +177,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
-        if (!rightsService.checkRightsInLocation(accountEmail, queueEntity.getLocationId())) {
+        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, queueEntity.getLocationId())) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
     }

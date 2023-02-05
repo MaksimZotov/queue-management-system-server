@@ -44,7 +44,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ServiceModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createServiceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
         return ServiceModel.toModel(
                 serviceRepo.save(
                         new ServiceEntity(
@@ -62,7 +62,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
         serviceRepo.deleteById(serviceId);
     }
 
@@ -95,7 +95,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ServicesSequenceModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
         ServicesSequenceEntity servicesSequenceEntity = servicesSequenceRepo.save(
                 new ServicesSequenceEntity(
                         null,
@@ -128,7 +128,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
         servicesSequenceRepo.deleteById(0L);
         serviceRepo.deleteById(servicesSequenceId);
     }

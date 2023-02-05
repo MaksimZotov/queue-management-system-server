@@ -9,7 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.HasRightsInfo;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
@@ -92,7 +92,7 @@ public class LocationServiceImpl implements LocationService {
         LocationEntity locationEntity = location.get();
         return Location.toModel(
                 locationEntity,
-                rightsService.checkRightsInLocation(accountService.getEmailOrNull(accessToken), locationId)
+                rightsService.checkEmployeeRightsInLocation(accountService.getEmailOrNull(accessToken), locationId)
         );
     }
 
@@ -105,14 +105,22 @@ public class LocationServiceImpl implements LocationService {
         return new ContainerForList<>(
                 locationsEntities.get()
                         .stream()
-                        .map(item -> Location.toModel(item, checkHasRights(accessToken, email).getHasRights()))
+                        .map(locationEntity ->
+                                Location.toModel(
+                                        locationEntity,
+                                        Objects.equals(
+                                                accountService.getEmailOrNull(accessToken),
+                                                locationEntity.getOwnerEmail()
+                                        )
+                                )
+                        )
                         .toList()
         );
     }
 
     @Override
-    public HasRightsInfo checkHasRights(String accessToken, String email) {
-        return new HasRightsInfo(Objects.equals(accountService.getEmailOrNull(accessToken), email));
+    public LocationsOwnerInfo checkIsOwner(String accessToken, String email) {
+        return new LocationsOwnerInfo(Objects.equals(accountService.getEmailOrNull(accessToken), email));
     }
 
     @Override
@@ -145,10 +153,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException {
-        Boolean hasRights = rightsService.checkRightsInLocation(
-                accountService.getEmail(accessToken),
-                locationId
-        );
+        Boolean hasRights = rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
         if (!hasRights) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
