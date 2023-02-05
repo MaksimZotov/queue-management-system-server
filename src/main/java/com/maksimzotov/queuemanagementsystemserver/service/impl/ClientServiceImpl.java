@@ -177,7 +177,7 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
-        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, queueEntity.getLocationId())) {
+        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountEmail, queueEntity.getLocationId())) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
     }
@@ -248,7 +248,6 @@ public class ClientServiceImpl implements ClientService {
         if (location.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
-        LocationEntity locationEntity = location.get();
         return new StringBuilder()
                 .append(Constants.CLIENT_URL)
                 .append("/locations/")

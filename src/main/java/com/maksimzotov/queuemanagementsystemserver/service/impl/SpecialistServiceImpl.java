@@ -38,7 +38,7 @@ public class SpecialistServiceImpl implements SpecialistService {
 
     @Override
     public SpecialistModel createQueueTypeInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         SpecialistEntity specialistEntity = specialistRepo.save(
                 new SpecialistEntity(
                         null,
@@ -68,7 +68,7 @@ public class SpecialistServiceImpl implements SpecialistService {
 
     @Override
     public void deleteQueueTypeInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
+        rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         specialistRepo.deleteById(queueTypeId);
     }
 }

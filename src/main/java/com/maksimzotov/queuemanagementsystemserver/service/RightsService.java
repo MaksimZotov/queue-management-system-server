@@ -11,5 +11,6 @@ public interface RightsService {
     ContainerForList<RightsModel> getRights(Localizer localizer, String email, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
     void addRights(Localizer localizer, String accessToken, Long locationId, AddRightsRequest addRightsRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteRights(Localizer localizer, String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException;
-    Boolean checkEmployeeRightsInLocation(String email, Long locationId);
+    String getRightsStatus(Localizer localizer, String email, Long locationId) throws DescriptionException;
+    Boolean checkEmployeeRightsInLocation(Localizer localizer, String email, Long locationId) throws DescriptionException;
 }

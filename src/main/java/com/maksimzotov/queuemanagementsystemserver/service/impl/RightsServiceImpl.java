@@ -80,10 +80,23 @@ public class RightsServiceImpl implements RightsService {
     }
 
     @Override
-    public Boolean checkEmployeeRightsInLocation(String accountEmail, Long locationId) {
+    public String getRightsStatus(Localizer localizer, String email, Long locationId) throws DescriptionException {
+        if (!locationRepo.existsById(locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
+        RightsEntity.PrimaryKey primaryKey = new RightsEntity.PrimaryKey(locationId, email);
+        Optional<RightsEntity> rights = rightsRepo.findById(primaryKey);
+        if (rights.isEmpty()) {
+            return null;
+        }
+        return rights.get().getStatus();
+    }
+
+    @Override
+    public Boolean checkEmployeeRightsInLocation(Localizer localizer, String accountEmail, Long locationId) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
-            return false;
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         if (Objects.equals(location.get().getOwnerEmail(), accountEmail)) {
             return true;

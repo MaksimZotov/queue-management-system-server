@@ -9,8 +9,8 @@ import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
@@ -51,7 +51,7 @@ public class LocationServiceImpl implements LocationService {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_NAME_MUST_NOT_BE_EMPTY));
         }
 
-        LocationEntity entity = locationRepo.save(
+        LocationEntity locationEntity = locationRepo.save(
                 new LocationEntity(
                         null,
                         accountEmail,
@@ -60,7 +60,7 @@ public class LocationServiceImpl implements LocationService {
                 )
         );
 
-        return Location.toModel(entity, true);
+        return Location.toModel(locationEntity, Objects.equals(accountEmail, locationEntity.getOwnerEmail()), null);
     }
 
     @Override
@@ -78,6 +78,7 @@ public class LocationServiceImpl implements LocationService {
         if (clientRepo.existsByLocationId(locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_CONTAINS_CLIENTS));
         }
+
         rightsRepo.deleteAllByPrimaryKeyLocationId(locationId);
         queueRepo.deleteAllByLocationId(locationId);
         locationRepo.deleteById(locationId);
@@ -90,9 +91,11 @@ public class LocationServiceImpl implements LocationService {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         LocationEntity locationEntity = location.get();
+        String accountEmail = accountService.getEmailOrNull(accessToken);
         return Location.toModel(
                 locationEntity,
-                rightsService.checkEmployeeRightsInLocation(accountService.getEmailOrNull(accessToken), locationId)
+                rightsService.checkEmployeeRightsInLocation(localizer, accountEmail, locationId),
+                rightsService.getRightsStatus(localizer, accountEmail, locationId)
         );
     }
 
@@ -102,16 +105,15 @@ public class LocationServiceImpl implements LocationService {
         if (locationsEntities.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
         }
+        String accountEmail = accountService.getEmailOrNull(accessToken);
         return new ContainerForList<>(
                 locationsEntities.get()
                         .stream()
                         .map(locationEntity ->
                                 Location.toModel(
                                         locationEntity,
-                                        Objects.equals(
-                                                accountService.getEmailOrNull(accessToken),
-                                                locationEntity.getOwnerEmail()
-                                        )
+                                        Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
+                                        null
                                 )
                         )
                         .toList()
@@ -153,7 +155,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException {
-        Boolean hasRights = rightsService.checkEmployeeRightsInLocation(accountService.getEmail(accessToken), locationId);
+        Boolean hasRights = rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         if (!hasRights) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }

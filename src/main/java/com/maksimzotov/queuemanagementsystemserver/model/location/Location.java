@@ -2,7 +2,6 @@ package com.maksimzotov.queuemanagementsystemserver.model.location;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.RightsStatusEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,14 +16,16 @@ public class Location {
     private String description;
     @JsonProperty("is_owner")
     private Boolean isOwner;
+    private String rightsStatus;
 
-    public static Location toModel(LocationEntity entity, Boolean isOwner) {
+    public static Location toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {
         return new Location(
                 entity.getId(),
                 entity.getOwnerEmail(),
                 entity.getName(),
                 entity.getDescription(),
-                isOwner
+                isOwner,
+                rightsStatus
         );
     }
 }
