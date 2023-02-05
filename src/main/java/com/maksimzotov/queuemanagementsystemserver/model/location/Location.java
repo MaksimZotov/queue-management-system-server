@@ -16,6 +16,7 @@ public class Location {
     private String description;
     @JsonProperty("is_owner")
     private Boolean isOwner;
+    @JsonProperty("rights_status")
     private String rightsStatus;
 
     public static Location toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {

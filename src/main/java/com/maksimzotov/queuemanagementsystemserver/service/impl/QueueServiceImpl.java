@@ -38,7 +38,7 @@ public class QueueServiceImpl implements QueueService {
     public QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountEmail = accountService.getEmail(accessToken);
 
-        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, locationId)) {
+        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountEmail, locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
 
@@ -83,10 +83,9 @@ public class QueueServiceImpl implements QueueService {
         }
         return new ContainerForList<>(
                 queuesEntities.get().stream()
-                        .map((item) ->
-                                QueueModel.toModel(
+                        .map((item) -> QueueModel.toModel(
                                         item,
-                                        rightsService.checkEmployeeRightsInLocation(
+                                        rightsService.checkEmployeeRightsInLocationNoException(
                                                 accountService.getEmailOrNull(accessToken),
                                                 locationId
                                         )
@@ -173,7 +172,7 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
         QueueEntity queueEntity = queue.get();
-        if (!rightsService.checkEmployeeRightsInLocation(accountEmail, queueEntity.getLocationId())) {
+        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountEmail, queueEntity.getLocationId())) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
         return queueEntity;

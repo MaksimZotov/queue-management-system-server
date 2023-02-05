@@ -13,4 +13,5 @@ public interface RightsService {
     void deleteRights(Localizer localizer, String accessToken, Long locationId, String email) throws DescriptionException, AccountIsNotAuthorizedException;
     String getRightsStatus(Localizer localizer, String email, Long locationId) throws DescriptionException;
     Boolean checkEmployeeRightsInLocation(Localizer localizer, String email, Long locationId) throws DescriptionException;
+    Boolean checkEmployeeRightsInLocationNoException(String email, Long locationId);
 }

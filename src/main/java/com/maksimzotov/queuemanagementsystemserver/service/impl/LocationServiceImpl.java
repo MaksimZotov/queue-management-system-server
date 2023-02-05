@@ -94,7 +94,7 @@ public class LocationServiceImpl implements LocationService {
         String accountEmail = accountService.getEmailOrNull(accessToken);
         return Location.toModel(
                 locationEntity,
-                rightsService.checkEmployeeRightsInLocation(localizer, accountEmail, locationId),
+                Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
                 rightsService.getRightsStatus(localizer, accountEmail, locationId)
         );
     }
