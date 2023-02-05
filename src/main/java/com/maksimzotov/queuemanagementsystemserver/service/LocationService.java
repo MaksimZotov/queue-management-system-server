@@ -10,11 +10,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface LocationService {
-    Location createLocation(Localizer localizer, String email, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException;
+    Location createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
     Location getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
-    ContainerForList<Location> getLocations(Localizer localizer, String accessToken, String email) throws DescriptionException;
-    LocationsOwnerInfo checkIsOwner(String accessToken, String email);
+    ContainerForList<Location> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
+    LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
     BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException;
     void updateLocationBoard(Long locationId);
     void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException;

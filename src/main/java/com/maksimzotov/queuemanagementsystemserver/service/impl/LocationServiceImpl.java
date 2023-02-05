@@ -1,6 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
+import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
@@ -37,6 +38,7 @@ public class LocationServiceImpl implements LocationService {
     @Lazy
     private final QueueService queueService;
     private final LocationRepo locationRepo;
+    private final AccountRepo accountRepo;
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
@@ -100,14 +102,16 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public ContainerForList<Location> getLocations(Localizer localizer, String accessToken, String email) throws DescriptionException {
-        Optional<List<LocationEntity>> locationsEntities = locationRepo.findByOwnerEmailContaining(email);
-        if (locationsEntities.isEmpty()) {
+    public ContainerForList<Location> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
+        Optional<AccountEntity> account = accountRepo.findById(accountId);
+        if (account.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
         }
+        AccountEntity accountEntity = account.get();
+        List<LocationEntity> locationsEntities = locationRepo.findByOwnerEmailContaining(accountEntity.getEmail());
         String accountEmail = accountService.getEmailOrNull(accessToken);
         return new ContainerForList<>(
-                locationsEntities.get()
+                locationsEntities
                         .stream()
                         .map(locationEntity ->
                                 Location.toModel(
@@ -121,8 +125,13 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public LocationsOwnerInfo checkIsOwner(String accessToken, String email) {
-        return new LocationsOwnerInfo(Objects.equals(accountService.getEmailOrNull(accessToken), email));
+    public LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
+        Optional<AccountEntity> account = accountRepo.findById(accountId);
+        if (account.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
+        }
+        AccountEntity accountEntity = account.get();
+        return new LocationsOwnerInfo(Objects.equals(accountService.getEmailOrNull(accessToken), accountEntity.getEmail()));
     }
 
     @Override

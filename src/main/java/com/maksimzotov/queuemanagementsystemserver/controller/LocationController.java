@@ -48,10 +48,10 @@ public class LocationController extends BaseController {
     @GetMapping()
     public ResponseEntity<?> getLocations(
             HttpServletRequest request,
-            @RequestParam String email
+            @RequestParam("account_id") Long accountId
     ) {
         try {
-            return ResponseEntity.ok().body(locationService.getLocations(getLocalizer(request), getToken(request), email));
+            return ResponseEntity.ok().body(locationService.getLocations(getLocalizer(request), getToken(request), accountId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -60,9 +60,13 @@ public class LocationController extends BaseController {
     @GetMapping("/check")
     public ResponseEntity<?> checkIsOwner(
             HttpServletRequest request,
-            @RequestParam String email
+            @RequestParam("account_id") Long accountId
     ) {
-        return ResponseEntity.ok().body(locationService.checkIsOwner(getToken(request), email));
+        try {
+            return ResponseEntity.ok().body(locationService.checkIsOwner(getLocalizer(request), getToken(request), accountId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
     }
 
     @PostMapping("/create")

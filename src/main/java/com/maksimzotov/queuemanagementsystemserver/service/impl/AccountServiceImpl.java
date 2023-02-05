@@ -154,7 +154,19 @@ public class AccountServiceImpl implements AccountService {
                 .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .sign(algorithm);
 
-        return new TokensResponse(access, refresh, user.getUsername());
+        Optional<AccountEntity> account = accountRepo.findByEmail(user.getUsername());
+        if (account.isEmpty()) {
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_START,
+                            user.getUsername(),
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_END
+                    )
+            );
+        }
+        AccountEntity accountEntity = account.get();
+
+        return new TokensResponse(access, refresh, accountEntity.getId());
     }
 
     @Override
@@ -179,7 +191,7 @@ public class AccountServiceImpl implements AccountService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshToken, email);
+            return new TokensResponse(accessToken, refreshToken, accountEntity.getId());
         } catch (Exception ex) {
             throw new RefreshTokenFailedException();
         }
