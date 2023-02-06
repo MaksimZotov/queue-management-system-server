@@ -166,4 +166,16 @@ public class QueueController extends BaseController {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
+
+    @GetMapping("/specialists/{specialist_id}")
+    public ResponseEntity<?> getServicesSpecialist(
+            HttpServletRequest request,
+            @PathVariable("specialist_id") Long specialistId
+    ) {
+        try {
+            return ResponseEntity.ok().body(serviceService.getServicesInSpecialist(getLocalizer(request), specialistId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
 }

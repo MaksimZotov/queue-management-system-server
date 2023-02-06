@@ -342,9 +342,9 @@ public class ClientServiceImpl implements ClientService {
                         null
                 )
         );
-        List<ServiceInSpecialistEntity> serviceInQueueTypeEntities = serviceInSpecialistRepo.findAllBySpecialistId(queueToAssign.getSpecialistId());
-        List<Long> serviceIdsInQueueType = serviceInQueueTypeEntities.stream().map(ServiceInSpecialistEntity::getServiceId).toList();
-        List<Long> serviceIdsWithKnownQueue = serviceIds.stream().distinct().filter(serviceIdsInQueueType::contains).toList();
+        List<ServiceInSpecialistEntity> serviceInSpecialistEntities = serviceInSpecialistRepo.findAllBySpecialistId(queueToAssign.getSpecialistId());
+        List<Long> serviceIdsInSpecialist = serviceInSpecialistEntities.stream().map(ServiceInSpecialistEntity::getServiceId).toList();
+        List<Long> serviceIdsWithKnownQueue = serviceIds.stream().distinct().filter(serviceIdsInSpecialist::contains).toList();
         for (Long serviceId : serviceIdsWithKnownQueue) {
             clientInQueueToChosenServiceRepo.save(
                     new ClientInQueueToChosenServiceEntity(
@@ -376,12 +376,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private QueueEntity getQueueToAssign(List<Long> serviceIds, Long locationId) {
-        Set<ServiceInSpecialistEntity> serviceInQueueTypeEntities = new HashSet<>();
+        Set<ServiceInSpecialistEntity> serviceInSpecialistEntities = new HashSet<>();
         for (Long serviceId : serviceIds) {
-            serviceInQueueTypeEntities.addAll(serviceInSpecialistRepo.findAllByServiceId(serviceId));
+            serviceInSpecialistEntities.addAll(serviceInSpecialistRepo.findAllByServiceId(serviceId));
         }
         List<QueueEntity> queueEntities = new ArrayList<>();
-        for (ServiceInSpecialistEntity serviceInSpecialistEntity : serviceInQueueTypeEntities) {
+        for (ServiceInSpecialistEntity serviceInSpecialistEntity : serviceInSpecialistEntities) {
             queueEntities.addAll(
                     queueRepo.findAllBySpecialistIdAndLocationId(
                             serviceInSpecialistEntity.getSpecialistId(),

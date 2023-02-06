@@ -238,26 +238,26 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/{location_id}/types")
-    public ResponseEntity<?> getQueueTypesInLocation(
+    @GetMapping("/{location_id}/specialists")
+    public ResponseEntity<?> getSpecialistsInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(specialistService.getQueueTypesInLocation(getLocalizer(request), locationId));
+            return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/{location_id}/types/create")
-    public ResponseEntity<?> createQueueTypeInLocation(
+    @PostMapping("/{location_id}/specialists/create")
+    public ResponseEntity<?> createSpecialistInLocation(
             HttpServletRequest request,
             @RequestBody CreateSpecialistRequest createSpecialistRequest,
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(specialistService.createQueueTypeInLocation(getLocalizer(request), getToken(request), locationId, createSpecialistRequest));
+            return ResponseEntity.ok().body(specialistService.createSpecialistInLocation(getLocalizer(request), getToken(request), locationId, createSpecialistRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
@@ -265,14 +265,14 @@ public class LocationController extends BaseController {
         }
     }
 
-    @DeleteMapping("/{location_id}/types/{queue_type_id}/delete")
-    public ResponseEntity<?> deleteQueueTypeInLocation(
+    @DeleteMapping("/{location_id}/specialists/{queue_type_id}/delete")
+    public ResponseEntity<?> deleteSpecialistInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId,
             @PathVariable("queue_type_id") Long queueTypeId
     ) {
         try {
-            specialistService.deleteQueueTypeInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
+            specialistService.deleteSpecialistInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

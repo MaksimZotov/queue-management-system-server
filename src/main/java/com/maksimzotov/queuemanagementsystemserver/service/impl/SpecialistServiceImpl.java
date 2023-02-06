@@ -32,12 +32,12 @@ public class SpecialistServiceImpl implements SpecialistService {
     private final ServiceRepo serviceRepo;
 
     @Override
-    public ContainerForList<SpecialistModel> getQueueTypesInLocation(Localizer localizer, Long locationId) throws DescriptionException {
+    public ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId) throws DescriptionException {
         return new ContainerForList<>(specialistRepo.findAllByLocationId(locationId).stream().map(SpecialistModel::toModel).toList());
     }
 
     @Override
-    public SpecialistModel createQueueTypeInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public SpecialistModel createSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         SpecialistEntity specialistEntity = specialistRepo.save(
                 new SpecialistEntity(
@@ -67,7 +67,7 @@ public class SpecialistServiceImpl implements SpecialistService {
     }
 
     @Override
-    public void deleteQueueTypeInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         specialistRepo.deleteById(queueTypeId);
     }

@@ -86,9 +86,9 @@ public class ServiceServiceImpl implements ServiceService {
 
     @Override
     public ContainerForList<ServiceModel> getServicesInSpecialist(Localizer localizer, Long specialistId) {
-        List<ServiceInSpecialistEntity> serviceInQueueTypeEntities = serviceInSpecialistRepo.findAllBySpecialistId(specialistId);
+        List<ServiceInSpecialistEntity> serviceInSpecialistEntities = serviceInSpecialistRepo.findAllBySpecialistId(specialistId);
         List<ServiceModel> serviceModels = new ArrayList<>();
-        for (ServiceInSpecialistEntity serviceInSpecialistEntity : serviceInQueueTypeEntities) {
+        for (ServiceInSpecialistEntity serviceInSpecialistEntity : serviceInSpecialistEntities) {
             Optional<ServiceEntity> service = serviceRepo.findById(serviceInSpecialistEntity.getServiceId());
             ServiceEntity serviceEntity = service.get();
             serviceModels.add(ServiceModel.toModel(serviceEntity));
