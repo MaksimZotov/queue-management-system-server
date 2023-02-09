@@ -67,8 +67,9 @@ public class SpecialistServiceImpl implements SpecialistService {
     }
 
     @Override
-    public void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long queueTypeId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long specialistId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
-        specialistRepo.deleteById(queueTypeId);
+        serviceInSpecialistRepo.deleteAllBySpecialistId(specialistId);
+        specialistRepo.deleteById(specialistId);
     }
 }

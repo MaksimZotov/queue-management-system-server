@@ -269,10 +269,10 @@ public class LocationController extends BaseController {
     public ResponseEntity<?> deleteSpecialistInLocation(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId,
-            @PathVariable("queue_type_id") Long queueTypeId
+            @PathVariable("queue_type_id") Long specialistId
     ) {
         try {
-            specialistService.deleteSpecialistInLocation(getLocalizer(request), getToken(request), locationId, queueTypeId);
+            specialistService.deleteSpecialistInLocation(getLocalizer(request), getToken(request), locationId, specialistId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
