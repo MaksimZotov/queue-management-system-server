@@ -144,7 +144,7 @@ public class ServiceServiceImpl implements ServiceService {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         };
+        serviceInServicesSequenceRepo.deleteAllByPrimaryKeyServicesSequenceId(servicesSequenceId);
         servicesSequenceRepo.deleteById(servicesSequenceId);
-        serviceRepo.deleteById(servicesSequenceId);
     }
 }

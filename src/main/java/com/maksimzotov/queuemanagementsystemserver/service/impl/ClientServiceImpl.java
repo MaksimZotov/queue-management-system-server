@@ -131,7 +131,7 @@ public class ClientServiceImpl implements ClientService {
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
         clientRepo.deleteById(clientId);
-        queueService.updateCurrentQueueState(clientId);
+        queueService.updateCurrentQueueState(clientInQueueEntity.getQueueId());
         return getQueueStateForClient(localizer, clientId, accessKey);
     }
 
@@ -250,8 +250,6 @@ public class ClientServiceImpl implements ClientService {
         }
         return new StringBuilder()
                 .append(Constants.CLIENT_URL)
-                .append("/locations/")
-                .append(locationId)
                 .append("/client?client_id=")
                 .append(clientEntity.getId())
                 .append("&access_key=")

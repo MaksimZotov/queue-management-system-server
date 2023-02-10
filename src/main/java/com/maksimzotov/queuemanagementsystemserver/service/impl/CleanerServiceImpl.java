@@ -46,13 +46,7 @@ public class CleanerServiceImpl implements CleanerService {
         if (!Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.RESERVED.name())) {
             return;
         }
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        clientInQueueRepo.updateClientsOrderNumberInQueue(clientId, clientInQueueEntity.getOrderNumber());
-        clientInQueueRepo.deleteByClientId(clientEntity.getId());
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
-        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
         clientRepo.deleteById(clientId);
-        queueService.updateCurrentQueueState(clientId);
     }
 }
