@@ -33,6 +33,8 @@ public class QueueServiceImpl implements QueueService {
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final SpecialistRepo specialistRepo;
+    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
+    private final ServiceRepo serviceRepo;
 
     @Override
     public QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -112,7 +114,11 @@ public class QueueServiceImpl implements QueueService {
                 clientsEntities.stream()
                         .map(clientInQueueEntity -> {
                             ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
-                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
+                            List<String> serviceIds = clientInQueueToChosenServiceRepo.findAllByClientId(clientEntity.getId())
+                                    .stream()
+                                    .map(item -> serviceRepo.findById(item.getServiceId()).get().getName())
+                                    .toList();
+                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity, serviceIds);
                         })
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),
@@ -139,7 +145,11 @@ public class QueueServiceImpl implements QueueService {
                 clientsEntities.stream()
                         .map(clientInQueueEntity -> {
                             ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
-                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity);
+                            List<String> serviceIds = clientInQueueToChosenServiceRepo.findAllByClientId(clientEntity.getId())
+                                    .stream()
+                                    .map(item -> serviceRepo.findById(item.getServiceId()).get().getName())
+                                    .toList();
+                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity, serviceIds);
                         })
                         .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
                         .toList(),

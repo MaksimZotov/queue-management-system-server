@@ -6,6 +6,8 @@ import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
+import java.util.List;
+
 @Value
 @AllArgsConstructor
 public class ClientInQueue {
@@ -23,9 +25,14 @@ public class ClientInQueue {
     @JsonProperty("access_key")
     String accessKey;
     String status;
+    List<String> services;
 
 
-    public static ClientInQueue toModel(ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
+    public static ClientInQueue toModel(
+            ClientInQueueEntity clientInQueueEntity,
+            ClientEntity clientEntity,
+            List<String> services
+    ) {
         return new ClientInQueue(
                 clientEntity.getId(),
                 clientEntity.getEmail(),
@@ -34,7 +41,8 @@ public class ClientInQueue {
                 clientInQueueEntity.getOrderNumber(),
                 clientInQueueEntity.getPublicCode(),
                 clientEntity.getAccessKey(),
-                clientEntity.getStatus()
+                clientEntity.getStatus(),
+                services
         );
     }
 }
