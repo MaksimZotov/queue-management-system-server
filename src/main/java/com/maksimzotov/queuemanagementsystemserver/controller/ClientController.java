@@ -1,7 +1,9 @@
 package com.maksimzotov.queuemanagementsystemserver.controller;
 
 import com.maksimzotov.queuemanagementsystemserver.controller.base.BaseController;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
@@ -57,6 +59,22 @@ public class ClientController extends BaseController {
     ) {
         try {
             return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), clientId, accessKey));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @DeleteMapping("/{client_id}/delete")
+    public ResponseEntity<?> deleteClientInLocation(
+            HttpServletRequest request,
+            @PathVariable(name = "client_id") Long clientId,
+            @RequestParam(name = "location_id") Long locationId
+    ) {
+        try {
+            clientService.deleteClientInLocation(getLocalizer(request), getToken(request), locationId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
