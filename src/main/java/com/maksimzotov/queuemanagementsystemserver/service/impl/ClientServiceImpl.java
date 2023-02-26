@@ -248,13 +248,11 @@ public class ClientServiceImpl implements ClientService {
         if (location.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
-        return new StringBuilder()
-                .append(Constants.CLIENT_URL)
-                .append("/client?client_id=")
-                .append(clientEntity.getId())
-                .append("&access_key=")
-                .append(clientEntity.getAccessKey())
-                .toString();
+        return Constants.CLIENT_URL +
+                "/client?client_id=" +
+                clientEntity.getId() +
+                "&access_key=" +
+                clientEntity.getAccessKey();
     }
 
     private void createClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
