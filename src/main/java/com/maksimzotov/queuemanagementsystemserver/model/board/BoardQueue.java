@@ -15,7 +15,7 @@ public class BoardQueue {
     public static BoardQueue toModel(ClientInQueueRepo clientInQueueRepo, QueueEntity queueEntity) {
         return new BoardQueue(
                 queueEntity.getName(),
-                clientInQueueRepo.findAllByQueueId(queueEntity.getId()).get().stream()
+                clientInQueueRepo.findAllByQueueId(queueEntity.getId()).stream()
                         .map((BoardPosition::toModel))
                         .sorted(Comparator.comparingInt(BoardPosition::getNumber))
                         .toList()

@@ -14,22 +14,11 @@ import java.io.Serializable;
 public class ClientInQueueEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long clientId;
 
     private Long queueId;
-
-    private String email;
-
-    private String firstName;
-
-    private String lastName;
 
     private Integer orderNumber;
 
     private Integer publicCode;
-
-    private String accessKey;
-
-    private String status;
 }

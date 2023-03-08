@@ -6,20 +6,17 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
-@Entity(name = "client_in_queue_status")
+@Entity(name = "service_in_history_item")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientInQueueStatusEntity {
-
-    public enum Status {
-        RESERVED,
-        CONFIRMED
-    }
+public class ServiceInHistoryItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    private Long historyItemId;
+
+    private Long serviceId;
 }

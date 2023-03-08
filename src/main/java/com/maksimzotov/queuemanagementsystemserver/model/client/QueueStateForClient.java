@@ -1,16 +1,15 @@
 package com.maksimzotov.queuemanagementsystemserver.model.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueStatusEntity;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueState;
+import com.maksimzotov.queuemanagementsystemserver.entity.ClientStatusEntity;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
 import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
 
 import java.util.Objects;
 
 @Value
-@Jacksonized
 public class QueueStateForClient {
     @JsonProperty("in_queue")
     Boolean inQueue;
@@ -33,37 +32,22 @@ public class QueueStateForClient {
     String accessKey;
     String status;
 
-    public static QueueStateForClient toModel(QueueState queueState) {
-        return new QueueStateForClient(
-                false,
-                queueState.getName(),
-                queueState.getClients().size(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    public static QueueStateForClient toModel(QueueState queueState, ClientInQueueEntity entity) {
+    public static QueueStateForClient toModel(QueueStateModel queueStateModel, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
         String accessKey = null;
-        if (Objects.equals(entity.getStatus(), ClientInQueueStatusEntity.Status.CONFIRMED.name())) {
-            accessKey = entity.getAccessKey();
+        if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
+            accessKey = clientEntity.getAccessKey();
         }
         return new QueueStateForClient(
                 true,
-                queueState.getName(),
-                queueState.getClients().size(),
-                entity.getEmail(),
-                entity.getFirstName(),
-                entity.getLastName(),
-                entity.getOrderNumber() - 1,
-                entity.getPublicCode(),
+                queueStateModel.getName(),
+                queueStateModel.getClients().size(),
+                clientEntity.getEmail(),
+                clientEntity.getFirstName(),
+                clientEntity.getLastName(),
+                clientInQueueEntity.getOrderNumber() - 1,
+                clientInQueueEntity.getPublicCode(),
                 accessKey,
-                entity.getStatus()
+                clientEntity.getStatus()
         );
     }
 }

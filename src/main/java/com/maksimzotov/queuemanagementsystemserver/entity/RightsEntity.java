@@ -4,21 +4,26 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
+import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity(name = "rights")
-@IdClass(RightsEntity.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RightsEntity implements Serializable {
 
-    @Id
-    private Long locationId;
+    @Embeddable
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PrimaryKey implements Serializable {
+        private Long locationId;
+        private String email;
+    }
 
-    @Id
-    private String email;
+    @EmbeddedId
+    private PrimaryKey primaryKey;
+
+    private String status;
 }

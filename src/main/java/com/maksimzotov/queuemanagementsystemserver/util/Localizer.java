@@ -32,4 +32,24 @@ public class Localizer {
                 " " +
                 messageSource.getMessage(messageEnd.toMessageId(), null, locale);
     }
+
+    public String getMessageForClientConfirmation(String link) {
+        return messageSource.getMessage(Message.PLEASE_GO_TO_LINK_TO_CONFIRM_CONNECTION.toMessageId(), null, locale) +
+                " " +
+                link;
+    }
+
+    public String getMessageForClientCheckStatus(String queue, String publicCode, String link) {
+        return messageSource.getMessage(Message.YOUR_QUEUE.toMessageId(), null, locale) +
+                " " +
+                queue +
+                ". " +
+                messageSource.getMessage(Message.PUBLIC_CODE.toMessageId(), null, locale) +
+                " " +
+                publicCode +
+                ". " +
+                messageSource.getMessage(Message.YOU_CAN_CHECK_YOUR_STATUS_HERE.toMessageId(), null, locale) +
+                " " +
+                link;
+    }
 }

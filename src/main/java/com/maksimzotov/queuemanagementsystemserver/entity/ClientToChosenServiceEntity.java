@@ -5,24 +5,23 @@ import lombok.*;
 import javax.persistence.*;
 import java.io.Serializable;
 
-@Entity(name = "client_code")
+@Entity(name = "client_to_chosen_service")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientCodeEntity implements Serializable {
+public class ClientToChosenServiceEntity implements Serializable {
 
     @Embeddable
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PrimaryKey implements Serializable {
-        private Long queueId;
-        private String email;
+        private Long clientId;
+        private Long serviceId;
     }
 
     @EmbeddedId
     private PrimaryKey primaryKey;
 
-    private String code;
+    private Integer orderNumber;
 }

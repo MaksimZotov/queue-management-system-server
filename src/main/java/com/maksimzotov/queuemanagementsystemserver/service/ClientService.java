@@ -1,14 +1,17 @@
 package com.maksimzotov.queuemanagementsystemserver.service;
 
+import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.client.JoinQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface ClientService {
-    QueueStateForClient joinQueue(Localizer localizer, Long queueId, JoinQueueRequest joinQueueRequest) throws DescriptionException;
-    QueueStateForClient getQueueStateForClient(Long queueId, String email, String accessKey);
-    QueueStateForClient rejoinQueue(Localizer localizer, Long queueId, String email) throws DescriptionException;
-    QueueStateForClient confirmCode(Localizer localizer, Long queueId, String email, String code) throws DescriptionException;
-    QueueStateForClient leaveQueue(Localizer localizer, Long queueId, String email, String accessKey) throws DescriptionException;
+    void addClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest) throws DescriptionException;
+    QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException;
+    QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException;
+    QueueStateForClient leaveByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException;
+    void serveClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
+    void notifyClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
+    void deleteClientInLocation(Localizer localizer, String accessToken, Long locationId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
 }

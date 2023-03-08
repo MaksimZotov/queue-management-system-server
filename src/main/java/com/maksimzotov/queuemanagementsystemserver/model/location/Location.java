@@ -4,28 +4,29 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.extern.jackson.Jacksonized;
 
 @Data
 @AllArgsConstructor
-@Jacksonized
 public class Location {
 
     private Long id;
-    @JsonProperty("owner_username")
-    private String ownerUsername;
+    @JsonProperty("owner_email")
+    private String ownerEmail;
     private String name;
     private String description;
-    @JsonProperty("has_rights")
-    private Boolean hasRights;
+    @JsonProperty("is_owner")
+    private Boolean isOwner;
+    @JsonProperty("rights_status")
+    private String rightsStatus;
 
-    public static Location toModel(LocationEntity entity, Boolean hasRights) {
+    public static Location toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {
         return new Location(
                 entity.getId(),
-                entity.getOwnerUsername(),
+                entity.getOwnerEmail(),
                 entity.getName(),
                 entity.getDescription(),
-                hasRights
+                isOwner,
+                rightsStatus
         );
     }
 }

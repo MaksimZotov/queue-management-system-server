@@ -18,7 +18,11 @@ public class QueueEntity {
 
     private Long locationId;
 
+    private Long specialistId;
+
     private String name;
 
     private String description;
+
+    private Boolean enabled;
 }
