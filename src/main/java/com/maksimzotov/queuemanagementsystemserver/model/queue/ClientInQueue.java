@@ -32,7 +32,7 @@ public class ClientInQueue {
                 clientEntity.getId(),
                 clientEntity.getEmail(),
                 clientInQueueEntity.getOrderNumber(),
-                clientInQueueEntity.getPublicCode(),
+                clientInQueueEntity.getCode(),
                 clientEntity.getCode(),
                 clientEntity.getStatus(),
                 services

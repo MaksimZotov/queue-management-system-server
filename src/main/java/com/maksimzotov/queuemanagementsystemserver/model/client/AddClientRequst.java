@@ -8,10 +8,6 @@ import java.util.List;
 @Value
 public class AddClientRequst {
     String email;
-    @JsonProperty("first_name")
-    String firstName;
-    @JsonProperty("last_name")
-    String lastName;
     @JsonProperty("service_ids")
     List<Long> serviceIds;
     @JsonProperty("services_sequence_id")

@@ -14,5 +14,5 @@ public class RegistrationCodeEntity {
     @Id
     private String email;
 
-    private String code;
+    private Integer code;
 }

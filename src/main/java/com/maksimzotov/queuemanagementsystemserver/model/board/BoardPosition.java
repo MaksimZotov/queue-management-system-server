@@ -13,7 +13,7 @@ public class BoardPosition {
     public static BoardPosition toModel(ClientInQueueEntity clientInQueueEntity) {
         return new BoardPosition(
                 clientInQueueEntity.getOrderNumber(),
-                clientInQueueEntity.getPublicCode()
+                clientInQueueEntity.getCode()
         );
     }
 }

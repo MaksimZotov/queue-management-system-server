@@ -3,11 +3,8 @@ package com.maksimzotov.queuemanagementsystemserver.model.client;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
 import lombok.Value;
-
-import java.util.Objects;
 
 @Value
 public class QueueStateForClient {
@@ -32,7 +29,7 @@ public class QueueStateForClient {
                 queueStateModel.getClients().size(),
                 clientEntity.getEmail(),
                 clientInQueueEntity.getOrderNumber() - 1,
-                clientInQueueEntity.getPublicCode(),
+                clientInQueueEntity.getCode(),
                 clientEntity.getStatus()
         );
     }

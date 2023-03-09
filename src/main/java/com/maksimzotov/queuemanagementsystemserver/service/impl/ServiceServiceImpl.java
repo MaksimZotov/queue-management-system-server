@@ -58,8 +58,6 @@ public class ServiceServiceImpl implements ServiceService {
                                 locationId,
                                 createServiceRequest.getName(),
                                 createServiceRequest.getDescription(),
-                                createServiceRequest.getSupposedDuration(),
-                                createServiceRequest.getMaxDuration(),
                                 true
                         )
                 )

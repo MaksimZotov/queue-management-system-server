@@ -90,7 +90,10 @@ public class ClientServiceImpl implements ClientService {
         createClient(localizer, locationId, addClientRequest, serviceIdsToOrderNumbers);
     }
 
-    public void callClient(Localizer localizer, Long locationId, Long queueId, Long clientId) throws DescriptionException {
+    @Override
+    public void callClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, queueId);
+
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
@@ -102,6 +105,7 @@ public class ClientServiceImpl implements ClientService {
 
         QueueEntity queueEntity = queue.get();
         ClientEntity clientEntity = client.get();
+        Long locationId = queueEntity.getLocationId();
 
         Map<Long, Integer> serviceIdsToOrderNumbers = getServiceIdsToOrderNumbersForClient(clientId);
 
@@ -281,18 +285,6 @@ public class ClientServiceImpl implements ClientService {
 
         if (!EmailChecker.emailMatches(addClientRequest.getEmail())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
-        }
-        if (addClientRequest.getFirstName().isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY));
-        }
-        if (addClientRequest.getFirstName().length() > 64) {
-            throw new DescriptionException(localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
-        }
-        if (addClientRequest.getLastName().isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY));
-        }
-        if (addClientRequest.getLastName().length() > 64) {
-            throw new DescriptionException(localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS));
         }
 
         Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();

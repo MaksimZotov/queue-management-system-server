@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.Random;
 
 public class CodeGenerator {
-    public static String generate() {
-        return String.valueOf(new Random().nextInt(9000) + 1000);
+    public static Integer generate() {
+        return new Random().nextInt(9000) + 1000;
     }
 
     public static Integer generate(List<Integer> list) {
