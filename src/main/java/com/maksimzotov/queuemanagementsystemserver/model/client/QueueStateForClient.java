@@ -20,33 +20,19 @@ public class QueueStateForClient {
     Integer queueLength;
 
     String email;
-    @JsonProperty("first_name")
-    String firstName;
-    @JsonProperty("last_name")
-    String lastName;
     @JsonProperty("before_me")
     Integer beforeMe;
-    @JsonProperty("public_code")
-    Integer publicCode;
-    @JsonProperty("access_key")
-    String accessKey;
+    Integer code;
     String status;
 
     public static QueueStateForClient toModel(QueueStateModel queueStateModel, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
-        String accessKey = null;
-        if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
-            accessKey = clientEntity.getAccessKey();
-        }
         return new QueueStateForClient(
                 true,
                 queueStateModel.getName(),
                 queueStateModel.getClients().size(),
                 clientEntity.getEmail(),
-                clientEntity.getFirstName(),
-                clientEntity.getLastName(),
                 clientInQueueEntity.getOrderNumber() - 1,
                 clientInQueueEntity.getPublicCode(),
-                accessKey,
                 clientEntity.getStatus()
         );
     }

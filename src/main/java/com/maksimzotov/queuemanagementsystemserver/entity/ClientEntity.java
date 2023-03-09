@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.util.Date;
 
 @Entity(name = "client")
 @Data
@@ -23,11 +24,9 @@ public class ClientEntity {
 
     private String email;
 
-    private String firstName;
-
-    private String lastName;
-
-    private String accessKey;
+    private Integer code;
 
     private String status;
+
+    private Date waitTimestamp;
 }

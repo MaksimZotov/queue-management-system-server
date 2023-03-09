@@ -59,10 +59,11 @@ public class QueueServiceImpl implements QueueService {
                         createQueueRequest.getSpecialistId(),
                         createQueueRequest.getName(),
                         createQueueRequest.getDescription(),
-                        true
+                        true,
+                        null
                 )
         );
-        locationService.updateLocationBoard(locationId);
+        locationService.updateLocationState(locationId);
 
         return QueueModel.toModel(queueEntity, true);
     }
@@ -74,7 +75,7 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_CONTAINS_CLIENTS));
         }
         queueRepo.deleteById(queueId);
-        locationService.updateLocationBoard(queueEntity.getLocationId());
+        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
@@ -159,20 +160,12 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public QueueStateModel updateCurrentQueueState(Long queueId) {
-        QueueStateModel queueStateModel = getCurrentQueueState(queueId);
-        messagingTemplate.convertAndSend(WebSocketConfig.QUEUE_URL + queueId, queueStateModel);
-        locationService.updateLocationBoard(queueStateModel.getLocationId());
-        return queueStateModel;
-    }
-
-    @Override
     public void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, queueId);
         QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
         queueEntity.setEnabled(paused);
         queueRepo.save(queueEntity);
-        updateCurrentQueueState(queueId);
+        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {

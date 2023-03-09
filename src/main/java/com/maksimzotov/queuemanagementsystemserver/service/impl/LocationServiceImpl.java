@@ -11,6 +11,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
@@ -135,31 +136,13 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException {
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
-        return BoardModel.toModel(
-                clientInQueueRepo,
-                queues.get()
-        );
+    public LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException {
+        return null;
     }
 
     @Override
-    public void updateLocationBoard(Long locationId)  {
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            return;
-        }
-        BoardModel boardModel = BoardModel.toModel(
-                clientInQueueRepo,
-                queues.get()
-        );
-        messagingTemplate.convertAndSend(
-                WebSocketConfig.BOARD_URL + locationId,
-                boardModel
-        );
+    public void updateLocationState(Long locationId) {
+
     }
 
     @Override
@@ -178,8 +161,6 @@ public class LocationServiceImpl implements LocationService {
                 .peek(item -> item.setEnabled(enabled))
                 .toList();
         queueRepo.saveAll(modifiedQueues);
-        for (QueueEntity entity: modifiedQueues) {
-            queueService.updateCurrentQueueState(entity.getId());
-        }
+        updateLocationState(locationId);
     }
 }
