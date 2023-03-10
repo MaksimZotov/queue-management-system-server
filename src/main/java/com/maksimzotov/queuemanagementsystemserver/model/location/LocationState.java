@@ -33,7 +33,7 @@ public class LocationState {
         Long id;
         Integer code;
         Date waitTimestamp;
-        List<Service> allServices;
+        List<Service> services;
         Queue queue;
         List<Service> servicesInQueue;
     }
