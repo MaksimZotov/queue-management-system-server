@@ -13,10 +13,6 @@ public interface ClientInQueueRepo extends JpaRepository<ClientInQueueEntity, Lo
 
     List<ClientInQueueEntity> findAllByQueueId(Long queueId);
 
-    @Modifying
-    @Query("UPDATE client_in_queue SET orderNumber = orderNumber - 1 WHERE queue_id = :p_queue_id AND order_number > :p_order_number")
-    void updateClientsOrderNumberInQueue(@Param("p_queue_id") Long queueId, @Param("p_order_number") Integer orderNumber);
-
     Optional<ClientInQueueEntity> findByClientId(Long clientId);
 
     Boolean existsByQueueId(Long queueId);

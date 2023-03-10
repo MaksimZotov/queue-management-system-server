@@ -17,7 +17,5 @@ public class ClientInQueueEntity {
 
     private Long queueId;
 
-    private Integer orderNumber;
-
     private Integer code;
 }

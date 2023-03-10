@@ -189,8 +189,6 @@ public class ClientServiceImpl implements ClientService {
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
-        ClientInQueueEntity clientInQueueEntity = client.get();
-        clientInQueueRepo.updateClientsOrderNumberInQueue(clientId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByClientId(clientId);
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
@@ -207,9 +205,7 @@ public class ClientServiceImpl implements ClientService {
         if (clientInQueue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
         }
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
 
-        clientInQueueRepo.updateClientsOrderNumberInQueue(queueId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteById(clientId);
 
         List<ClientInQueueToChosenServiceEntity> services = clientInQueueToChosenServiceRepo.findAllByClientId(clientId);
@@ -256,8 +252,6 @@ public class ClientServiceImpl implements ClientService {
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
-        ClientInQueueEntity clientInQueueEntity = client.get();
-        clientInQueueRepo.updateClientsOrderNumberInQueue(clientId, clientInQueueEntity.getOrderNumber());
         clientInQueueRepo.deleteByClientId(clientId);
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);

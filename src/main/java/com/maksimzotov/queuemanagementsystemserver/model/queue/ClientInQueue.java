@@ -14,8 +14,6 @@ public class ClientInQueue {
     Long id;
     @JsonProperty("email")
     String email;
-    @JsonProperty("order_number")
-    Integer orderNumber;
     @JsonProperty("public_code")
     Integer publicCode;
     Integer code;
@@ -31,7 +29,6 @@ public class ClientInQueue {
         return new ClientInQueue(
                 clientEntity.getId(),
                 clientEntity.getEmail(),
-                clientInQueueEntity.getOrderNumber(),
                 clientInQueueEntity.getCode(),
                 clientEntity.getCode(),
                 clientEntity.getStatus(),

@@ -13,12 +13,8 @@ public class QueueStateForClient {
 
     @JsonProperty("queue_name")
     String queueName;
-    @JsonProperty("queue_length")
-    Integer queueLength;
 
     String email;
-    @JsonProperty("before_me")
-    Integer beforeMe;
     Integer code;
     String status;
 
@@ -26,9 +22,7 @@ public class QueueStateForClient {
         return new QueueStateForClient(
                 true,
                 queueStateModel.getName(),
-                queueStateModel.getClients().size(),
                 clientEntity.getEmail(),
-                clientInQueueEntity.getOrderNumber() - 1,
                 clientInQueueEntity.getCode(),
                 clientEntity.getStatus()
         );

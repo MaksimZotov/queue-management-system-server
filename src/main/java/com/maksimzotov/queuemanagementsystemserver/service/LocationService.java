@@ -3,7 +3,6 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;

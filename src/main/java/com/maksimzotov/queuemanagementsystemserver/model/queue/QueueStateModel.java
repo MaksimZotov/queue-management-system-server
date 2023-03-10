@@ -13,7 +13,6 @@ public class QueueStateModel {
     Long locationId;
     String name;
     String description;
-    List<ClientInQueue> clients;
     @JsonProperty("owner_email")
     String ownerEmail;
     Boolean enabled;

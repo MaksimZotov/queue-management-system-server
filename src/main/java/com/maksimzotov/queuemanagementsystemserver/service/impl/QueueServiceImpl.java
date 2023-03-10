@@ -103,24 +103,11 @@ public class QueueServiceImpl implements QueueService {
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
 
-        List<ClientInQueueEntity> clientsEntities = clientInQueueRepo.findAllByQueueId(queueId);
-
         return new QueueStateModel(
                 queueId,
                 queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream()
-                        .map(clientInQueueEntity -> {
-                            ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
-                            List<String> serviceIds = clientInQueueToChosenServiceRepo.findAllByClientId(clientEntity.getId())
-                                    .stream()
-                                    .map(item -> serviceRepo.findById(item.getServiceId()).get().getName())
-                                    .toList();
-                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity, serviceIds);
-                        })
-                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
-                        .toList(),
                 locationEntity.getOwnerEmail(),
                 queueEntity.getEnabled()
         );
@@ -141,17 +128,6 @@ public class QueueServiceImpl implements QueueService {
                 queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
-                clientsEntities.stream()
-                        .map(clientInQueueEntity -> {
-                            ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
-                            List<String> serviceIds = clientInQueueToChosenServiceRepo.findAllByClientId(clientEntity.getId())
-                                    .stream()
-                                    .map(item -> serviceRepo.findById(item.getServiceId()).get().getName())
-                                    .toList();
-                            return ClientInQueue.toModel(clientInQueueEntity, clientEntity, serviceIds);
-                        })
-                        .sorted(Comparator.comparingInt(ClientInQueue::getOrderNumber))
-                        .toList(),
                 locationEntity.getOwnerEmail(),
                 queueEntity.getEnabled()
         );
