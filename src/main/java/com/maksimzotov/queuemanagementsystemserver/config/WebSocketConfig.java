@@ -10,8 +10,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    public static String QUEUE_URL = "/topic/queues/";
-    public static String BOARD_URL = "/topic/boards/";
+    public static String LOCATION_URL = "/topic/locations/";
 
     @Override
     public void configureMessageBroker(final MessageBrokerRegistry registry) {

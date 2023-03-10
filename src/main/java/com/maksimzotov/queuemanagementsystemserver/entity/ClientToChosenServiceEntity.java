@@ -18,6 +18,7 @@ public class ClientToChosenServiceEntity implements Serializable {
     public static class PrimaryKey implements Serializable {
         private Long clientId;
         private Long serviceId;
+        private Long locationId;
     }
 
     @EmbeddedId

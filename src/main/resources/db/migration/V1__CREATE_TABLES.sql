@@ -75,8 +75,9 @@ CREATE TABLE client (
 CREATE TABLE client_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
+    location_id BIGINT REFERENCES location (id) NOT NULL,
     order_number INTEGER NOT NULL,
-    PRIMARY KEY (client_id, service_id)
+    PRIMARY KEY (client_id, service_id, location_id)
 );
 
 -- Queue
@@ -101,7 +102,8 @@ CREATE TABLE client_in_queue_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
-    PRIMARY KEY (client_id, service_id, queue_id)
+    location_id BIGINT REFERENCES location (id) NOT NULL,
+    PRIMARY KEY (client_id, service_id, queue_id, location_id)
 );
 
 -- Rights

@@ -1,9 +1,7 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
-import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
@@ -44,6 +42,9 @@ public class LocationServiceImpl implements LocationService {
     private final QueueRepo queueRepo;
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
+    private final ServiceRepo serviceRepo;
+    private final ClientToChosenServiceRepo clientToChosenServiceRepo;
+    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -137,12 +138,40 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException {
-        return null;
+        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
+        List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
+        List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities = clientInQueueToChosenServiceRepo.findAllByLocationId(locationId);
+        return LocationState.toModel(
+                locationId,
+                clientEntities,
+                serviceEntities,
+                clientToChosenServiceEntities,
+                queueEntities,
+                clientInQueueToChosenServiceEntities
+        );
     }
 
     @Override
     public void updateLocationState(Long locationId) {
-
+        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
+        List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
+        List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities = clientInQueueToChosenServiceRepo.findAllByLocationId(locationId);
+        LocationState locationState = LocationState.toModel(
+                locationId,
+                clientEntities,
+                serviceEntities,
+                clientToChosenServiceEntities,
+                queueEntities,
+                clientInQueueToChosenServiceEntities
+        );
+        messagingTemplate.convertAndSend(
+                WebSocketConfig.LOCATION_URL + locationId,
+                locationState
+        );
     }
 
     @Override
@@ -151,12 +180,8 @@ public class LocationServiceImpl implements LocationService {
         if (!hasRights) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
+        List<QueueEntity> queues = queueRepo.findAllByLocationId(locationId);
         List<QueueEntity> modifiedQueues = queues
-                .get()
                 .stream()
                 .peek(item -> item.setEnabled(enabled))
                 .toList();

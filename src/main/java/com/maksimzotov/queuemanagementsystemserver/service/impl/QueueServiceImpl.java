@@ -80,12 +80,10 @@ public class QueueServiceImpl implements QueueService {
 
     @Override
     public ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
-        Optional<List<QueueEntity>> queuesEntities = queueRepo.findAllByLocationId(locationId);
-        if (queuesEntities.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
+        List<QueueEntity> queuesEntities = queueRepo.findAllByLocationId(locationId);
         return new ContainerForList<>(
-                queuesEntities.get().stream()
+                queuesEntities
+                        .stream()
                         .map((item) -> QueueModel.toModel(
                                         item,
                                         rightsService.checkEmployeeRightsInLocationNoException(

@@ -132,7 +132,8 @@ public class ClientServiceImpl implements ClientService {
                     new ClientInQueueToChosenServiceEntity(
                             clientEntity.getId(),
                             serviceId,
-                            queueEntity.getId()
+                            queueEntity.getId(),
+                            locationId
                     )
             );
         }
@@ -358,7 +359,8 @@ public class ClientServiceImpl implements ClientService {
                     new ClientToChosenServiceEntity(
                             new ClientToChosenServiceEntity.PrimaryKey(
                                     clientEntity.getId(),
-                                    serviceIdToOrderNumber.getKey()
+                                    serviceIdToOrderNumber.getKey(),
+                                    locationId
                             ),
                             serviceIdToOrderNumber.getValue()
                     )

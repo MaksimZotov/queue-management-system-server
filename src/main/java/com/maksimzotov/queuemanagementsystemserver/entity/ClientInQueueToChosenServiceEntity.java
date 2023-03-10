@@ -24,4 +24,7 @@ public class ClientInQueueToChosenServiceEntity implements Serializable {
 
     @Id
     private Long queueId;
+
+    @Id
+    private Long locationId;
 }
