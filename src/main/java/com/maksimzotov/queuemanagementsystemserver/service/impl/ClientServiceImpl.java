@@ -185,7 +185,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public QueueStateForClient leaveByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         checkAccessKey(localizer, clientId, accessKey);
-        Optional<ClientInQueueEntity> client = clientInQueueRepo.findByClientId(clientId);
+        Optional<ClientEntity> client = clientRepo.findById(clientId);
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
