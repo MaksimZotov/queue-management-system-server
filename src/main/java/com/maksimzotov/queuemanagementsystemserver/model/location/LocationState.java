@@ -7,6 +7,7 @@ import lombok.Data;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Data
 @AllArgsConstructor
@@ -15,7 +16,6 @@ public class LocationState {
     @AllArgsConstructor
     public static class Queue {
         Long id;
-        Long specialistId;
         String name;
     }
 
@@ -30,7 +30,7 @@ public class LocationState {
     @AllArgsConstructor
     public static class Client {
         Integer code;
-        Long waitTime;
+        Date waitTimestamp;
         List<Service> allServices;
         Queue queue;
         List<Service> servicesInQueue;
@@ -57,13 +57,13 @@ public class LocationState {
                         .stream()
                         .map(clientEntity -> {
                             Integer code = getCode(clientEntity);
-                            Long waitTime = getWaitTime(clientEntity);
+                            Date waitTimestamp = getWaitTime(clientEntity);
                             List<Service> allServices = getAllServices(clientEntity, serviceEntities, clientToChosenServiceEntities);
                             Queue queue = getQueue(clientEntity, queueEntities);
                             List<Service> servicesInQueue = getServicesInQueue(clientEntity, serviceEntities, clientInQueueToChosenServiceEntities);
                             return new Client(
                                     code,
-                                    waitTime,
+                                    waitTimestamp,
                                     allServices,
                                     queue,
                                     servicesInQueue
@@ -77,8 +77,8 @@ public class LocationState {
         return clientEntity.getCode();
     }
 
-    private static Long getWaitTime(ClientEntity clientEntity) {
-        return new Date().getTime() - clientEntity.getWaitTimestamp().getTime();
+    private static Date getWaitTime(ClientEntity clientEntity) {
+        return clientEntity.getWaitTimestamp();
     }
 
     private static List<Service> getAllServices(
@@ -117,7 +117,7 @@ public class LocationState {
             ClientEntity clientEntity,
             List<QueueEntity> queueEntities
     ) {
-        return queueEntities
+        Optional<Queue> queue = queueEntities
                 .stream()
                 .filter(queueEntity ->
                         Objects.equals(
@@ -127,11 +127,15 @@ public class LocationState {
                 )
                 .map(queueEntity -> new Queue(
                         queueEntity.getId(),
-                        queueEntity.getSpecialistId(),
                         queueEntity.getName()
                 ))
-                .findFirst()
-                .get();
+                .findFirst();
+
+        if (queue.isEmpty()) {
+            return null;
+        } else  {
+            return queue.get();
+        }
     }
 
     private static List<Service> getServicesInQueue(
