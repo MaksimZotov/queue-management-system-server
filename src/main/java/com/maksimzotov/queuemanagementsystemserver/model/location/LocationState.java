@@ -24,6 +24,7 @@ public class LocationState {
     public static class Service {
         Long id;
         String name;
+        Integer orderNumber;
     }
 
     @Data
@@ -105,7 +106,8 @@ public class LocationState {
                                 )
                                 .map(serviceEntity -> new Service(
                                         serviceEntity.getId(),
-                                        serviceEntity.getName()
+                                        serviceEntity.getName(),
+                                        clientToChosenServiceEntity.getOrderNumber()
                                 ))
                                 .findFirst()
                                 .get()
@@ -162,7 +164,8 @@ public class LocationState {
                                 )
                                 .map(serviceEntity -> new Service(
                                         serviceEntity.getId(),
-                                        serviceEntity.getName()
+                                        serviceEntity.getName(),
+                                        0
                                 ))
                                 .findFirst()
                                 .get()
