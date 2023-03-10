@@ -18,12 +18,22 @@ public class QueueStateForClient {
     Integer code;
     String status;
 
-    public static QueueStateForClient toModel(QueueStateModel queueStateModel, ClientInQueueEntity clientInQueueEntity, ClientEntity clientEntity) {
+    public static QueueStateForClient toModel(QueueStateModel queueStateModel, ClientEntity clientEntity) {
         return new QueueStateForClient(
                 true,
                 queueStateModel.getName(),
                 clientEntity.getEmail(),
-                clientInQueueEntity.getCode(),
+                clientEntity.getCode(),
+                clientEntity.getStatus()
+        );
+    }
+
+    public static QueueStateForClient toModel(ClientEntity clientEntity) {
+        return new QueueStateForClient(
+                false,
+                null,
+                clientEntity.getEmail(),
+                clientEntity.getCode(),
                 clientEntity.getStatus()
         );
     }

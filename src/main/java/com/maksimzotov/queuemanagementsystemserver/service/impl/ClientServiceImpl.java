@@ -152,19 +152,19 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
+    public QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
         Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
         if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
+            return QueueStateForClient.toModel(clientEntity);
         }
         ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
         QueueStateModel queueStateModel = queueService.getCurrentQueueState(clientInQueueEntity.getQueueId());
-        return QueueStateForClient.toModel(queueStateModel, clientInQueueEntity, clientEntity);
+        return QueueStateForClient.toModel(queueStateModel, clientEntity);
     }
 
     @Override
-    public QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
+    public QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
         if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_CONFIRMED));
@@ -174,7 +174,7 @@ public class ClientServiceImpl implements ClientService {
 
         clientEntity.setStatus(ClientStatusEntity.Status.CONFIRMED.name());
         clientEntity.setWaitTimestamp(new Date());
-        clientEntity.setCode(CodeGenerator.generate(clientEntities.stream().map(ClientEntity::getCode).toList()));
+        clientEntity.setCode(CodeGenerator.generateCodeInLocation(clientEntities.stream().map(ClientEntity::getCode).toList()));
 
         clientRepo.save(clientEntity);
         locationService.updateLocationState(clientEntity.getLocationId());
@@ -183,7 +183,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient leaveByClient(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
+    public QueueStateForClient leaveByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         checkAccessKey(localizer, clientId, accessKey);
         Optional<ClientInQueueEntity> client = clientInQueueRepo.findByClientId(clientId);
         if (client.isEmpty()) {
@@ -308,13 +308,13 @@ public class ClientServiceImpl implements ClientService {
         return serviceIdsToOrderNumbers;
     }
 
-    private ClientEntity checkAccessKey(Localizer localizer, Long clientId, String accessKey) throws DescriptionException {
+    private ClientEntity checkAccessKey(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         Optional<ClientEntity> client = clientRepo.findById(clientId);
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
         ClientEntity clientEntity = client.get();
-        if (!Objects.equals(clientEntity.getCode(), accessKey)) {
+        if (!Objects.equals(clientEntity.getAccessKey(), accessKey)) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_ACCESS_KEY));
         }
         return clientEntity;
@@ -329,7 +329,7 @@ public class ClientServiceImpl implements ClientService {
                 "/client?client_id=" +
                 clientEntity.getId() +
                 "&access_key=" +
-                clientEntity.getCode();
+                clientEntity.getAccessKey();
     }
 
     private void createClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
@@ -343,6 +343,7 @@ public class ClientServiceImpl implements ClientService {
                         locationId,
                         addClientRequest.getEmail(),
                         null,
+                        CodeGenerator.generateAccessKey(),
                         ClientStatusEntity.Status.RESERVED.name(),
                         null
                 )

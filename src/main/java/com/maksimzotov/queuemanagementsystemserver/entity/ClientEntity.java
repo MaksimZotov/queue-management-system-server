@@ -26,6 +26,8 @@ public class ClientEntity {
 
     private Integer code;
 
+    private Integer accessKey;
+
     private String status;
 
     private Date waitTimestamp;

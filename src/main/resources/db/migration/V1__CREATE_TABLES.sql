@@ -66,9 +66,8 @@ CREATE TABLE client (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     email VARCHAR(64),
-    first_name VARCHAR(64) NOT NULL,
-    last_name VARCHAR(64) NOT NULL,
-    code INTEGER NOT NULL,
+    code INTEGER,
+    access_key INTEGER NOT NULL,
     status VARCHAR(64) REFERENCES client_status (name) NOT NULL,
     wait_timestamp TIMESTAMP
 );
@@ -93,9 +92,7 @@ CREATE TABLE queue (
 CREATE TABLE client_in_queue (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     queue_id BIGINT REFERENCES queue (id) NOT NULL,
-    order_number INTEGER,
-    code INTEGER NOT NULL,
-    UNIQUE (client_id, queue_id, order_number),
+    UNIQUE (client_id, queue_id),
     PRIMARY KEY (client_id)
 );
 CREATE TABLE client_in_queue_to_chosen_service (
