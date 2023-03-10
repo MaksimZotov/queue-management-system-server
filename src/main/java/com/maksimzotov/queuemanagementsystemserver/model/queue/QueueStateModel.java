@@ -16,4 +16,5 @@ public class QueueStateModel {
     @JsonProperty("owner_email")
     String ownerEmail;
     Boolean enabled;
+    List<Long> services;
 }

@@ -33,6 +33,7 @@ public class QueueServiceImpl implements QueueService {
     private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final SpecialistRepo specialistRepo;
+    private final ServiceInSpecialistRepo serviceInSpecialistRepo;
     private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
     private final ServiceRepo serviceRepo;
 
@@ -103,13 +104,19 @@ public class QueueServiceImpl implements QueueService {
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
 
+        List<Long> services = serviceInSpecialistRepo.findAllBySpecialistId(queueEntity.getSpecialistId())
+                .stream()
+                .map(ServiceInSpecialistEntity::getServiceId)
+                .toList();
+
         return new QueueStateModel(
                 queueId,
                 queueEntity.getLocationId(),
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 locationEntity.getOwnerEmail(),
-                queueEntity.getEnabled()
+                queueEntity.getEnabled(),
+                services
         );
     }
 
@@ -118,10 +125,13 @@ public class QueueServiceImpl implements QueueService {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         QueueEntity queueEntity = queue.get();
 
-        List<ClientInQueueEntity> clientsEntities = clientInQueueRepo.findAllByQueueId(queueId);
-
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();
+
+        List<Long> services = serviceInSpecialistRepo.findAllBySpecialistId(queueEntity.getSpecialistId())
+                .stream()
+                .map(ServiceInSpecialistEntity::getServiceId)
+                .toList();
 
         return new QueueStateModel(
                 queueId,
@@ -129,7 +139,8 @@ public class QueueServiceImpl implements QueueService {
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 locationEntity.getOwnerEmail(),
-                queueEntity.getEnabled()
+                queueEntity.getEnabled(),
+                services
         );
     }
 
