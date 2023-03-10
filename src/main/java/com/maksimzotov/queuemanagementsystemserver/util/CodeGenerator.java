@@ -18,7 +18,7 @@ public class CodeGenerator {
             if (min > 1) {
                 result = min - 1;
             } else {
-                result = list.stream().max(Integer::compare).get() + 1;
+                result = list.stream().filter(Objects::nonNull).max(Integer::compare).get() + 1;
             }
         }
         return result;

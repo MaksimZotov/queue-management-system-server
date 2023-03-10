@@ -138,6 +138,9 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
+        queueEntity.setClientId(clientId);
+        queueRepo.save(queueEntity);
+
         mailService.send(
                 clientEntity.getEmail(),
                 localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
@@ -248,9 +251,11 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public void deleteClientInLocation(Localizer localizer, String accessToken, Long locationId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
-        Optional<ClientInQueueEntity> client = clientInQueueRepo.findByClientId(clientId);
-        if (client.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
+        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
+        if (clientInQueue.isPresent()) {
+            ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
+            clientInQueueEntity.setClientId(null);
+            clientInQueueRepo.save(clientInQueueEntity);
         }
         clientInQueueRepo.deleteByClientId(clientId);
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
