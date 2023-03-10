@@ -110,6 +110,18 @@ public class LocationController extends BaseController {
         }
     }
 
+    @GetMapping("/{location_id}/state")
+    public ResponseEntity<?> getLocationState(
+            HttpServletRequest request,
+            @PathVariable("location_id") Long locationId
+    ) {
+        try {
+            return ResponseEntity.ok().body(locationService.getLocationState(getLocalizer(request), locationId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
     @PostMapping("/{location_id}/enable")
     public ResponseEntity<?> enable(
             HttpServletRequest request,

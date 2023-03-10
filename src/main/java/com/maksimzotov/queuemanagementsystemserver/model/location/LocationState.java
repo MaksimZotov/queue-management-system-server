@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.model.location;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class LocationState {
     public static class Service {
         Long id;
         String name;
+        @JsonProperty("order_number")
         Integer orderNumber;
     }
 
@@ -32,13 +34,15 @@ public class LocationState {
     public static class Client {
         Long id;
         Integer code;
+        @JsonProperty("wait_timestamp")
         Date waitTimestamp;
         List<Service> services;
         Queue queue;
+        @JsonProperty("services_in_queue")
         List<Service> servicesInQueue;
     }
 
-    Long locationId;
+    Long id;
 
     List<Client> clients;
 
