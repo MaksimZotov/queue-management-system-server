@@ -30,6 +30,7 @@ public class LocationState {
     @Data
     @AllArgsConstructor
     public static class Client {
+        Long id;
         Integer code;
         Date waitTimestamp;
         List<Service> allServices;
@@ -63,6 +64,7 @@ public class LocationState {
                             Queue queue = getQueue(clientEntity, queueEntities);
                             List<Service> servicesInQueue = getServicesInQueue(clientEntity, serviceEntities, clientInQueueToChosenServiceEntities);
                             return new Client(
+                                    clientEntity.getId(),
                                     code,
                                     waitTimestamp,
                                     allServices,
