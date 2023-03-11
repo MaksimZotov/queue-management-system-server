@@ -9,6 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 public interface ClientService {
     void addClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest) throws DescriptionException;
     void callClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
+    void returnClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException;
     QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException;
     QueueStateForClient leaveByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException;

@@ -98,12 +98,18 @@ public class ClientServiceImpl implements ClientService {
         if (queue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
+
+        QueueEntity queueEntity = queue.get();
+        if (queueEntity.getClientId() != null) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_CONTAINS_CLIENTS));
+        }
+
         Optional<ClientEntity> client = clientRepo.findById(clientId);
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
 
-        QueueEntity queueEntity = queue.get();
+
         ClientEntity clientEntity = client.get();
         Long locationId = queueEntity.getLocationId();
 
@@ -152,6 +158,24 @@ public class ClientServiceImpl implements ClientService {
         );
 
         locationService.updateLocationState(locationId);
+    }
+
+    @Override
+    public void returnClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, queueId);
+
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
+
+        QueueEntity queueEntity = queue.get();
+        queueEntity.setClientId(null);
+        queueRepo.save(queueEntity);
+
+        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
+
+        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override

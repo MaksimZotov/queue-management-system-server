@@ -155,6 +155,22 @@ public class QueueController extends BaseController {
         }
     }
 
+    @PostMapping("/{queue_id}/return")
+    public ResponseEntity<?> returnClient(
+            HttpServletRequest request,
+            @PathVariable(name = "queue_id") Long queueId,
+            @RequestParam(name = "client_id") Long clientId
+    ) {
+        try {
+            clientService.returnClient(getLocalizer(request), getToken(request), queueId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
     @PostMapping("/{queue_id}/notify")
     public ResponseEntity<?> notifyClientInQueue(
             HttpServletRequest request,
