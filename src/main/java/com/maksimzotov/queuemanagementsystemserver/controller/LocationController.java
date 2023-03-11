@@ -122,36 +122,6 @@ public class LocationController extends BaseController {
         }
     }
 
-    @PostMapping("/{location_id}/enable")
-    public ResponseEntity<?> enable(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            locationService.changeEnabledStateInLocation(getLocalizer(request), getToken(request), locationId, true);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/{location_id}/disable")
-    public ResponseEntity<?> disable(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            locationService.changeEnabledStateInLocation(getLocalizer(request), getToken(request), locationId, false);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
     @GetMapping("/{location_id}/services")
     public ResponseEntity<?> getServicesInLocation(
             HttpServletRequest request,

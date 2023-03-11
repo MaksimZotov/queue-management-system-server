@@ -172,19 +172,4 @@ public class LocationServiceImpl implements LocationService {
                 locationState
         );
     }
-
-    @Override
-    public void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException {
-        Boolean hasRights = rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
-        if (!hasRights) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        }
-        List<QueueEntity> queues = queueRepo.findAllByLocationId(locationId);
-        List<QueueEntity> modifiedQueues = queues
-                .stream()
-                .peek(item -> item.setEnabled(enabled))
-                .toList();
-        queueRepo.saveAll(modifiedQueues);
-        updateLocationState(locationId);
-    }
 }

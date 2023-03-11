@@ -17,5 +17,4 @@ public interface LocationService {
     LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
     LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException;
     void updateLocationState(Long locationId);
-    void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException;
 }
