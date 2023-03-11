@@ -112,7 +112,7 @@ public class ClientServiceImpl implements ClientService {
                 localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
                 localizer.getMessageForClientCheckStatus(
                         queueEntity.getName(),
-                        clientEntity.toString(),
+                        clientEntity.getCode().toString(),
                         getLinkForClient(localizer, clientEntity, locationId)
                 )
         );
@@ -170,7 +170,13 @@ public class ClientServiceImpl implements ClientService {
         }
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientRepo.deleteById(clientId);
-        locationService.updateLocationState(clientId);
+        Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
+        if (queue.isPresent()) {
+            QueueEntity queueEntity = queue.get();
+            queueEntity.setClientId(null);
+            queueRepo.save(queueEntity);
+        }
+        locationService.updateLocationState(client.get().getLocationId());
         return getQueueStateForClient(localizer, clientId, accessKey);
     }
 
