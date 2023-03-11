@@ -89,19 +89,6 @@ CREATE TABLE queue (
     enabled BOOLEAN NOT NULL,
     client_id BIGINT REFERENCES client (id)
 );
-CREATE TABLE client_in_queue (
-    client_id BIGINT REFERENCES client (id) NOT NULL,
-    queue_id BIGINT REFERENCES queue (id) NOT NULL,
-    UNIQUE (client_id, queue_id),
-    PRIMARY KEY (client_id)
-);
-CREATE TABLE client_in_queue_to_chosen_service (
-    client_id BIGINT REFERENCES client (id) NOT NULL,
-    service_id BIGINT REFERENCES service (id) NOT NULL,
-    queue_id BIGINT REFERENCES queue (id) NOT NULL,
-    location_id BIGINT REFERENCES location (id) NOT NULL,
-    PRIMARY KEY (client_id, service_id, queue_id, location_id)
-);
 
 -- Rights
 CREATE TABLE rights_status (

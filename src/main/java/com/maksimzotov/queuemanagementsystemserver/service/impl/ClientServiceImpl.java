@@ -32,15 +32,12 @@ public class ClientServiceImpl implements ClientService {
     private final QueueService queueService;
     private final DelayedJobService delayedJobService;
     private final CleanerService cleanerService;
-    private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
     private final LocationRepo locationRepo;
     private final ServiceRepo serviceRepo;
     private final ServicesSequenceRepo servicesSequenceRepo;
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
-    private final ServiceInSpecialistRepo serviceInSpecialistRepo;
-    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
     private final Integer confirmationTimeInSeconds;
 
@@ -52,7 +49,6 @@ public class ClientServiceImpl implements ClientService {
             @Lazy QueueService queueService,
             DelayedJobService delayedJobService,
             CleanerService cleanerService,
-            ClientInQueueRepo clientInQueueRepo,
             ClientRepo clientRepo,
             QueueRepo queueRepo,
             LocationRepo locationRepo,
@@ -60,7 +56,6 @@ public class ClientServiceImpl implements ClientService {
             ServicesSequenceRepo servicesSequenceRepo,
             ServiceInServicesSequenceRepo serviceInServicesSequenceRepo,
             ServiceInSpecialistRepo serviceInSpecialistRepo,
-            ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo,
             ClientToChosenServiceRepo clientToChosenServiceRepo,
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
@@ -71,15 +66,12 @@ public class ClientServiceImpl implements ClientService {
         this.queueService = queueService;
         this.delayedJobService = delayedJobService;
         this.cleanerService = cleanerService;
-        this.clientInQueueRepo = clientInQueueRepo;
         this.clientRepo = clientRepo;
         this.queueRepo = queueRepo;
         this.locationRepo = locationRepo;
         this.serviceRepo = serviceRepo;
         this.servicesSequenceRepo = servicesSequenceRepo;
         this.serviceInServicesSequenceRepo = serviceInServicesSequenceRepo;
-        this.serviceInSpecialistRepo = serviceInSpecialistRepo;
-        this.clientInQueueToChosenServiceRepo = clientInQueueToChosenServiceRepo;
         this.clientToChosenServiceRepo = clientToChosenServiceRepo;
         this.confirmationTimeInSeconds = confirmationTimeInSeconds;
     }
@@ -109,40 +101,8 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
 
-
         ClientEntity clientEntity = client.get();
         Long locationId = queueEntity.getLocationId();
-
-        Map<Long, Integer> serviceIdsToOrderNumbers = getServiceIdsToOrderNumbersForClient(clientId);
-
-        int minOrderNumber = Integer.MAX_VALUE;
-        Collection<Integer> orderNumbers = serviceIdsToOrderNumbers.values();
-        for (Integer orderNumber : orderNumbers) {
-            if (orderNumber < minOrderNumber) {
-                minOrderNumber = orderNumber;
-            }
-        }
-
-        List<Long> serviceIds = new ArrayList<>();
-        for (Map.Entry<Long, Integer> serviceIdToOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
-            if (serviceIdToOrderNumber.getValue() == minOrderNumber) {
-                serviceIds.add(serviceIdToOrderNumber.getKey());
-            }
-        }
-
-        List<ServiceInSpecialistEntity> serviceInSpecialistEntities = serviceInSpecialistRepo.findAllBySpecialistId(queueEntity.getSpecialistId());
-        List<Long> serviceIdsInSpecialist = serviceInSpecialistEntities.stream().map(ServiceInSpecialistEntity::getServiceId).toList();
-        List<Long> serviceIdsWithKnownQueue = serviceIds.stream().distinct().filter(serviceIdsInSpecialist::contains).toList();
-        for (Long serviceId : serviceIdsWithKnownQueue) {
-            clientInQueueToChosenServiceRepo.save(
-                    new ClientInQueueToChosenServiceEntity(
-                            clientEntity.getId(),
-                            serviceId,
-                            queueEntity.getId(),
-                            locationId
-                    )
-            );
-        }
 
         queueEntity.setClientId(clientId);
         queueRepo.save(queueEntity);
@@ -173,21 +133,13 @@ public class ClientServiceImpl implements ClientService {
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
 
-        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
-
         locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
     public QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
-        if (clientInQueue.isEmpty()) {
-            return QueueStateForClient.toModel(clientEntity);
-        }
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        QueueStateModel queueStateModel = queueService.getCurrentQueueState(clientInQueueEntity.getQueueId());
-        return QueueStateForClient.toModel(queueStateModel, clientEntity);
+        return QueueStateForClient.toModel(clientEntity);
     }
 
     @Override
@@ -216,9 +168,7 @@ public class ClientServiceImpl implements ClientService {
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
-        clientInQueueRepo.deleteByClientId(clientId);
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
-        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
         clientRepo.deleteById(clientId);
         locationService.updateLocationState(clientId);
         return getQueueStateForClient(localizer, clientId, accessKey);
@@ -227,20 +177,6 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public void serveClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, queueId);
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
-        if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
-        }
-
-        clientInQueueRepo.deleteById(clientId);
-
-        List<ClientInQueueToChosenServiceEntity> services = clientInQueueToChosenServiceRepo.findAllByClientId(clientId);
-        for (ClientInQueueToChosenServiceEntity service : services) {
-            clientToChosenServiceRepo.deleteByPrimaryKeyServiceId(service.getServiceId());
-        }
-        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
-        clientInQueueRepo.deleteByClientId(clientId);
         if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
             clientRepo.deleteById(clientId);
         } else {
@@ -251,39 +187,27 @@ public class ClientServiceImpl implements ClientService {
                 clientRepo.save(clientEntity);
             }
         }
-
         locationService.updateLocationState(clientId);
     }
 
     @Override
     public void notifyClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, queueId);
-
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findById(clientId);
-        if (clientInQueue.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_STAND_IN_QUEUE));
+        Optional<ClientEntity> client = clientRepo.findById(clientId);
+        if (client.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
-        ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-        ClientEntity clientEntity = clientRepo.findById(clientInQueueEntity.getClientId()).get();
+        ClientEntity clientEntity = client.get();
         if (clientEntity.getEmail() == null) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_HAVE_EMAIL));
         }
-
         mailService.send(clientEntity.getEmail(), localizer.getMessage(Message.QUEUE), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
     }
 
     @Override
     public void deleteClientInLocation(Localizer localizer, String accessToken, Long locationId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
-        Optional<ClientInQueueEntity> clientInQueue = clientInQueueRepo.findByClientId(clientId);
-        if (clientInQueue.isPresent()) {
-            ClientInQueueEntity clientInQueueEntity = clientInQueue.get();
-            clientInQueueEntity.setClientId(null);
-            clientInQueueRepo.save(clientInQueueEntity);
-        }
-        clientInQueueRepo.deleteByClientId(clientId);
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
-        clientInQueueToChosenServiceRepo.deleteAllByClientId(clientId);
         clientRepo.deleteById(clientId);
         locationService.updateLocationState(locationId);
     }

@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
@@ -11,7 +10,6 @@ import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +25,10 @@ public class QueueServiceImpl implements QueueService {
     private final AccountService accountService;
     private final RightsService rightsService;
     private final LocationService locationService;
-    private final SimpMessagingTemplate messagingTemplate;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
-    private final ClientInQueueRepo clientInQueueRepo;
-    private final ClientRepo clientRepo;
     private final SpecialistRepo specialistRepo;
     private final ServiceInSpecialistRepo serviceInSpecialistRepo;
-    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
-    private final ServiceRepo serviceRepo;
 
     @Override
     public QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -72,9 +65,6 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
         QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
-        if (clientInQueueRepo.existsByQueueId(queueId)) {
-            throw new DescriptionException(localizer.getMessage(Message.QUEUE_CONTAINS_CLIENTS));
-        }
         queueRepo.deleteById(queueId);
         locationService.updateLocationState(queueEntity.getLocationId());
     }

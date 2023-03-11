@@ -38,8 +38,6 @@ public class LocationState {
         Date waitTimestamp;
         List<Service> services;
         Queue queue;
-        @JsonProperty("services_in_queue")
-        List<Service> servicesInQueue;
     }
 
     Long id;
@@ -48,14 +46,10 @@ public class LocationState {
 
     public static LocationState toModel(
             Long locationId,
-
             List<ClientEntity> clientEntities,
-
             List<ServiceEntity> serviceEntities,
             List<ClientToChosenServiceEntity> clientToChosenServiceEntities,
-
-            List<QueueEntity> queueEntities,
-            List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities
+            List<QueueEntity> queueEntities
     ) {
         return new LocationState(
                 locationId,
@@ -66,14 +60,12 @@ public class LocationState {
                             Date waitTimestamp = getWaitTime(clientEntity);
                             List<Service> allServices = getAllServices(clientEntity, serviceEntities, clientToChosenServiceEntities);
                             Queue queue = getQueue(clientEntity, queueEntities);
-                            List<Service> servicesInQueue = getServicesInQueue(clientEntity, serviceEntities, clientInQueueToChosenServiceEntities);
                             return new Client(
                                     clientEntity.getId(),
                                     code,
                                     waitTimestamp,
                                     allServices,
-                                    queue,
-                                    servicesInQueue
+                                    queue
                             );
                         })
                         .toList()
@@ -144,38 +136,5 @@ public class LocationState {
         } else  {
             return queue.get();
         }
-    }
-
-    private static List<Service> getServicesInQueue(
-            ClientEntity clientEntity,
-            List<ServiceEntity> serviceEntities,
-            List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities
-    ) {
-        return clientInQueueToChosenServiceEntities
-                .stream()
-                .filter(clientInQueueToChosenServiceEntity ->
-                        Objects.equals(
-                                clientInQueueToChosenServiceEntity.getClientId(),
-                                clientEntity.getId()
-                        )
-                )
-                .map(clientInQueueToChosenServiceEntity ->
-                        serviceEntities
-                                .stream()
-                                .filter(serviceEntity ->
-                                        Objects.equals(
-                                                serviceEntity.getId(),
-                                                clientInQueueToChosenServiceEntity.getServiceId()
-                                        )
-                                )
-                                .map(serviceEntity -> new Service(
-                                        serviceEntity.getId(),
-                                        serviceEntity.getName(),
-                                        0
-                                ))
-                                .findFirst()
-                                .get()
-                )
-                .toList();
     }
 }

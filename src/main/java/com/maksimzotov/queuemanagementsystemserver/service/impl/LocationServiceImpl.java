@@ -13,11 +13,9 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwner
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +31,13 @@ public class LocationServiceImpl implements LocationService {
 
     private final AccountService accountService;
     private final RightsService rightsService;
-    @Lazy
-    private final QueueService queueService;
     private final LocationRepo locationRepo;
     private final AccountRepo accountRepo;
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
-    private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final ServiceRepo serviceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
-    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -141,14 +135,12 @@ public class LocationServiceImpl implements LocationService {
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
         List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
-        List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities = clientInQueueToChosenServiceRepo.findAllByLocationId(locationId);
         return LocationState.toModel(
                 locationId,
                 clientEntities,
                 serviceEntities,
                 clientToChosenServiceEntities,
-                queueEntities,
-                clientInQueueToChosenServiceEntities
+                queueEntities
         );
     }
 
@@ -158,14 +150,12 @@ public class LocationServiceImpl implements LocationService {
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
         List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
-        List<ClientInQueueToChosenServiceEntity> clientInQueueToChosenServiceEntities = clientInQueueToChosenServiceRepo.findAllByLocationId(locationId);
         LocationState locationState = LocationState.toModel(
                 locationId,
                 clientEntities,
                 serviceEntities,
                 clientToChosenServiceEntities,
-                queueEntities,
-                clientInQueueToChosenServiceEntities
+                queueEntities
         );
         messagingTemplate.convertAndSend(
                 WebSocketConfig.LOCATION_URL + locationId,

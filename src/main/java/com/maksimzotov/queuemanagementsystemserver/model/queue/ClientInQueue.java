@@ -2,7 +2,6 @@ package com.maksimzotov.queuemanagementsystemserver.model.queue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
