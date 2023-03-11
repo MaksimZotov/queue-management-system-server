@@ -213,11 +213,7 @@ public class LocationController extends BaseController {
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
     ) {
-        try {
-            return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
+        return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
     }
 
     @PostMapping("/{location_id}/specialists/create")

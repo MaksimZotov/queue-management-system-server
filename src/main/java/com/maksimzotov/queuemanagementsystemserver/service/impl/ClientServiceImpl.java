@@ -93,7 +93,7 @@ public class ClientServiceImpl implements ClientService {
 
         QueueEntity queueEntity = queue.get();
         if (queueEntity.getClientId() != null) {
-            throw new DescriptionException(localizer.getMessage(Message.QUEUE_CONTAINS_CLIENTS));
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_ASSIGNED_TO_QUEUE));
         }
 
         Optional<ClientEntity> client = clientRepo.findById(clientId);
@@ -183,12 +183,33 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public void serveClientInQueueByEmployee(Localizer localizer, String accessToken, ServeClientRequest serveClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, serveClientRequest.getQueueId());
+
+        Optional<Integer> minOrderNumber = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(serveClientRequest.getClientId())
+                .stream()
+                .map(ClientToChosenServiceEntity::getOrderNumber)
+                .min(Integer::compareTo);
+
+        if (minOrderNumber.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
+        }
+
+        Integer min = minOrderNumber.get();
+
         for (Long serviceId : serveClientRequest.getServices()) {
-            clientToChosenServiceRepo.deleteByPrimaryKeyClientIdAndPrimaryKeyServiceId(
+            Optional<ClientToChosenServiceEntity> clientToChosenService = clientToChosenServiceRepo.findByPrimaryKeyClientIdAndPrimaryKeyServiceId(
                     serveClientRequest.getClientId(),
                     serviceId
             );
+            if (clientToChosenService.isEmpty()) {
+                throw new DescriptionException(localizer.getMessage(Message.INCORRECT_SERVICES));
+            }
+            ClientToChosenServiceEntity clientToChosenServiceEntity = clientToChosenService.get();
+            if (!Objects.equals(clientToChosenServiceEntity.getOrderNumber(), min)) {
+                throw new DescriptionException(localizer.getMessage(Message.INCORRECT_SERVICES));
+            }
+            clientToChosenServiceRepo.delete(clientToChosenServiceEntity);
         }
+
         Optional<QueueEntity> queue = queueRepo.findById(serveClientRequest.getQueueId());
         if (queue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
@@ -196,6 +217,7 @@ public class ClientServiceImpl implements ClientService {
         QueueEntity queueEntity = queue.get();
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
+
         if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(serveClientRequest.getClientId())) {
             clientRepo.deleteById(serveClientRequest.getClientId());
         } else {
@@ -206,6 +228,7 @@ public class ClientServiceImpl implements ClientService {
                 clientRepo.save(clientEntity);
             }
         }
+
         locationService.updateLocationState(queueEntity.getLocationId());
     }
 
@@ -226,6 +249,12 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public void deleteClientInLocation(Localizer localizer, String accessToken, Long locationId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
+        Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
+        if (queue.isPresent()) {
+            QueueEntity queueEntity = queue.get();
+            queueEntity.setClientId(null);
+            queueRepo.save(queueEntity);
+        }
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientRepo.deleteById(clientId);
         locationService.updateLocationState(locationId);

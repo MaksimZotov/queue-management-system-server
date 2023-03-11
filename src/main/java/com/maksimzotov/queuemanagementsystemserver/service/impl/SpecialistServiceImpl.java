@@ -8,6 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecialistRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.SpecialistModel;
+import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ServiceInSpecialistRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ServiceRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.SpecialistRepo;
@@ -30,9 +31,10 @@ public class SpecialistServiceImpl implements SpecialistService {
     private final SpecialistRepo specialistRepo;
     private final ServiceInSpecialistRepo serviceInSpecialistRepo;
     private final ServiceRepo serviceRepo;
+    private final QueueRepo queueRepo;
 
     @Override
-    public ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId) throws DescriptionException {
+    public ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId) {
         return new ContainerForList<>(specialistRepo.findAllByLocationId(locationId).stream().map(SpecialistModel::toModel).toList());
     }
 
@@ -69,6 +71,9 @@ public class SpecialistServiceImpl implements SpecialistService {
     @Override
     public void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long specialistId) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
+        if (queueRepo.existsBySpecialistId(specialistId)) {
+            throw new DescriptionException(localizer.getMessage(Message.CREATED_FROM_SPECIALIST_QUEUE_EXIST));
+        }
         serviceInSpecialistRepo.deleteAllBySpecialistId(specialistId);
         specialistRepo.deleteById(specialistId);
     }

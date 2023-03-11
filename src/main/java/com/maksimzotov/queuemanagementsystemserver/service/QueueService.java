@@ -9,8 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 public interface QueueService {
     QueueModel createQueue(Localizer localizer, String accessToken, Long locationId, CreateQueueRequest createQueueRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException;
-    ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
-    QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException;
-    QueueStateModel getCurrentQueueState(Long queueId);
+    ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId);
+    QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException;
     void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException;
 }

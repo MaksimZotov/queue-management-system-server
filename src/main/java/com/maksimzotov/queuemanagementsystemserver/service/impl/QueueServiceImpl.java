@@ -70,7 +70,7 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) {
         List<QueueEntity> queuesEntities = queueRepo.findAllByLocationId(locationId);
         return new ContainerForList<>(
                 queuesEntities
@@ -83,37 +83,19 @@ public class QueueServiceImpl implements QueueService {
                                         )
                                 )
                         )
+                        .sorted((Comparator.comparing(QueueModel::getId)))
                         .toList()
         );
     }
 
     @Override
-    public QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
-        QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
-
-        Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
-        LocationEntity locationEntity = location.get();
-
-        List<Long> services = serviceInSpecialistRepo.findAllBySpecialistId(queueEntity.getSpecialistId())
-                .stream()
-                .map(ServiceInSpecialistEntity::getServiceId)
-                .toList();
-
-        return new QueueStateModel(
-                queueId,
-                queueEntity.getLocationId(),
-                queueEntity.getName(),
-                queueEntity.getDescription(),
-                locationEntity.getOwnerEmail(),
-                queueEntity.getEnabled(),
-                services
-        );
-    }
-
-    @Override
-    public QueueStateModel getCurrentQueueState(Long queueId) {
+    public QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
         QueueEntity queueEntity = queue.get();
+
 
         Optional<LocationEntity> location = locationRepo.findById(queueEntity.getLocationId());
         LocationEntity locationEntity = location.get();

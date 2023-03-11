@@ -12,6 +12,6 @@ import java.util.Queue;
 public interface QueueRepo extends JpaRepository<QueueEntity, Long> {
     List<QueueEntity> findAllByLocationId(Long locationId);
     Optional<QueueEntity> findByClientId(Long clientId);
+    Boolean existsBySpecialistId(Long specialistId);
     void deleteAllByLocationId(Long locationId);
-    List<QueueEntity> findAllBySpecialistIdAndLocationId(Long specialistId, Long locationId);
 }

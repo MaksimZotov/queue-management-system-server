@@ -33,6 +33,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final RightsService rightsService;
     private final ServiceRepo serviceRepo;
     private final LocationRepo locationRepo;
+    private final ClientToChosenServiceRepo clientToChosenServiceRepo;
     private final ServiceInSpecialistRepo serviceInSpecialistRepo;
     private final ServicesSequenceRepo servicesSequenceRepo;
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
@@ -68,7 +69,10 @@ public class ServiceServiceImpl implements ServiceService {
     public void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
+        }
+        if (clientToChosenServiceRepo.existsByPrimaryKeyServiceId(serviceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_BOOKED_BY_CLIENT));
+        }
         serviceRepo.deleteById(serviceId);
     }
 

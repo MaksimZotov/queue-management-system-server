@@ -43,11 +43,7 @@ public class QueueController extends BaseController {
             HttpServletRequest request,
             @RequestParam(name = "location_id") Long locationId
     ) {
-        try {
-            return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
+        return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
     }
 
     @PostMapping("/create")
@@ -87,8 +83,6 @@ public class QueueController extends BaseController {
     ) {
         try {
             return ResponseEntity.ok().body(queueService.getQueueState(getLocalizer(request), getToken(request), queueId));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
