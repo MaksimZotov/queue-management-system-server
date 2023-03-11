@@ -29,7 +29,6 @@ public class ClientServiceImpl implements ClientService {
     private final LocationService locationService;
     private final RightsService rightsService;
     private final MailService mailService;
-    private final QueueService queueService;
     private final DelayedJobService delayedJobService;
     private final CleanerService cleanerService;
     private final ClientRepo clientRepo;
@@ -55,7 +54,6 @@ public class ClientServiceImpl implements ClientService {
             ServiceRepo serviceRepo,
             ServicesSequenceRepo servicesSequenceRepo,
             ServiceInServicesSequenceRepo serviceInServicesSequenceRepo,
-            ServiceInSpecialistRepo serviceInSpecialistRepo,
             ClientToChosenServiceRepo clientToChosenServiceRepo,
             @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
     ) {
@@ -63,7 +61,6 @@ public class ClientServiceImpl implements ClientService {
         this.locationService = locationService;
         this.rightsService = rightsService;
         this.mailService = mailService;
-        this.queueService = queueService;
         this.delayedJobService = delayedJobService;
         this.cleanerService = cleanerService;
         this.clientRepo = clientRepo;
