@@ -7,7 +7,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
@@ -175,19 +175,32 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void serveClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
-        checkRightsInQueue(localizer, accessToken, queueId);
-        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
-            clientRepo.deleteById(clientId);
+    public void serveClientInQueueByEmployee(Localizer localizer, String accessToken, ServeClientRequest serveClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, serveClientRequest.getQueueId());
+        for (Long serviceId : serveClientRequest.getServices()) {
+            clientToChosenServiceRepo.deleteByPrimaryKeyClientIdAndPrimaryKeyServiceId(
+                    serveClientRequest.getClientId(),
+                    serviceId
+            );
+        }
+        Optional<QueueEntity> queue = queueRepo.findById(serveClientRequest.getQueueId());
+        if (queue.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
+        }
+        QueueEntity queueEntity = queue.get();
+        queueEntity.setClientId(null);
+        queueRepo.save(queueEntity);
+        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(serveClientRequest.getClientId())) {
+            clientRepo.deleteById(serveClientRequest.getClientId());
         } else {
-            Optional<ClientEntity> client = clientRepo.findById(clientId);
+            Optional<ClientEntity> client = clientRepo.findById(serveClientRequest.getClientId());
             if (client.isPresent()) {
                 ClientEntity clientEntity = client.get();
                 clientEntity.setWaitTimestamp(new Date());
                 clientRepo.save(clientEntity);
             }
         }
-        locationService.updateLocationState(clientId);
+        locationService.updateLocationState(serveClientRequest.getClientId());
     }
 
     @Override
@@ -326,14 +339,5 @@ public class ClientServiceImpl implements ClientService {
                 localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION),
                 localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
         );
-    }
-
-    private Map<Long, Integer> getServiceIdsToOrderNumbersForClient(Long clientId) {
-        Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();
-        List<ClientToChosenServiceEntity> services = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
-        for (ClientToChosenServiceEntity service : services) {
-            serviceIdsToOrderNumbers.put(service.getPrimaryKey().getServiceId(), service.getOrderNumber());
-        }
-        return serviceIdsToOrderNumbers;
     }
 }

@@ -5,6 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
@@ -123,14 +124,13 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/{queue_id}/serve")
+    @PostMapping("/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,
-            @PathVariable(name = "queue_id") Long queueId,
-            @RequestParam(name = "client_id") Long clientId
+            @RequestBody ServeClientRequest serveClientRequest
     ) {
         try {
-            clientService.serveClientInQueueByEmployee(getLocalizer(request), getToken(request), queueId, clientId);
+            clientService.serveClientInQueueByEmployee(getLocalizer(request), getToken(request), serveClientRequest);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
