@@ -200,7 +200,7 @@ public class ClientServiceImpl implements ClientService {
                 clientRepo.save(clientEntity);
             }
         }
-        locationService.updateLocationState(serveClientRequest.getClientId());
+        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
