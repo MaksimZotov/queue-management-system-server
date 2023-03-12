@@ -245,7 +245,9 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public void deleteClientInLocation(Localizer localizer, String accessToken, Long locationId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
-        rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
+        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
         Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
         if (queue.isPresent()) {
             QueueEntity queueEntity = queue.get();
