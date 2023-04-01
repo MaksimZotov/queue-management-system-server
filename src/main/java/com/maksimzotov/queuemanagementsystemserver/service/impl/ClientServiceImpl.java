@@ -85,19 +85,29 @@ public class ClientServiceImpl implements ClientService {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
-        Long clientId = changeClientRequest.getClientId();
-        clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
-        Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
+
+        Optional<ClientEntity> client = clientRepo.findById(changeClientRequest.getClientId());
+        if (client.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
+        }
+        ClientEntity clientEntity = client.get();
+        clientEntity.setWaitTimestamp(new Date());
+        clientRepo.save(clientEntity);
+
+        clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientEntity.getId());
+
+        Optional<QueueEntity> queue = queueRepo.findByClientId(clientEntity.getId());
         if (queue.isPresent()) {
             QueueEntity queueEntity = queue.get();
             queueEntity.setClientId(null);
             queueRepo.save(queueEntity);
         }
+
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : changeClientRequest.getServiceIdsToOrderNumbers().entrySet()) {
             clientToChosenServiceRepo.save(
                     new ClientToChosenServiceEntity(
                             new ClientToChosenServiceEntity.PrimaryKey(
-                                    clientId,
+                                    clientEntity.getId(),
                                     serviceIdToOrderNumber.getKey(),
                                     locationId
                             ),
