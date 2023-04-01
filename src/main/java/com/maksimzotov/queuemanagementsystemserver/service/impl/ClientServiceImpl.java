@@ -5,7 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
-import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
 import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
@@ -74,9 +75,36 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void addClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest) throws DescriptionException {
+    public void addClient(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
         Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
         createClient(localizer, locationId, addClientRequest, serviceIdsToOrderNumbers);
+    }
+
+    @Override
+    public void changeClient(Localizer localizer, String accessToken, Long locationId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+        Long clientId = changeClientRequest.getClientId();
+        clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
+        Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
+        if (queue.isPresent()) {
+            QueueEntity queueEntity = queue.get();
+            queueEntity.setClientId(null);
+            queueRepo.save(queueEntity);
+        }
+        for (Map.Entry<Long, Integer> serviceIdToOrderNumber : changeClientRequest.getServiceIdsToOrderNumbers().entrySet()) {
+            clientToChosenServiceRepo.save(
+                    new ClientToChosenServiceEntity(
+                            new ClientToChosenServiceEntity.PrimaryKey(
+                                    clientId,
+                                    serviceIdToOrderNumber.getKey(),
+                                    locationId
+                            ),
+                            serviceIdToOrderNumber.getValue()
+                    )
+            );
+        }
     }
 
     @Override
@@ -271,20 +299,21 @@ public class ClientServiceImpl implements ClientService {
         }
     }
 
-    private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, AddClientRequst addClientRequest) throws DescriptionException {
-        boolean servicesChosen = addClientRequest.getServiceIds() != null && !addClientRequest.getServiceIds().isEmpty();
-        boolean servicesSequenceChosen = addClientRequest.getServicesSequenceId() != null;
-        if (servicesChosen == servicesSequenceChosen) {
-            throw new DescriptionException(localizer.getMessage(Message.INCORRECT_REQUEST));
-        }
-
+    private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
         if (!EmailChecker.emailMatches(addClientRequest.getEmail())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
+        return getServiceIdsToOrderNumbers(localizer, locationId, addClientRequest.getServiceIds(), addClientRequest.getServicesSequenceId());
+    }
 
+    private Map<Long, Integer> getServiceIdsToOrderNumbers(Localizer localizer, Long locationId, List<Long> serviceIds, Long servicesSequenceId) throws DescriptionException {
+        boolean servicesChosen = serviceIds != null && !serviceIds.isEmpty();
+        boolean servicesSequenceChosen = servicesSequenceId != null;
+        if (servicesChosen == servicesSequenceChosen) {
+            throw new DescriptionException(localizer.getMessage(Message.INCORRECT_REQUEST));
+        }
         Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();
         if (servicesChosen) {
-            List<Long> serviceIds = addClientRequest.getServiceIds();
             for (Long serviceId : serviceIds) {
                 if (!serviceRepo.existsByIdAndLocationId(serviceId, locationId)) {
                     throw new DescriptionException(localizer.getMessage(Message.ONE_OR_MORE_OF_CHOSEN_SERVICES_DO_NOT_EXIST_IN_LOCATION));
@@ -292,7 +321,6 @@ public class ClientServiceImpl implements ClientService {
                 serviceIdsToOrderNumbers.put(serviceId, 1);
             }
         } else {
-            Long servicesSequenceId = addClientRequest.getServicesSequenceId();
             if (!servicesSequenceRepo.existsByIdAndLocationId(servicesSequenceId, locationId)) {
                 throw new DescriptionException(localizer.getMessage(Message.CHOSEN_SERVICES_SEQUENCE_DOES_NOT_EXIST_IN_LOCATION));
             }
@@ -332,7 +360,7 @@ public class ClientServiceImpl implements ClientService {
                 clientEntity.getAccessKey();
     }
 
-    private void createClient(Localizer localizer, Long locationId, AddClientRequst addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
+    private void createClient(Localizer localizer, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
         if (addClientRequest.getEmail() != null && clientRepo.findByEmail(addClientRequest.getEmail()).isPresent()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_EMAIL_ALREADY_EXIST));
         }
