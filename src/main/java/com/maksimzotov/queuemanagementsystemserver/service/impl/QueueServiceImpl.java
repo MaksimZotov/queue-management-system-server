@@ -53,7 +53,6 @@ public class QueueServiceImpl implements QueueService {
                         createQueueRequest.getSpecialistId(),
                         createQueueRequest.getName(),
                         createQueueRequest.getDescription(),
-                        true,
                         null
                 )
         );
@@ -111,18 +110,8 @@ public class QueueServiceImpl implements QueueService {
                 queueEntity.getName(),
                 queueEntity.getDescription(),
                 locationEntity.getOwnerEmail(),
-                queueEntity.getEnabled(),
                 services
         );
-    }
-
-    @Override
-    public void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException {
-        checkRightsInQueue(localizer, accessToken, queueId);
-        QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
-        queueEntity.setEnabled(paused);
-        queueRepo.save(queueEntity);
-        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     private QueueEntity checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {

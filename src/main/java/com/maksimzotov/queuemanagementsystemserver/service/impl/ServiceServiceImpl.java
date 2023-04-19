@@ -58,8 +58,7 @@ public class ServiceServiceImpl implements ServiceService {
                                 null,
                                 locationId,
                                 createServiceRequest.getName(),
-                                createServiceRequest.getDescription(),
-                                true
+                                createServiceRequest.getDescription()
                         )
                 )
         );
@@ -116,8 +115,7 @@ public class ServiceServiceImpl implements ServiceService {
                         null,
                         locationId,
                         createServicesSequenceRequest.getName(),
-                        createServicesSequenceRequest.getDescription(),
-                        true
+                        createServicesSequenceRequest.getDescription()
                 )
         );
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : createServicesSequenceRequest.getServiceIdsToOrderNumbers().entrySet()) {

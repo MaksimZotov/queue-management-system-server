@@ -88,36 +88,6 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/{queue_id}/enable")
-    public ResponseEntity<?> enable(
-            HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId
-    ) {
-        try {
-            queueService.changePausedState(getLocalizer(request), getToken(request), queueId, true);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/{queue_id}/disable")
-    public ResponseEntity<?> disable(
-            HttpServletRequest request,
-            @PathVariable("queue_id") Long queueId
-    ) {
-        try {
-            queueService.changePausedState(getLocalizer(request), getToken(request), queueId, false);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
     @PostMapping("/serve")
     public ResponseEntity<?> serveClientInQueue(
             HttpServletRequest request,

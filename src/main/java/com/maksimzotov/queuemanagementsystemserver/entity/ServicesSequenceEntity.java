@@ -21,6 +21,4 @@ public class ServicesSequenceEntity {
     private String name;
 
     private String description;
-
-    private Boolean enabled;
 }

@@ -15,7 +15,6 @@ public class QueueModel {
     private String description;
     @JsonProperty("has_rights")
     private Boolean hasRights;
-    private Boolean enabled;
 
 
     public static QueueModel toModel(QueueEntity entity, Boolean hasRights) {
@@ -23,8 +22,7 @@ public class QueueModel {
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
-                hasRights,
-                entity.getEnabled()
+                hasRights
         );
     }
 }

@@ -25,15 +25,13 @@ CREATE TABLE service (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048),
-    enabled BOOLEAN NOT NULL
+    description VARCHAR(2048)
 );
 CREATE TABLE services_sequence (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048),
-    enabled BOOLEAN NOT NULL
+    description VARCHAR(2048)
 );
 CREATE TABLE service_in_services_sequence (
     service_id BIGINT REFERENCES service (id) NOT NULL,
@@ -45,8 +43,7 @@ CREATE TABLE specialist (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048),
-    enabled BOOLEAN NOT NULL
+    description VARCHAR(2048)
 );
 CREATE TABLE service_in_specialist (
     service_id BIGINT REFERENCES service (id) NOT NULL,
@@ -86,7 +83,6 @@ CREATE TABLE queue (
     specialist_id BIGINT REFERENCES specialist (id) NOT NULL,
     name VARCHAR(256) NOT NULL,
     description VARCHAR(2048),
-    enabled BOOLEAN NOT NULL,
     client_id BIGINT REFERENCES client (id)
 );
 

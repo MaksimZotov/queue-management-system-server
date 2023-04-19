@@ -24,6 +24,4 @@ public class ServiceEntity {
     private String name;
 
     private String description;
-
-    private Boolean enabled;
 }

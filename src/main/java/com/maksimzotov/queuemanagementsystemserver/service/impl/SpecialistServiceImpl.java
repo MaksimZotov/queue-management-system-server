@@ -46,8 +46,7 @@ public class SpecialistServiceImpl implements SpecialistService {
                         null,
                         locationId,
                         createSpecialistRequest.getName(),
-                        createSpecialistRequest.getDescription(),
-                        true
+                        createSpecialistRequest.getDescription()
                 )
         );
         for (Long serviceId : createSpecialistRequest.getServiceIds()) {

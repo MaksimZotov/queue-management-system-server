@@ -24,6 +24,4 @@ public class SpecialistEntity {
     private String name;
 
     private String description;
-
-    private Boolean enabled;
 }
