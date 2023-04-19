@@ -5,7 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequst;
+import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
@@ -110,43 +111,13 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/{location_id}/board")
-    public ResponseEntity<?> getLocationBoard(
+    @GetMapping("/{location_id}/state")
+    public ResponseEntity<?> getLocationState(
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(locationService.getLocationBoard(getLocalizer(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/{location_id}/enable")
-    public ResponseEntity<?> enable(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            locationService.changeEnabledStateInLocation(getLocalizer(request), getToken(request), locationId, true);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @PostMapping("/{location_id}/disable")
-    public ResponseEntity<?> disable(
-            HttpServletRequest request,
-            @PathVariable("location_id") Long locationId
-    ) {
-        try {
-            locationService.changeEnabledStateInLocation(getLocalizer(request), getToken(request), locationId, false);
-            return ResponseEntity.ok().build();
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+            return ResponseEntity.ok().body(locationService.getLocationState(getLocalizer(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -243,11 +214,7 @@ public class LocationController extends BaseController {
             HttpServletRequest request,
             @PathVariable("location_id") Long locationId
     ) {
-        try {
-            return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
+        return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
     }
 
     @PostMapping("/{location_id}/specialists/create")
@@ -284,12 +251,28 @@ public class LocationController extends BaseController {
     @PostMapping("/{location_id}/clients/add")
     public ResponseEntity<?> addClient(
             HttpServletRequest request,
-            @RequestBody AddClientRequst addClientRequst,
+            @RequestBody AddClientRequest addClientRequest,
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            clientService.addClient(getLocalizer(request), locationId, addClientRequst);
+            clientService.addClient(getLocalizer(request), locationId, addClientRequest);
             return ResponseEntity.ok().build();
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{location_id}/clients/change")
+    public ResponseEntity<?> changeClient(
+            HttpServletRequest request,
+            @RequestBody ChangeClientRequest changeClientRequest,
+            @PathVariable("location_id") Long locationId
+    ) {
+        try {
+            clientService.changeClient(getLocalizer(request), getToken(request), locationId, changeClientRequest);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

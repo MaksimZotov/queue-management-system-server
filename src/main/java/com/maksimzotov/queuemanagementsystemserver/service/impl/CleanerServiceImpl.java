@@ -1,13 +1,10 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.ClientInQueueEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import lombok.AllArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,14 +16,10 @@ import java.util.Optional;
 @AllArgsConstructor
 public class CleanerServiceImpl implements CleanerService {
 
-    @Lazy
-    private final QueueService queueService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
-    private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
-    private final ClientInQueueToChosenServiceRepo clientInQueueToChosenServiceRepo;
 
     @Override
     public void deleteNonConfirmedUser(String email) {

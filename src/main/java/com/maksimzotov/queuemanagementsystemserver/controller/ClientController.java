@@ -29,7 +29,7 @@ public class ClientController extends BaseController {
     public ResponseEntity<?> getQueueStateForClient(
             HttpServletRequest request,
             @RequestParam("client_id") Long clientId,
-            @RequestParam("access_key") String accessKey
+            @RequestParam("access_key") Integer accessKey
     ) {
         try {
             return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId, accessKey));
@@ -42,7 +42,7 @@ public class ClientController extends BaseController {
     public ResponseEntity<?> confirmAccessKeyByClient(
             HttpServletRequest request,
             @RequestParam("client_id") Long clientId,
-            @RequestParam("access_key") String accessKey
+            @RequestParam("access_key") Integer accessKey
     ) {
         try {
             return ResponseEntity.ok().body(clientService.confirmAccessKeyByClient(getLocalizer(request), clientId, accessKey));
@@ -55,7 +55,7 @@ public class ClientController extends BaseController {
     public ResponseEntity<?> leaveByClient(
             HttpServletRequest request,
             @RequestParam("client_id") Long clientId,
-            @RequestParam("access_key") String accessKey
+            @RequestParam("access_key") Integer accessKey
     ) {
         try {
             return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), clientId, accessKey));

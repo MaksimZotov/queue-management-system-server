@@ -85,7 +85,7 @@ public class AccountServiceImpl implements AccountService {
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         checkSignup(localizer, signupRequest);
 
-        String code = CodeGenerator.generate();
+        Integer code = CodeGenerator.generateCodeForEmail();
         AccountEntity account = new AccountEntity(
                 null,
                 signupRequest.getEmail(),

@@ -8,5 +8,4 @@ import java.util.List;
 public interface ServiceInSpecialistRepo extends JpaRepository<ServiceInSpecialistEntity, ServiceInSpecialistEntity> {
     List<ServiceInSpecialistEntity> findAllBySpecialistId(Long specialistId);
     void deleteAllBySpecialistId(Long specialistId);
-    List<ServiceInSpecialistEntity> findAllByServiceId(Long serviceId);
 }

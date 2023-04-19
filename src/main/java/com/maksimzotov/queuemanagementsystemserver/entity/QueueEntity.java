@@ -25,4 +25,6 @@ public class QueueEntity {
     private String description;
 
     private Boolean enabled;
+
+    private Long clientId;
 }

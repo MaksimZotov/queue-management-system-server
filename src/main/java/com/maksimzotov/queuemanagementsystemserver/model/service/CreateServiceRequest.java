@@ -7,8 +7,4 @@ import lombok.Value;
 public class CreateServiceRequest {
     String name;
     String description;
-    @JsonProperty("supposed_duration")
-    Long supposedDuration;
-    @JsonProperty("max_duration")
-    Long maxDuration;
 }

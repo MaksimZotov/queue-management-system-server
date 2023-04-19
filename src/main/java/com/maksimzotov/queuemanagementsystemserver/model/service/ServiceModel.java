@@ -9,18 +9,12 @@ public class ServiceModel {
     Long id;
     String name;
     String description;
-    @JsonProperty("supposed_duration")
-    Long supposedDuration;
-    @JsonProperty("max_duration")
-    Long maxDuration;
 
     public static ServiceModel toModel(ServiceEntity serviceEntity) {
         return new ServiceModel(
                 serviceEntity.getId(),
                 serviceEntity.getName(),
-                serviceEntity.getDescription(),
-                serviceEntity.getSupposedDuration(),
-                serviceEntity.getMaxDuration()
+                serviceEntity.getDescription()
         );
     }
 }

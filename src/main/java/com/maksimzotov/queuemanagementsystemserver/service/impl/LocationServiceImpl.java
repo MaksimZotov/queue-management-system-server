@@ -1,25 +1,21 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.config.WebSocketConfig;
-import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.board.BoardModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
 import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,14 +31,13 @@ public class LocationServiceImpl implements LocationService {
 
     private final AccountService accountService;
     private final RightsService rightsService;
-    @Lazy
-    private final QueueService queueService;
     private final LocationRepo locationRepo;
     private final AccountRepo accountRepo;
     private final RightsRepo rightsRepo;
     private final QueueRepo queueRepo;
-    private final ClientInQueueRepo clientInQueueRepo;
     private final ClientRepo clientRepo;
+    private final ServiceRepo serviceRepo;
+    private final ClientToChosenServiceRepo clientToChosenServiceRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
@@ -135,51 +130,36 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public BoardModel getLocationBoard(Localizer localizer, Long locationId) throws DescriptionException {
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
-        return BoardModel.toModel(
-                clientInQueueRepo,
-                queues.get()
+    public LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException {
+        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
+        List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
+        return LocationState.toModel(
+                locationId,
+                clientEntities,
+                serviceEntities,
+                clientToChosenServiceEntities,
+                queueEntities
         );
     }
 
     @Override
-    public void updateLocationBoard(Long locationId)  {
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            return;
-        }
-        BoardModel boardModel = BoardModel.toModel(
-                clientInQueueRepo,
-                queues.get()
+    public void updateLocationState(Long locationId) {
+        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
+        List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
+        LocationState locationState = LocationState.toModel(
+                locationId,
+                clientEntities,
+                serviceEntities,
+                clientToChosenServiceEntities,
+                queueEntities
         );
         messagingTemplate.convertAndSend(
-                WebSocketConfig.BOARD_URL + locationId,
-                boardModel
+                WebSocketConfig.LOCATION_URL + locationId,
+                locationState
         );
-    }
-
-    @Override
-    public void changeEnabledStateInLocation(Localizer localizer, String accessToken, Long locationId, Boolean enabled) throws DescriptionException, AccountIsNotAuthorizedException {
-        Boolean hasRights = rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
-        if (!hasRights) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        }
-        Optional<List<QueueEntity>> queues = queueRepo.findAllByLocationId(locationId);
-        if (queues.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
-        }
-        List<QueueEntity> modifiedQueues = queues
-                .get()
-                .stream()
-                .peek(item -> item.setEnabled(enabled))
-                .toList();
-        queueRepo.saveAll(modifiedQueues);
-        for (QueueEntity entity: modifiedQueues) {
-            queueService.updateCurrentQueueState(entity.getId());
-        }
     }
 }

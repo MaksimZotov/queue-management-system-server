@@ -6,12 +6,8 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-public class AddClientRequst {
+public class AddClientRequest {
     String email;
-    @JsonProperty("first_name")
-    String firstName;
-    @JsonProperty("last_name")
-    String lastName;
     @JsonProperty("service_ids")
     List<Long> serviceIds;
     @JsonProperty("services_sequence_id")

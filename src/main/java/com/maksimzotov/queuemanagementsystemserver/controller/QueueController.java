@@ -5,6 +5,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
@@ -42,11 +43,7 @@ public class QueueController extends BaseController {
             HttpServletRequest request,
             @RequestParam(name = "location_id") Long locationId
     ) {
-        try {
-            return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
+        return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
     }
 
     @PostMapping("/create")
@@ -86,8 +83,6 @@ public class QueueController extends BaseController {
     ) {
         try {
             return ResponseEntity.ok().body(queueService.getQueueState(getLocalizer(request), getToken(request), queueId));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -123,14 +118,45 @@ public class QueueController extends BaseController {
         }
     }
 
-    @PostMapping("/{queue_id}/serve")
+    @PostMapping("/serve")
     public ResponseEntity<?> serveClientInQueue(
+            HttpServletRequest request,
+            @RequestBody ServeClientRequest serveClientRequest
+    ) {
+        try {
+            clientService.serveClientInQueueByEmployee(getLocalizer(request), getToken(request), serveClientRequest);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{queue_id}/call")
+    public ResponseEntity<?> callClientToQueue(
             HttpServletRequest request,
             @PathVariable(name = "queue_id") Long queueId,
             @RequestParam(name = "client_id") Long clientId
     ) {
         try {
-            clientService.serveClientInQueueByEmployee(getLocalizer(request), getToken(request), queueId, clientId);
+            clientService.callClient(getLocalizer(request), getToken(request), queueId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{queue_id}/return")
+    public ResponseEntity<?> returnClient(
+            HttpServletRequest request,
+            @PathVariable(name = "queue_id") Long queueId,
+            @RequestParam(name = "client_id") Long clientId
+    ) {
+        try {
+            clientService.returnClient(getLocalizer(request), getToken(request), queueId, clientId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

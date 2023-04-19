@@ -25,9 +25,5 @@ public class ServiceEntity {
 
     private String description;
 
-    private Long supposedDuration;
-
-    private Long maxDuration;
-
     private Boolean enabled;
 }
