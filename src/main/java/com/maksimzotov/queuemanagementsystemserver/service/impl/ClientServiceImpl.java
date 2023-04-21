@@ -30,7 +30,7 @@ public class ClientServiceImpl implements ClientService {
     private final LocationService locationService;
     private final RightsService rightsService;
     private final MailService mailService;
-    private final DelayedJobService delayedJobService;
+    private final JobService jobService;
     private final CleanerService cleanerService;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
@@ -46,8 +46,7 @@ public class ClientServiceImpl implements ClientService {
             LocationService locationService,
             RightsService rightsService,
             MailService mailService,
-            @Lazy QueueService queueService,
-            DelayedJobService delayedJobService,
+            JobService jobService,
             CleanerService cleanerService,
             ClientRepo clientRepo,
             QueueRepo queueRepo,
@@ -62,7 +61,7 @@ public class ClientServiceImpl implements ClientService {
         this.locationService = locationService;
         this.rightsService = rightsService;
         this.mailService = mailService;
-        this.delayedJobService = delayedJobService;
+        this.jobService = jobService;
         this.cleanerService = cleanerService;
         this.clientRepo = clientRepo;
         this.queueRepo = queueRepo;
@@ -400,7 +399,7 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        delayedJobService.schedule(
+        jobService.schedule(
                 () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), addClientRequest.getEmail()),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS

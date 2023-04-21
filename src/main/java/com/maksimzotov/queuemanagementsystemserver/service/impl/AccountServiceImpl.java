@@ -19,7 +19,7 @@ import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
-import com.maksimzotov.queuemanagementsystemserver.service.DelayedJobService;
+import com.maksimzotov.queuemanagementsystemserver.service.JobService;
 import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class AccountServiceImpl implements AccountService {
 
     private final MailService mailService;
-    private final DelayedJobService delayedJobService;
+    private final JobService jobService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
     private final CleanerService cleanerService;
@@ -57,7 +57,7 @@ public class AccountServiceImpl implements AccountService {
 
     public AccountServiceImpl(
             MailService mailService,
-            DelayedJobService delayedJobService,
+            JobService jobService,
             AccountRepo accountRepo,
             RegistrationCodeRepo registrationCodeRepo,
             CleanerService cleanerService,
@@ -69,7 +69,7 @@ public class AccountServiceImpl implements AccountService {
             @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
     ) {
         this.mailService = mailService;
-        this.delayedJobService = delayedJobService;
+        this.jobService = jobService;
         this.accountRepo = accountRepo;
         this.registrationCodeRepo = registrationCodeRepo;
         this.cleanerService = cleanerService;
@@ -107,7 +107,7 @@ public class AccountServiceImpl implements AccountService {
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
         );
 
-        delayedJobService.schedule(
+        jobService.schedule(
                 () -> cleanerService.deleteNonConfirmedUser(account.getEmail()),
                 confirmationTimeInSeconds,
                 TimeUnit.SECONDS
