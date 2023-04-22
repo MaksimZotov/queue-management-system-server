@@ -255,8 +255,7 @@ public class LocationController extends BaseController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            clientService.addClient(getLocalizer(request), getToken(request), locationId, addClientRequest);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body(clientService.addClient(getLocalizer(request), getToken(request), locationId, addClientRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
