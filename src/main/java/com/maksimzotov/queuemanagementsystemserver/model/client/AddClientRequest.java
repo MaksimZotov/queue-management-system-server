@@ -12,4 +12,6 @@ public class AddClientRequest {
     List<Long> serviceIds;
     @JsonProperty("services_sequence_id")
     Long servicesSequenceId;
+    @JsonProperty("confirmation_required")
+    Boolean confirmationRequired;
 }

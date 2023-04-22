@@ -2,14 +2,11 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
-import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface ClientService {
-    void addClient(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException;
+    ClientModel addClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void changeClient(Localizer localizer, String accessToken, Long locationId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void callClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     void returnClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;

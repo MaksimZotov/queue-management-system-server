@@ -5,17 +5,13 @@ import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
-import com.maksimzotov.queuemanagementsystemserver.model.client.AddClientRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.client.QueueStateForClient;
-import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,7 +51,7 @@ public class ClientServiceImpl implements ClientService {
             ServicesSequenceRepo servicesSequenceRepo,
             ServiceInServicesSequenceRepo serviceInServicesSequenceRepo,
             ClientToChosenServiceRepo clientToChosenServiceRepo,
-            @Value("${app.registration.confirmationtime.join}")  Integer confirmationTimeInSeconds
+            @Value("${app.registration.confirmationtime.join}") Integer confirmationTimeInSeconds
     ) {
         this.accountService = accountService;
         this.locationService = locationService;
@@ -74,9 +70,9 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void addClient(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
+    public ClientModel addClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
-        createClient(localizer, locationId, addClientRequest, serviceIdsToOrderNumbers);
+        return createClient(localizer, accessToken, locationId, addClientRequest, serviceIdsToOrderNumbers);
     }
 
     @Override
@@ -135,23 +131,10 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
 
-        ClientEntity clientEntity = client.get();
-        Long locationId = queueEntity.getLocationId();
-
         queueEntity.setClientId(clientId);
         queueRepo.save(queueEntity);
 
-        mailService.send(
-                clientEntity.getEmail(),
-                localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
-                localizer.getMessageForClientCheckStatus(
-                        queueEntity.getName(),
-                        clientEntity.getCode().toString(),
-                        getLinkForClient(localizer, clientEntity, locationId)
-                )
-        );
-
-        locationService.updateLocationState(locationId);
+        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
@@ -309,7 +292,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
-        if (!EmailChecker.emailMatches(addClientRequest.getEmail())) {
+        if (addClientRequest.getConfirmationRequired() && !EmailChecker.emailMatches(addClientRequest.getEmail())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
         }
         return getServiceIdsToOrderNumbers(localizer, locationId, addClientRequest.getServiceIds(), addClientRequest.getServicesSequenceId());
@@ -369,8 +352,14 @@ public class ClientServiceImpl implements ClientService {
                 clientEntity.getAccessKey();
     }
 
-    private void createClient(Localizer localizer, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException {
-        if (addClientRequest.getEmail() != null && clientRepo.findByEmail(addClientRequest.getEmail()).isPresent()) {
+    private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
+        String email = addClientRequest.getEmail();
+        Boolean confirmationRequired = addClientRequest.getConfirmationRequired();
+
+        if (!confirmationRequired) {
+            rightsService.checkEmployeeRightsInLocation(localizer,  accountService.getEmail(accessToken), locationId);
+        }
+        if (email != null && clientRepo.findByEmail(email).isPresent()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_EMAIL_ALREADY_EXIST));
         }
 
@@ -378,11 +367,11 @@ public class ClientServiceImpl implements ClientService {
                 new ClientEntity(
                         null,
                         locationId,
-                        addClientRequest.getEmail(),
-                        null,
+                        email,
+                        confirmationRequired ? null : CodeGenerator.generateCodeInLocation(clientRepo.findAllByLocationId(locationId).stream().map(ClientEntity::getCode).toList()),
                         CodeGenerator.generateAccessKey(),
-                        ClientStatusEntity.Status.RESERVED.name(),
-                        null
+                        confirmationRequired ? ClientStatusEntity.Status.RESERVED.name() : ClientStatusEntity.Status.CONFIRMED.name(),
+                        confirmationRequired ? null : new Date()
                 )
         );
 
@@ -399,16 +388,31 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        jobService.schedule(
-                () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), addClientRequest.getEmail()),
-                confirmationTimeInSeconds,
-                TimeUnit.SECONDS
-        );
+        if (confirmationRequired) {
+            jobService.schedule(
+                    () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), addClientRequest.getEmail()),
+                    confirmationTimeInSeconds,
+                    TimeUnit.SECONDS
+            );
+        }
 
-        mailService.send(
-                addClientRequest.getEmail(),
-                localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION),
-                localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
-        );
+        if (confirmationRequired) {
+            mailService.send(
+                    email,
+                    localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION),
+                    localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
+            );
+        } else if (email != null) {
+            mailService.send(
+                    email,
+                    localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
+                    localizer.getMessageForClientCheckStatus(
+                            clientEntity.getCode().toString(),
+                            getLinkForClient(localizer, clientEntity, locationId)
+                    )
+            );
+        }
+
+        return ClientModel.toModel(clientEntity);
     }
 }
