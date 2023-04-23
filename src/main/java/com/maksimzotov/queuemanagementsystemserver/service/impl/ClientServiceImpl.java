@@ -363,17 +363,32 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_EMAIL_ALREADY_EXIST));
         }
 
-        ClientEntity clientEntity = clientRepo.save(
-                new ClientEntity(
-                        null,
-                        locationId,
-                        email,
-                        confirmationRequired ? null : CodeGenerator.generateCodeInLocation(clientRepo.findAllByLocationId(locationId).stream().map(ClientEntity::getCode).toList()),
-                        CodeGenerator.generateAccessKey(),
-                        confirmationRequired ? ClientStatusEntity.Status.RESERVED.name() : ClientStatusEntity.Status.CONFIRMED.name(),
-                        confirmationRequired ? null : new Date()
-                )
-        );
+        ClientEntity clientEntity;
+        if (confirmationRequired) {
+            clientEntity = clientRepo.save(
+                    new ClientEntity(
+                            null,
+                            locationId,
+                            email,
+                            null,
+                            CodeGenerator.generateAccessKey(),
+                            ClientStatusEntity.Status.RESERVED.name(),
+                            null
+                    )
+            );
+        } else {
+            clientEntity = clientRepo.save(
+                    new ClientEntity(
+                            null,
+                            locationId,
+                            null,
+                            CodeGenerator.generateCodeInLocation(clientRepo.findAllByLocationId(locationId).stream().map(ClientEntity::getCode).toList()),
+                            CodeGenerator.generateAccessKey(),
+                            ClientStatusEntity.Status.CONFIRMED.name(),
+                            new Date()
+                    )
+            );
+        }
 
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
             clientToChosenServiceRepo.save(
