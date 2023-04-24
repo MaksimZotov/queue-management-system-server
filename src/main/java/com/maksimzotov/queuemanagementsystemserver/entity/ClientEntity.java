@@ -22,7 +22,7 @@ public class ClientEntity {
 
     private Long locationId;
 
-    private String email;
+    private String phone;
 
     private Integer code;
 

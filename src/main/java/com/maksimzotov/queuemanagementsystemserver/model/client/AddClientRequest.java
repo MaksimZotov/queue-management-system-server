@@ -7,7 +7,7 @@ import java.util.List;
 
 @Value
 public class AddClientRequest {
-    String email;
+    String phone;
     @JsonProperty("service_ids")
     List<Long> serviceIds;
     @JsonProperty("services_sequence_id")

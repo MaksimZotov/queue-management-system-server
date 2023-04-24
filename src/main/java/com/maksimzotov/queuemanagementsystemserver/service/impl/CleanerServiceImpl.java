@@ -30,8 +30,8 @@ public class CleanerServiceImpl implements CleanerService {
     }
 
     @Override
-    public void deleteNonConfirmedClient(Long clientId, String email) {
-        Optional<ClientEntity> client = clientRepo.findByEmail(email);
+    public void deleteNonConfirmedClient(Long clientId, String phone) {
+        Optional<ClientEntity> client = clientRepo.findByPhone(phone);
         if (client.isEmpty()) {
             return;
         }

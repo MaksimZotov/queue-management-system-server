@@ -62,7 +62,7 @@ INSERT INTO client_status VALUES
 CREATE TABLE client (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    email VARCHAR(64),
+    phone VARCHAR(32),
     code INTEGER,
     access_key INTEGER NOT NULL,
     status VARCHAR(64) REFERENCES client_status (name) NOT NULL,

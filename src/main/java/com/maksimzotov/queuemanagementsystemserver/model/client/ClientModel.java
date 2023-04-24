@@ -8,14 +8,14 @@ import lombok.Value;
 @AllArgsConstructor
 public class ClientModel {
     Long id;
-    String email;
+    String phone;
     Integer code;
     String status;
 
     public static ClientModel toModel(ClientEntity clientEntity) {
         return new ClientModel(
                 clientEntity.getId(),
-                clientEntity.getEmail(),
+                clientEntity.getPhone(),
                 clientEntity.getCode(),
                 clientEntity.getStatus()
         );

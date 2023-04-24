@@ -9,8 +9,8 @@ import com.maksimzotov.queuemanagementsystemserver.model.client.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
-import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
+import com.maksimzotov.queuemanagementsystemserver.util.PhoneChecker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ public class ClientServiceImpl implements ClientService {
     private final AccountService accountService;
     private final LocationService locationService;
     private final RightsService rightsService;
-    private final MailService mailService;
+    private final SmsService smsService;
     private final JobService jobService;
     private final CleanerService cleanerService;
     private final ClientRepo clientRepo;
@@ -41,7 +41,7 @@ public class ClientServiceImpl implements ClientService {
             AccountService accountService,
             LocationService locationService,
             RightsService rightsService,
-            MailService mailService,
+            SmsService smsService,
             JobService jobService,
             CleanerService cleanerService,
             ClientRepo clientRepo,
@@ -56,7 +56,7 @@ public class ClientServiceImpl implements ClientService {
         this.accountService = accountService;
         this.locationService = locationService;
         this.rightsService = rightsService;
-        this.mailService = mailService;
+        this.smsService = smsService;
         this.jobService = jobService;
         this.cleanerService = cleanerService;
         this.clientRepo = clientRepo;
@@ -257,10 +257,10 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
         ClientEntity clientEntity = client.get();
-        if (clientEntity.getEmail() == null) {
+        if (clientEntity.getPhone() == null) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_HAVE_EMAIL));
         }
-        mailService.send(clientEntity.getEmail(), localizer.getMessage(Message.QUEUE), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
+        smsService.send(clientEntity.getPhone(), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
     }
 
     @Override
@@ -292,8 +292,8 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
-        if (addClientRequest.getConfirmationRequired() && !EmailChecker.emailMatches(addClientRequest.getEmail())) {
-            throw new DescriptionException(localizer.getMessage(Message.WRONG_EMAIL));
+        if (addClientRequest.getConfirmationRequired() && !PhoneChecker.phoneMatches(addClientRequest.getPhone())) {
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_PHONE));
         }
         return getServiceIdsToOrderNumbers(localizer, locationId, addClientRequest.getServiceIds(), addClientRequest.getServicesSequenceId());
     }
@@ -348,19 +348,19 @@ public class ClientServiceImpl implements ClientService {
         return Constants.CLIENT_URL +
                 "/client?client_id=" +
                 clientEntity.getId() +
-                "&access_key=" +
+                "%26access_key=" +
                 clientEntity.getAccessKey();
     }
 
     private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
-        String email = addClientRequest.getEmail();
+        String phone = addClientRequest.getPhone();
         Boolean confirmationRequired = addClientRequest.getConfirmationRequired();
 
         if (!confirmationRequired) {
             rightsService.checkEmployeeRightsInLocation(localizer,  accountService.getEmail(accessToken), locationId);
         }
-        if (email != null && clientRepo.findByEmail(email).isPresent()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_EMAIL_ALREADY_EXIST));
+        if (phone != null && clientRepo.findByPhone(phone).isPresent()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_PHONE_ALREADY_EXIST));
         }
 
         ClientEntity clientEntity;
@@ -369,7 +369,7 @@ public class ClientServiceImpl implements ClientService {
                     new ClientEntity(
                             null,
                             locationId,
-                            email,
+                            phone,
                             null,
                             CodeGenerator.generateAccessKey(),
                             ClientStatusEntity.Status.RESERVED.name(),
@@ -405,22 +405,20 @@ public class ClientServiceImpl implements ClientService {
 
         if (confirmationRequired) {
             jobService.schedule(
-                    () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), addClientRequest.getEmail()),
+                    () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), phone),
                     confirmationTimeInSeconds,
                     TimeUnit.SECONDS
             );
         }
 
         if (confirmationRequired) {
-            mailService.send(
-                    email,
-                    localizer.getMessage(Message.CONFIRMATION_OF_CONNECTION),
+            smsService.send(
+                    phone,
                     localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
             );
-        } else if (email != null) {
-            mailService.send(
-                    email,
-                    localizer.getMessage(Message.YOUR_STATUS_IN_QUEUE),
+        } else if (phone != null) {
+            smsService.send(
+                    phone,
                     localizer.getMessageForClientCheckStatus(
                             clientEntity.getCode().toString(),
                             getLinkForClient(localizer, clientEntity, locationId)
