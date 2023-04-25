@@ -34,6 +34,7 @@ public class LocationState {
     public static class Client {
         Long id;
         Integer code;
+        String phone;
         @JsonProperty("wait_timestamp")
         Date waitTimestamp;
         List<Service> services;
@@ -66,6 +67,7 @@ public class LocationState {
                             return new Client(
                                     clientEntity.getId(),
                                     code,
+                                    clientEntity.getPhone(),
                                     waitTimestamp,
                                     allServices,
                                     queue

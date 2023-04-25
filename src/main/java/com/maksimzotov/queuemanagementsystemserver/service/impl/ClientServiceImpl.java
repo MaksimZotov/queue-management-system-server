@@ -70,18 +70,18 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public ClientModel addClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, addClientRequest);
-        return createClient(localizer, accessToken, locationId, addClientRequest, serviceIdsToOrderNumbers);
+    public ClientModel createClient(Localizer localizer, String accessToken, Long locationId, CreateClientRequest createClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        Map<Long, Integer> serviceIdsToOrderNumbers = checkAddClientRequest(localizer, locationId, createClientRequest);
+        return createClient(localizer, accessToken, locationId, createClientRequest, serviceIdsToOrderNumbers);
     }
 
     @Override
-    public void changeClient(Localizer localizer, String accessToken, Long locationId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void changeClient(Localizer localizer, String accessToken, Long locationId, Long clientId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
 
-        Optional<ClientEntity> client = clientRepo.findById(changeClientRequest.getClientId());
+        Optional<ClientEntity> client = clientRepo.findById(clientId);
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
@@ -179,29 +179,10 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient leaveByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
-        checkAccessKey(localizer, clientId, accessKey);
-        Optional<ClientEntity> client = clientRepo.findById(clientId);
-        if (client.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
-        }
-        clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
-        clientRepo.deleteById(clientId);
-        Optional<QueueEntity> queue = queueRepo.findByClientId(clientId);
-        if (queue.isPresent()) {
-            QueueEntity queueEntity = queue.get();
-            queueEntity.setClientId(null);
-            queueRepo.save(queueEntity);
-        }
-        locationService.updateLocationState(client.get().getLocationId());
-        return getQueueStateForClient(localizer, clientId, accessKey);
-    }
+    public void serveClient(Localizer localizer, String accessToken, Long queueId, Long clientId, ServeClientRequest serveClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+        checkRightsInQueue(localizer, accessToken, queueId);
 
-    @Override
-    public void serveClientInQueueByEmployee(Localizer localizer, String accessToken, ServeClientRequest serveClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        checkRightsInQueue(localizer, accessToken, serveClientRequest.getQueueId());
-
-        Optional<Integer> minOrderNumber = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(serveClientRequest.getClientId())
+        Optional<Integer> minOrderNumber = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId)
                 .stream()
                 .map(ClientToChosenServiceEntity::getOrderNumber)
                 .min(Integer::compareTo);
@@ -214,7 +195,7 @@ public class ClientServiceImpl implements ClientService {
 
         for (Long serviceId : serveClientRequest.getServices()) {
             Optional<ClientToChosenServiceEntity> clientToChosenService = clientToChosenServiceRepo.findByPrimaryKeyClientIdAndPrimaryKeyServiceId(
-                    serveClientRequest.getClientId(),
+                    clientId,
                     serviceId
             );
             if (clientToChosenService.isEmpty()) {
@@ -227,7 +208,7 @@ public class ClientServiceImpl implements ClientService {
             clientToChosenServiceRepo.delete(clientToChosenServiceEntity);
         }
 
-        Optional<QueueEntity> queue = queueRepo.findById(serveClientRequest.getQueueId());
+        Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
@@ -235,10 +216,10 @@ public class ClientServiceImpl implements ClientService {
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
 
-        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(serveClientRequest.getClientId())) {
-            clientRepo.deleteById(serveClientRequest.getClientId());
+        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(queueId)) {
+            clientRepo.deleteById(queueId);
         } else {
-            Optional<ClientEntity> client = clientRepo.findById(serveClientRequest.getClientId());
+            Optional<ClientEntity> client = clientRepo.findById(queueId);
             if (client.isPresent()) {
                 ClientEntity clientEntity = client.get();
                 clientEntity.setWaitTimestamp(new Date());
@@ -250,7 +231,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void notifyClientInQueueByEmployee(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void notifyClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException {
         checkRightsInQueue(localizer, accessToken, queueId);
         Optional<ClientEntity> client = clientRepo.findById(clientId);
         if (client.isEmpty()) {
@@ -291,11 +272,11 @@ public class ClientServiceImpl implements ClientService {
         }
     }
 
-    private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, AddClientRequest addClientRequest) throws DescriptionException {
-        if (addClientRequest.getConfirmationRequired() && !PhoneChecker.phoneMatches(addClientRequest.getPhone())) {
+    private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, CreateClientRequest createClientRequest) throws DescriptionException {
+        if (createClientRequest.getConfirmationRequired() && !PhoneChecker.phoneMatches(createClientRequest.getPhone())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_PHONE));
         }
-        return getServiceIdsToOrderNumbers(localizer, locationId, addClientRequest.getServiceIds(), addClientRequest.getServicesSequenceId());
+        return getServiceIdsToOrderNumbers(localizer, locationId, createClientRequest.getServiceIds(), createClientRequest.getServicesSequenceId());
     }
 
     private Map<Long, Integer> getServiceIdsToOrderNumbers(Localizer localizer, Long locationId, List<Long> serviceIds, Long servicesSequenceId) throws DescriptionException {
@@ -352,9 +333,9 @@ public class ClientServiceImpl implements ClientService {
                 clientEntity.getAccessKey();
     }
 
-    private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
-        String phone = getPhoneWithoutPlus(addClientRequest.getPhone());
-        Boolean confirmationRequired = addClientRequest.getConfirmationRequired();
+    private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, CreateClientRequest createClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
+        String phone = getPhoneWithoutPlus(createClientRequest.getPhone());
+        Boolean confirmationRequired = createClientRequest.getConfirmationRequired();
 
         if (!confirmationRequired) {
             rightsService.checkEmployeeRightsInLocation(localizer,  accountService.getEmail(accessToken), locationId);

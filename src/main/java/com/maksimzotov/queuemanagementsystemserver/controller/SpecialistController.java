@@ -5,8 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
-import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecialistRequest;
+import com.maksimzotov.queuemanagementsystemserver.service.SpecialistService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
@@ -15,33 +15,33 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/queues")
+@RequestMapping("/specialists")
 @EqualsAndHashCode(callSuper = true)
-public class QueueController extends BaseController {
+public class SpecialistController extends BaseController {
 
-    private final QueueService queueService;
+    private final SpecialistService specialistService;
 
-    public QueueController(MessageSource messageSource, QueueService queueService) {
+    public SpecialistController(MessageSource messageSource, SpecialistService specialistService) {
         super(messageSource);
-        this.queueService = queueService;
+        this.specialistService = specialistService;
     }
 
-    @GetMapping()
-    public ResponseEntity<?> getQueues(
+    @GetMapping
+    public ResponseEntity<?> getSpecialistsInLocation(
             HttpServletRequest request,
-            @RequestParam(name = "location_id") Long locationId
+            @RequestParam("location_id") Long locationId
     ) {
-        return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
+        return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createQueue(
+    public ResponseEntity<?> createSpecialistInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
-            @RequestBody CreateQueueRequest createQueueRequest
+            @RequestBody CreateSpecialistRequest createSpecialistRequest
     ) {
         try {
-            return ResponseEntity.ok().body(queueService.createQueue(getLocalizer(request), getToken(request), locationId, createQueueRequest));
+            return ResponseEntity.ok().body(specialistService.createSpecialistInLocation(getLocalizer(request), getToken(request), locationId, createSpecialistRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
@@ -49,29 +49,18 @@ public class QueueController extends BaseController {
         }
     }
 
-    @DeleteMapping("/{queue_id}/delete")
-    public ResponseEntity<?> deleteQueue(
+    @DeleteMapping("/{specialist_id}/delete")
+    public ResponseEntity<?> deleteSpecialistInLocation(
             HttpServletRequest request,
-            @PathVariable(name = "queue_id") Long queueId
+            @PathVariable("specialist_id") Long specialistId,
+            @RequestParam("location_id") Long locationId
     ) {
         try {
-            queueService.deleteQueue(getLocalizer(request), getToken(request), queueId);
+            specialistService.deleteSpecialistInLocation(getLocalizer(request), getToken(request), locationId, specialistId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @GetMapping("/{queue_id}/state")
-    public ResponseEntity<?> getQueueState(
-            HttpServletRequest request,
-            @PathVariable(name = "queue_id") Long queueId
-    ) {
-        try {
-            return ResponseEntity.ok().body(queueService.getQueueState(getLocalizer(request), getToken(request), queueId));
-        } catch (DescriptionException ex) {
+        }  catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }

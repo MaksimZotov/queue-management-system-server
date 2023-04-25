@@ -5,8 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
-import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
-import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
+import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
+import com.maksimzotov.queuemanagementsystemserver.service.ServicesSequenceService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
@@ -15,60 +15,56 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/rights")
+@RequestMapping("/services_sequences")
 @EqualsAndHashCode(callSuper = true)
-public class RightsController extends BaseController {
+public class ServiceSequenceController extends BaseController {
 
-    private final RightsService rightsService;
+    private final ServicesSequenceService servicesSequenceService;
 
-    public RightsController(MessageSource messageSource, RightsService rightsService) {
+    public ServiceSequenceController(MessageSource messageSource, ServicesSequenceService servicesSequenceService) {
         super(messageSource);
-        this.rightsService = rightsService;
+        this.servicesSequenceService = servicesSequenceService;
     }
 
     @GetMapping
-    public ResponseEntity<?> getRights(
+    public ResponseEntity<?> getServicesSequencesInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(rightsService.getRights(getLocalizer(request), getToken(request), locationId));
-        } catch (AccountIsNotAuthorizedException ex) {
-            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
+            return ResponseEntity.ok().body(servicesSequenceService.getServicesSequencesInLocation(getLocalizer(request), locationId));
+        }  catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-
-    @PostMapping("/add")
-    public ResponseEntity<?> addRights(
+    @PostMapping("/create")
+    public ResponseEntity<?> createServicesSequenceInLocation(
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId,
-            @RequestBody AddRightsRequest addRightsRequest
+            @RequestBody CreateServicesSequenceRequest createServicesSequenceRequest
     ) {
         try {
-            rightsService.addRights(getLocalizer(request), getToken(request), locationId, addRightsRequest);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok().body(servicesSequenceService.createServicesSequenceInLocation(getLocalizer(request), getToken(request), locationId, createServicesSequenceRequest));
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
+        }  catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @DeleteMapping("/{email}/delete")
-    public ResponseEntity<?> deleteRights(
+    @DeleteMapping("/{services_sequence_id}/delete")
+    public ResponseEntity<?> deleteServicesSequenceInLocation(
             HttpServletRequest request,
-            @PathVariable("email") String email,
+            @PathVariable("services_sequence_id") Long servicesSequenceId,
             @RequestParam("location_id") Long locationId
     ) {
         try {
-            rightsService.deleteRights(getLocalizer(request), getToken(request), locationId, email);
+            servicesSequenceService.deleteServicesSequenceInLocation(getLocalizer(request), getToken(request), locationId, servicesSequenceId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
-        } catch (DescriptionException ex) {
+        }  catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }

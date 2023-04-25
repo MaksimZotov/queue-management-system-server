@@ -58,7 +58,8 @@ public enum Message {
     CLIENT_ALREADY_CONFIRMED,
     CREATED_FROM_SPECIALIST_QUEUE_EXIST,
     INCORRECT_SERVICES,
-    SERVICE_IS_BOOKED_BY_CLIENT;
+    SERVICE_IS_BOOKED_BY_CLIENT,
+    SERVICES_SEQUENCE_DOES_NOT_EXIST;
 
     public String toMessageId() {
         return name().toLowerCase();

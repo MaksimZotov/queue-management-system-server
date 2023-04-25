@@ -11,5 +11,4 @@ public interface SpecialistService {
     ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId);
     SpecialistModel createSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long specialistId) throws DescriptionException, AccountIsNotAuthorizedException;
-
 }

@@ -6,7 +6,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-public class AddClientRequest {
+public class CreateClientRequest {
     String phone;
     @JsonProperty("service_ids")
     List<Long> serviceIds;
