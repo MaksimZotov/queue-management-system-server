@@ -191,7 +191,12 @@ public class AccountServiceImpl implements AccountService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshToken, accountEntity.getId());
+            String newRefreshToken = JWT.create()
+                    .withSubject(accountEntity.getEmail())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                    .sign(algorithm);
+
+            return new TokensResponse(accessToken, newRefreshToken, accountEntity.getId());
         } catch (Exception ex) {
             throw new RefreshTokenFailedException();
         }
