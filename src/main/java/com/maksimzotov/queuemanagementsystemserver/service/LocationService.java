@@ -15,6 +15,6 @@ public interface LocationService {
     Location getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
     ContainerForList<Location> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
     LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
-    LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException;
+    LocationState getLocationState(Localizer localizer, Long locationId);
     void updateLocationState(Long locationId);
 }

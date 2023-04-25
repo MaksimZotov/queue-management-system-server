@@ -353,7 +353,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, AddClientRequest addClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
-        String phone = addClientRequest.getPhone();
+        String phone = getPhoneWithoutPlus(addClientRequest.getPhone());
         Boolean confirmationRequired = addClientRequest.getConfirmationRequired();
 
         if (!confirmationRequired) {
@@ -427,5 +427,12 @@ public class ClientServiceImpl implements ClientService {
         }
 
         return ClientModel.toModel(clientEntity);
+    }
+
+    private String getPhoneWithoutPlus(String phone) {
+        if (phone.length() == 12) {
+            return phone.substring(1);
+        }
+        return phone;
     }
 }

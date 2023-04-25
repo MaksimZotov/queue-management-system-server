@@ -130,7 +130,7 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public LocationState getLocationState(Localizer localizer, Long locationId) throws DescriptionException {
+    public LocationState getLocationState(Localizer localizer, Long locationId) {
         List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);

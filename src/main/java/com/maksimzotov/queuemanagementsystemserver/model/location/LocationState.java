@@ -44,6 +44,9 @@ public class LocationState {
 
     List<Client> clients;
 
+    @JsonProperty("created_at")
+    Date createdAt;
+
     public static LocationState toModel(
             Long locationId,
             List<ClientEntity> clientEntities,
@@ -68,7 +71,8 @@ public class LocationState {
                                     queue
                             );
                         })
-                        .toList()
+                        .toList(),
+                new Date()
         );
     }
 
