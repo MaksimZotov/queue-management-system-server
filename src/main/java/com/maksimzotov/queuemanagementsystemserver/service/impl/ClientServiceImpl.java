@@ -430,6 +430,9 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private String getPhoneWithoutPlus(String phone) {
+        if (phone == null) {
+            return null;
+        }
         if (phone.length() == 12) {
             return phone.substring(1);
         }
