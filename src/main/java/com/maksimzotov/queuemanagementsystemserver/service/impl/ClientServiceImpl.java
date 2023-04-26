@@ -305,8 +305,8 @@ public class ClientServiceImpl implements ClientService {
                     serviceInServicesSequenceRepo.findAllByPrimaryKeyServicesSequenceIdOrderByOrderNumberAsc(
                             servicesSequenceId
                     );
-            for (ServiceInServicesSequenceEntity servicesSequenceEntity : servicesInServicesSequenceEntities) {
-                serviceIdsToOrderNumbers.put(servicesSequenceEntity.getPrimaryKey().getServiceId(), servicesSequenceEntity.getOrderNumber());
+            for (ServiceInServicesSequenceEntity serviceInServicesSequenceEntity : servicesInServicesSequenceEntities) {
+                serviceIdsToOrderNumbers.put(serviceInServicesSequenceEntity.getPrimaryKey().getServiceId(), serviceInServicesSequenceEntity.getOrderNumber());
             }
         }
 

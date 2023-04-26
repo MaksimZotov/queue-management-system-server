@@ -9,6 +9,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.service.OrderedServicesModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.ServiceModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
@@ -19,9 +20,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 @Service
@@ -70,18 +69,16 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServiceModel> getServicesInServicesSequence(Localizer localizer, Long servicesSequenceId) throws DescriptionException {
+    public OrderedServicesModel getServicesInServicesSequence(Localizer localizer, Long servicesSequenceId) throws DescriptionException {
         if (!servicesSequenceRepo.existsById(servicesSequenceId)) {
             throw new DescriptionException(localizer.getMessage(Message.SERVICES_SEQUENCE_DOES_NOT_EXIST));
         }
         List<ServiceInServicesSequenceEntity> serviceInServicesSequenceEntities = serviceInServicesSequenceRepo.findAllByPrimaryKeyServicesSequenceIdOrderByOrderNumberAsc(servicesSequenceId);
-        List<ServiceModel> serviceModels = new ArrayList<>();
+        Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();
         for (ServiceInServicesSequenceEntity serviceInServicesSequenceEntity : serviceInServicesSequenceEntities) {
-            Optional<ServiceEntity> service = serviceRepo.findById(serviceInServicesSequenceEntity.getPrimaryKey().getServiceId());
-            ServiceEntity serviceEntity = service.get();
-            serviceModels.add(ServiceModel.toModel(serviceEntity));
+            serviceIdsToOrderNumbers.put(serviceInServicesSequenceEntity.getPrimaryKey().getServiceId(), serviceInServicesSequenceEntity.getOrderNumber());
         }
-        return new ContainerForList<>(serviceModels);
+        return new OrderedServicesModel(serviceIdsToOrderNumbers);
     }
 
     @Override
