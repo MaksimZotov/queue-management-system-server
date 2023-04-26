@@ -107,7 +107,10 @@ public class ServiceServiceImpl implements ServiceService {
             throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_BOOKED_BY_CLIENT));
         }
         if (serviceInSpecialistRepo.existsByServiceId(serviceId)) {
-            throw new DescriptionException(localizer.getMessage(Message.SERVICES_IS_ASSIGNED_TO_SPECIALIST));
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_ASSIGNED_TO_SPECIALIST));
+        }
+        if (serviceInServicesSequenceRepo.existsByPrimaryKeyServiceId(serviceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_ASSIGNED_TO_SERVICES_SEQUENCE));
         }
         serviceRepo.deleteById(serviceId);
     }
