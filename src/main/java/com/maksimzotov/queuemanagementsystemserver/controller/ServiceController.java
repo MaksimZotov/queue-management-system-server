@@ -29,10 +29,10 @@ public class ServiceController extends BaseController {
     @GetMapping
     public ResponseEntity<?> getServicesInLocation(
             HttpServletRequest request,
-            @RequestParam("location_id") Long locationId,
-            @RequestParam("queue_id") Long queueId,
-            @RequestParam("specialist_id") Long specialistId,
-            @RequestParam("services_sequence_id") Long servicesSequenceId
+            @RequestParam(value = "location_id", required = false) Long locationId,
+            @RequestParam(value = "queue_id", required = false) Long queueId,
+            @RequestParam(value = "specialist_id", required = false) Long specialistId,
+            @RequestParam(value = "services_sequence_id", required = false) Long servicesSequenceId
     ) {
         try {
             int count = 0;
