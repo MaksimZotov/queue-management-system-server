@@ -7,7 +7,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.Location;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
@@ -41,7 +41,7 @@ public class LocationServiceImpl implements LocationService {
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public Location createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public LocationModel createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountEmail = accountService.getEmail(accessToken);
 
         if (createLocationRequest.getName().isEmpty()) {
@@ -57,7 +57,7 @@ public class LocationServiceImpl implements LocationService {
                 )
         );
 
-        return Location.toModel(locationEntity, Objects.equals(accountEmail, locationEntity.getOwnerEmail()), null);
+        return LocationModel.toModel(locationEntity, Objects.equals(accountEmail, locationEntity.getOwnerEmail()), null);
     }
 
     @Override
@@ -82,14 +82,14 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public Location getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public LocationModel getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         LocationEntity locationEntity = location.get();
         String accountEmail = accountService.getEmailOrNull(accessToken);
-        return Location.toModel(
+        return LocationModel.toModel(
                 locationEntity,
                 Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
                 rightsService.getRightsStatus(localizer, accountEmail, locationId)
@@ -97,7 +97,7 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public ContainerForList<Location> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
+    public ContainerForList<LocationModel> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
         Optional<AccountEntity> account = accountRepo.findById(accountId);
         if (account.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
@@ -109,7 +109,7 @@ public class LocationServiceImpl implements LocationService {
                 locationsEntities
                         .stream()
                         .map(locationEntity ->
-                                Location.toModel(
+                                LocationModel.toModel(
                                         locationEntity,
                                         Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
                                         null
