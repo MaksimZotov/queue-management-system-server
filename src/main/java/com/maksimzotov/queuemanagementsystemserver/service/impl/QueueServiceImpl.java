@@ -64,6 +64,9 @@ public class QueueServiceImpl implements QueueService {
     @Override
     public void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
         QueueEntity queueEntity = checkRightsInQueue(localizer, accessToken, queueId);
+        if (queueEntity.getClientId() != null) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_ASSIGNED_TO_QUEUE));
+        }
         queueRepo.deleteById(queueId);
         locationService.updateLocationState(queueEntity.getLocationId());
     }

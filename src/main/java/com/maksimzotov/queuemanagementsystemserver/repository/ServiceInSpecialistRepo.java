@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface ServiceInSpecialistRepo extends JpaRepository<ServiceInSpecialistEntity, ServiceInSpecialistEntity> {
     List<ServiceInSpecialistEntity> findAllBySpecialistId(Long specialistId);
+    Boolean existsByServiceId(Long serviceId);
     void deleteAllBySpecialistId(Long specialistId);
 }
