@@ -25,6 +25,6 @@ public class CodeGenerator {
     }
 
     public static Integer generateAccessKey() {
-        return new Random().nextInt(9000000) + 1000000;
+        return new Random().nextInt(9000) + 1000;
     }
 }

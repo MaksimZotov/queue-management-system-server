@@ -154,8 +154,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
-        ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
+    public QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId) throws DescriptionException {
+        Optional<ClientEntity> client = clientRepo.findById(clientId);
+        if (client.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
+        }
+        ClientEntity clientEntity = client.get();
         return QueueStateForClient.toModel(clientEntity);
     }
 
@@ -175,7 +179,7 @@ public class ClientServiceImpl implements ClientService {
         clientRepo.save(clientEntity);
         locationService.updateLocationState(clientEntity.getLocationId());
 
-        return getQueueStateForClient(localizer, clientId, accessKey);
+        return getQueueStateForClient(localizer, clientId);
     }
 
     @Override

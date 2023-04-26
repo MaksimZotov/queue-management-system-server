@@ -59,11 +59,10 @@ public class ClientController extends BaseController {
     @GetMapping("/{client_id}/state")
     public ResponseEntity<?> getQueueStateForClient(
             HttpServletRequest request,
-            @PathVariable("client_id") Long clientId,
-            @RequestParam("access_key") Integer accessKey
+            @PathVariable("client_id") Long clientId
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId, accessKey));
+            return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

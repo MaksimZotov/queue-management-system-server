@@ -10,7 +10,7 @@ public interface ClientService {
     void changeClient(Localizer localizer, String accessToken, Long locationId, Long clientId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void callClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
     void returnClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
-    QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException;
+    QueueStateForClient getQueueStateForClient(Localizer localizer, Long clientId) throws DescriptionException;
     QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException;
     void serveClient(Localizer localizer, String accessToken, Long queueId, Long clientId, ServeClientRequest serveClientRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void notifyClient(Localizer localizer, String accessToken, Long queueId, Long clientId) throws DescriptionException, AccountIsNotAuthorizedException;
