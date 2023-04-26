@@ -243,7 +243,7 @@ public class ClientServiceImpl implements ClientService {
         }
         ClientEntity clientEntity = client.get();
         if (clientEntity.getPhone() == null) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_HAVE_EMAIL));
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_HAVE_PHONE));
         }
         smsService.send(clientEntity.getPhone(), localizer.getMessage(Message.PLEASE_GO_TO_SERVICE));
     }
