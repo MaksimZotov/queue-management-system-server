@@ -10,7 +10,7 @@ import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
-import com.maksimzotov.queuemanagementsystemserver.util.PhoneChecker;
+import com.maksimzotov.queuemanagementsystemserver.util.PhoneHelper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -277,7 +277,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private Map<Long, Integer> checkAddClientRequest(Localizer localizer, Long locationId, CreateClientRequest createClientRequest) throws DescriptionException {
-        if (createClientRequest.getConfirmationRequired() && !PhoneChecker.phoneMatches(createClientRequest.getPhone())) {
+        if (createClientRequest.getConfirmationRequired() && !PhoneHelper.phoneMatches(createClientRequest.getPhone())) {
             throw new DescriptionException(localizer.getMessage(Message.WRONG_PHONE));
         }
         return getServiceIdsToOrderNumbers(localizer, locationId, createClientRequest.getServiceIds(), createClientRequest.getServicesSequenceId());
@@ -338,7 +338,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private ClientModel createClient(Localizer localizer, String accessToken, Long locationId, CreateClientRequest createClientRequest, Map<Long, Integer> serviceIdsToOrderNumbers) throws DescriptionException, AccountIsNotAuthorizedException {
-        String phone = getPhoneWithoutPlus(createClientRequest.getPhone());
+        String phone = PhoneHelper.normalizePhoneForDatabase(createClientRequest.getPhone());
         Boolean confirmationRequired = createClientRequest.getConfirmationRequired();
 
         if (!confirmationRequired) {
@@ -412,15 +412,5 @@ public class ClientServiceImpl implements ClientService {
         }
 
         return ClientModel.toModel(clientEntity);
-    }
-
-    private String getPhoneWithoutPlus(String phone) {
-        if (phone == null) {
-            return null;
-        }
-        if (phone.length() == 12) {
-            return phone.substring(1);
-        }
-        return phone;
     }
 }
