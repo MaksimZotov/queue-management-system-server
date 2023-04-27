@@ -220,10 +220,10 @@ public class ClientServiceImpl implements ClientService {
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
 
-        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(queueId)) {
-            clientRepo.deleteById(queueId);
+        if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
+            clientRepo.deleteById(clientId);
         } else {
-            Optional<ClientEntity> client = clientRepo.findById(queueId);
+            Optional<ClientEntity> client = clientRepo.findById(clientId);
             if (client.isPresent()) {
                 ClientEntity clientEntity = client.get();
                 clientEntity.setWaitTimestamp(new Date());

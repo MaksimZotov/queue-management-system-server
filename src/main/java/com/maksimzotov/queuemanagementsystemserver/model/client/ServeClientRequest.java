@@ -1,10 +1,10 @@
 package com.maksimzotov.queuemanagementsystemserver.model.client;
 
-import lombok.Value;
+import lombok.Data;
 
 import java.util.List;
 
-@Value
+@Data
 public class ServeClientRequest {
     List<Long> services;
 }
