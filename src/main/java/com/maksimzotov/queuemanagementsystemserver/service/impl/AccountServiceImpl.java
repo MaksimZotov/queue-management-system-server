@@ -54,11 +54,11 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
     @Value("${app.tokens.secret}")
     private String secret;
-    @Value("${app.tokens.access.expiration}")
+    @Value("${app.tokens.expiration.access}")
     private Long accessTokenExpiration;
-    @Value("${app.tokens.refresh.expiration}")
+    @Value("${app.tokens.expiration.refresh}")
     private Long refreshTokenExpiration;
-    @Value("${app.registration.confirmationtime.registration}")
+    @Value("${app.confirmation.time.registration}")
     private Integer confirmationTimeInSeconds;
 
     @Override

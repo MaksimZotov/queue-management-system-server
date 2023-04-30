@@ -36,7 +36,7 @@ public class ClientServiceImpl implements ClientService {
     private final ServicesSequenceRepo servicesSequenceRepo;
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
-    @Value("${app.registration.confirmationtime.join}")
+    @Value("${app.confirmation.time.join}")
     private Integer confirmationTimeInSeconds;
     @Value("${app.client.url}")
     private String clientBaseUrl;
