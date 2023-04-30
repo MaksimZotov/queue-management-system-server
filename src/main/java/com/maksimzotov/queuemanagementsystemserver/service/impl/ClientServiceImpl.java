@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.Constants;
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
@@ -11,6 +10,7 @@ import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import com.maksimzotov.queuemanagementsystemserver.util.PhoneHelper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ClientServiceImpl implements ClientService {
 
     private final AccountService accountService;
@@ -35,39 +36,10 @@ public class ClientServiceImpl implements ClientService {
     private final ServicesSequenceRepo servicesSequenceRepo;
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
-    private final Integer confirmationTimeInSeconds;
-
-    public ClientServiceImpl(
-            AccountService accountService,
-            LocationService locationService,
-            RightsService rightsService,
-            SmsService smsService,
-            JobService jobService,
-            CleanerService cleanerService,
-            ClientRepo clientRepo,
-            QueueRepo queueRepo,
-            LocationRepo locationRepo,
-            ServiceRepo serviceRepo,
-            ServicesSequenceRepo servicesSequenceRepo,
-            ServiceInServicesSequenceRepo serviceInServicesSequenceRepo,
-            ClientToChosenServiceRepo clientToChosenServiceRepo,
-            @Value("${app.registration.confirmationtime.join}") Integer confirmationTimeInSeconds
-    ) {
-        this.accountService = accountService;
-        this.locationService = locationService;
-        this.rightsService = rightsService;
-        this.smsService = smsService;
-        this.jobService = jobService;
-        this.cleanerService = cleanerService;
-        this.clientRepo = clientRepo;
-        this.queueRepo = queueRepo;
-        this.locationRepo = locationRepo;
-        this.serviceRepo = serviceRepo;
-        this.servicesSequenceRepo = servicesSequenceRepo;
-        this.serviceInServicesSequenceRepo = serviceInServicesSequenceRepo;
-        this.clientToChosenServiceRepo = clientToChosenServiceRepo;
-        this.confirmationTimeInSeconds = confirmationTimeInSeconds;
-    }
+    @Value("${app.registration.confirmationtime.join}")
+    private Integer confirmationTimeInSeconds;
+    @Value("${app.client.url}")
+    private String clientBaseUrl;
 
     @Override
     public ClientModel createClient(Localizer localizer, String accessToken, Long locationId, CreateClientRequest createClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -330,7 +302,7 @@ public class ClientServiceImpl implements ClientService {
         if (location.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
-        return Constants.CLIENT_URL +
+        return clientBaseUrl +
                 "/client?client_id=" +
                 clientEntity.getId() +
                 "%26access_key=" +

@@ -24,6 +24,7 @@ import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
     private final MailService mailService;
@@ -50,36 +52,14 @@ public class AccountServiceImpl implements AccountService {
     private final CleanerService cleanerService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final String secret;
-    private final Long accessTokenExpiration;
-    private final Long refreshTokenExpiration;
-    private final Integer confirmationTimeInSeconds;
-
-    public AccountServiceImpl(
-            MailService mailService,
-            JobService jobService,
-            AccountRepo accountRepo,
-            RegistrationCodeRepo registrationCodeRepo,
-            CleanerService cleanerService,
-            AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder,
-            @Value("${app.tokens.secret}") String secret,
-            @Value("${app.tokens.access.expiration}") Long accessTokenExpiration,
-            @Value("${app.tokens.refresh.expiration}") Long refreshTokenExpiration,
-            @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
-    ) {
-        this.mailService = mailService;
-        this.jobService = jobService;
-        this.accountRepo = accountRepo;
-        this.registrationCodeRepo = registrationCodeRepo;
-        this.cleanerService = cleanerService;
-        this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.secret = secret;
-        this.accessTokenExpiration = accessTokenExpiration;
-        this.refreshTokenExpiration = refreshTokenExpiration;
-        this.confirmationTimeInSeconds = confirmationTimeInSeconds;
-    }
+    @Value("${app.tokens.secret}")
+    private String secret;
+    @Value("${app.tokens.access.expiration}")
+    private Long accessTokenExpiration;
+    @Value("${app.tokens.refresh.expiration}")
+    private Long refreshTokenExpiration;
+    @Value("${app.registration.confirmationtime.registration}")
+    private Integer confirmationTimeInSeconds;
 
     @Override
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {

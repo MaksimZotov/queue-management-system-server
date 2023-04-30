@@ -2,6 +2,7 @@ package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.service.JobService;
 import com.maksimzotov.queuemanagementsystemserver.service.SmsService;
+import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -14,28 +15,20 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.nio.charset.StandardCharsets;
 
 @Service
+@RequiredArgsConstructor
 public class SmsServiceImpl implements SmsService {
 
     private static final String sendMessageUrl = "https://gate.smsaero.ru/v2/sms/send";
 
     private final JobService jobService;
-    private final String username;
-    private final String password;
-    private final String sign;
+    @Value("${app.sms.username}")
+    private String username;
+    @Value("${app.sms.password}")
+    private String password;
+    @Value("${app.sms.sign}")
+    private String sign;
 
     private final RestTemplate restTemplate =  new RestTemplate();
-
-    public SmsServiceImpl(
-            JobService jobService,
-            @Value("${app.sms.username}") String username,
-            @Value("${app.sms.password}") String password,
-            @Value("${app.sms.sign}") String sign
-    ) {
-        this.jobService = jobService;
-        this.username = username;
-        this.password = password;
-        this.sign = sign;
-    }
 
     @Override
     public void send(String phone, String text) {
