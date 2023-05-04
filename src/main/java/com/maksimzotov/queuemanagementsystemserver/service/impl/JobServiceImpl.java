@@ -1,26 +1,29 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
 import com.maksimzotov.queuemanagementsystemserver.service.JobService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class JobServiceImpl implements JobService {
 
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
-    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
+    @Value("${app.threadPoolSize}")
+    private Integer threadPoolSize;
 
-    @Override
-    public void schedule(Runnable command, long delay, TimeUnit unit) {
-        scheduledExecutorService.schedule(command, delay, unit);
-    }
+    private ExecutorService executorService;
 
     @Override
     public void runAsync(Runnable command) {
-        executorService.submit(command);
+        getExecutorService().submit(command);
+    }
+
+    private ExecutorService getExecutorService() {
+        if (executorService == null) {
+            executorService = Executors.newFixedThreadPool(threadPoolSize);
+        }
+        return executorService;
     }
 }

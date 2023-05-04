@@ -4,7 +4,8 @@ CREATE TABLE account (
     email VARCHAR(64) NOT NULL UNIQUE,
     password VARCHAR(64) NOT NULL,
     first_name VARCHAR(64) NOT NULL,
-    last_name VARCHAR(64) NOT NULL
+    last_name VARCHAR(64) NOT NULL,
+    registration_timestamp TIMESTAMP NOT NULL
 );
 CREATE TABLE registration_code (
     email VARCHAR(64) REFERENCES account (email) NOT NULL,
@@ -66,7 +67,8 @@ CREATE TABLE client (
     code INTEGER,
     access_key INTEGER NOT NULL,
     status VARCHAR(64) REFERENCES client_status (name) NOT NULL,
-    wait_timestamp TIMESTAMP
+    wait_timestamp TIMESTAMP NOT NULL,
+    total_timestamp TIMESTAMP NOT NULL
 );
 CREATE TABLE client_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,

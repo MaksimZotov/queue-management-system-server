@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
@@ -28,7 +27,6 @@ public class ClientServiceImpl implements ClientService {
     private final RightsService rightsService;
     private final SmsService smsService;
     private final JobService jobService;
-    private final CleanerService cleanerService;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
     private final LocationRepo locationRepo;
@@ -37,7 +35,7 @@ public class ClientServiceImpl implements ClientService {
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
     @Value("${app.confirmation.time.join}")
-    private Integer confirmationTimeInSeconds;
+    private Integer confirmationTime;
     @Value("${app.client.url}")
     private String clientBaseUrl;
 
@@ -314,10 +312,28 @@ public class ClientServiceImpl implements ClientService {
         Boolean confirmationRequired = createClientRequest.getConfirmationRequired();
 
         if (!confirmationRequired) {
-            rightsService.checkEmployeeRightsInLocation(localizer,  accountService.getEmail(accessToken), locationId);
+            rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
         }
-        if (phone != null && clientRepo.findByPhone(phone).isPresent()) {
-            throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_PHONE_ALREADY_EXIST));
+
+        if (phone != null) {
+            Optional<ClientEntity> client = clientRepo.findByPhone(phone);
+            if (client.isPresent()) {
+                ClientEntity clientEntity = client.get();
+                if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
+                    throw new DescriptionException(localizer.getMessage(Message.CLIENT_WITH_THIS_PHONE_ALREADY_EXIST));
+                }
+                if (new Date().getTime() - clientEntity.getTotalTimestamp().getTime() < confirmationTime) {
+                    throw new DescriptionException(
+                            localizer.getMessage(
+                                    Message.CLIENT_WITH_PHONE_RESERVED_START,
+                                    phone,
+                                    Message.CLIENT_WITH_PHONE_RESERVED_END
+                            )
+                    );
+                } else {
+                    clientRepo.delete(clientEntity);
+                }
+            }
         }
 
         ClientEntity clientEntity;
@@ -330,7 +346,8 @@ public class ClientServiceImpl implements ClientService {
                             null,
                             CodeGenerator.generateAccessKey(),
                             ClientStatusEntity.Status.RESERVED.name(),
-                            null
+                            new Date(),
+                            new Date()
                     )
             );
         } else {
@@ -342,6 +359,7 @@ public class ClientServiceImpl implements ClientService {
                             CodeGenerator.generateCodeInLocation(clientRepo.findAllByLocationId(locationId).stream().map(ClientEntity::getCode).toList()),
                             CodeGenerator.generateAccessKey(),
                             ClientStatusEntity.Status.CONFIRMED.name(),
+                            new Date(),
                             new Date()
                     )
             );
@@ -357,14 +375,6 @@ public class ClientServiceImpl implements ClientService {
                             ),
                             serviceIdToOrderNumber.getValue()
                     )
-            );
-        }
-
-        if (confirmationRequired) {
-            jobService.schedule(
-                    () -> cleanerService.deleteNonConfirmedClient(clientEntity.getId(), phone),
-                    confirmationTimeInSeconds,
-                    TimeUnit.SECONDS
             );
         }
 

@@ -31,4 +31,6 @@ public class ClientEntity {
     private String status;
 
     private Date waitTimestamp;
+
+    private Date totalTimestamp;
 }

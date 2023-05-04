@@ -18,8 +18,6 @@ import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
-import com.maksimzotov.queuemanagementsystemserver.service.JobService;
 import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
@@ -38,7 +36,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
@@ -46,10 +43,8 @@ import java.util.concurrent.TimeUnit;
 public class AccountServiceImpl implements AccountService {
 
     private final MailService mailService;
-    private final JobService jobService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
-    private final CleanerService cleanerService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     @Value("${app.tokens.secret}")
@@ -59,7 +54,7 @@ public class AccountServiceImpl implements AccountService {
     @Value("${app.tokens.expiration.refresh}")
     private Long refreshTokenExpiration;
     @Value("${app.confirmation.time.registration}")
-    private Integer confirmationTimeInSeconds;
+    private Integer registrationTime;
 
     @Override
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
@@ -71,7 +66,8 @@ public class AccountServiceImpl implements AccountService {
                 signupRequest.getEmail(),
                 signupRequest.getFirstName(),
                 signupRequest.getLastName(),
-                passwordEncoder.encode(signupRequest.getPassword())
+                passwordEncoder.encode(signupRequest.getPassword()),
+                new Date()
         );
         accountRepo.save(account);
         registrationCodeRepo.save(
@@ -85,12 +81,6 @@ public class AccountServiceImpl implements AccountService {
                 signupRequest.getEmail(),
                 localizer.getMessage(Message.CONFIRMATION_OF_REGISTRATION),
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
-        );
-
-        jobService.schedule(
-                () -> cleanerService.deleteNonConfirmedUser(account.getEmail()),
-                confirmationTimeInSeconds,
-                TimeUnit.SECONDS
         );
     }
 
@@ -261,16 +251,20 @@ public class AccountServiceImpl implements AccountService {
             throw new FieldsException(fieldsErrors);
         }
 
-        if (accountRepo.existsByEmail(signupRequest.getEmail())) {
+        Optional<AccountEntity> account = accountRepo.findByEmail(signupRequest.getEmail());
+        if (account.isPresent()) {
             if (registrationCodeRepo.existsByEmail(signupRequest.getEmail())) {
-                fieldsErrors.put(
-                        FieldsException.EMAIL,
-                        localizer.getMessage(
-                                Message.USER_WITH_EMAIL_RESERVED_START,
-                                signupRequest.getEmail(),
-                                Message.USER_WITH_EMAIL_RESERVED_END
-                        )
-                );
+                AccountEntity accountEntity = account.get();
+                if (new Date().getTime() - accountEntity.getRegistrationTimestamp().getTime() < registrationTime) {
+                    fieldsErrors.put(
+                            FieldsException.EMAIL,
+                            localizer.getMessage(
+                                    Message.USER_WITH_EMAIL_RESERVED_START,
+                                    signupRequest.getEmail(),
+                                    Message.USER_WITH_EMAIL_RESERVED_END
+                            )
+                    );
+                }
             } else {
                 fieldsErrors.put(
                         FieldsException.EMAIL,

@@ -37,5 +37,7 @@ app:
     password: ${SMS_PASSWORD}
     sign: ${SMS_SIGN}
 
+  threadPoolSize: ${THREAD_POOL_SIZE}
+
   client:
     url: ${CLIENT_URL}
