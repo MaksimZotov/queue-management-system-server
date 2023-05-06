@@ -58,21 +58,22 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
-        checkSignup(localizer, signupRequest);
+        AccountEntity accountEntity = checkSignup(localizer, signupRequest);
+        if (accountEntity == null) {
+            accountEntity = new AccountEntity();
+        }
+        accountEntity.setEmail(signupRequest.getEmail());
+        accountEntity.setFirstName(signupRequest.getFirstName());
+        accountEntity.setLastName(signupRequest.getLastName());
+        accountEntity.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+        accountEntity.setRegistrationTimestamp(new Date());
 
         Integer code = CodeGenerator.generateCodeForEmail();
-        AccountEntity account = new AccountEntity(
-                null,
-                signupRequest.getEmail(),
-                signupRequest.getFirstName(),
-                signupRequest.getLastName(),
-                passwordEncoder.encode(signupRequest.getPassword()),
-                new Date()
-        );
-        accountRepo.save(account);
+
+        accountRepo.save(accountEntity);
         registrationCodeRepo.save(
                 new RegistrationCodeEntity(
-                        account.getEmail(),
+                        accountEntity.getEmail(),
                         code
                 )
         );
@@ -196,7 +197,7 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
-    private void checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
+    private AccountEntity checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
 
         if (signupRequest.getPassword().length() < 8) {
@@ -264,6 +265,8 @@ public class AccountServiceImpl implements AccountService {
                                     Message.USER_WITH_EMAIL_RESERVED_END
                             )
                     );
+                } else {
+                    return accountEntity;
                 }
             } else {
                 fieldsErrors.put(
@@ -279,6 +282,7 @@ public class AccountServiceImpl implements AccountService {
         if (!fieldsErrors.isEmpty()) {
             throw new FieldsException(fieldsErrors);
         }
+        return null;
     }
 
     private void checkLogin(Localizer localizer, LoginRequest loginRequest) throws FieldsException {
