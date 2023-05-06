@@ -322,6 +322,17 @@ public class AccountServiceImpl implements AccountService {
             );
             throw new FieldsException(fieldsErrors);
         }
+        if (registrationCodeRepo.existsByEmail(loginRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(
+                            Message.USER_WITH_EMAIL_IS_NOT_CONFIRMED_START,
+                            loginRequest.getEmail(),
+                            Message.USER_WITH_EMAIL_IS_NOT_CONFIRMED_END
+                    )
+            );
+            throw new FieldsException(fieldsErrors);
+        }
         AccountEntity accountEntity = account.get();
         if (!passwordEncoder.matches(loginRequest.getPassword(), accountEntity.getPassword())) {
             fieldsErrors.put(
