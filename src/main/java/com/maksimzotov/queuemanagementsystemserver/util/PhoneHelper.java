@@ -3,7 +3,7 @@ package com.maksimzotov.queuemanagementsystemserver.util;
 import java.util.regex.Pattern;
 
 public class PhoneHelper {
-    private static final String PHONE_PATTERN = "^[\\+]?[0-9]{11}";
+    private static final String PHONE_PATTERN = "((\\+?7)|8)[0-9]{10}";
 
     public static boolean phoneMatches(String phone) {
         return Pattern.compile(PHONE_PATTERN)
@@ -16,8 +16,8 @@ public class PhoneHelper {
             return null;
         }
         if (phone.length() == 12) {
-            return phone.substring(1);
+            return "+7" + phone.substring(2);
         }
-        return phone;
+        return "+7" + phone.substring(1);
     }
 }

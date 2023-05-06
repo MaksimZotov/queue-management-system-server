@@ -26,7 +26,6 @@ public class ClientServiceImpl implements ClientService {
     private final LocationService locationService;
     private final RightsService rightsService;
     private final SmsService smsService;
-    private final JobService jobService;
     private final ClientRepo clientRepo;
     private final QueueRepo queueRepo;
     private final LocationRepo locationRepo;
@@ -49,6 +48,9 @@ public class ClientServiceImpl implements ClientService {
     public void changeClient(Localizer localizer, String accessToken, Long locationId, Long clientId, ChangeClientRequest changeClientRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
+        }
+        if (changeClientRequest.getServiceIdsToOrderNumbers().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.INCORRECT_REQUEST));
         }
 
         Optional<ClientEntity> client = clientRepo.findById(clientId);

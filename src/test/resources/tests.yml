@@ -1,0 +1,41 @@
+server.servlet.contextPath: /api
+
+spring:
+
+  datasource:
+    url: jdbc:tc:postgresql:15.2-alpine:test_db
+
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto=validate: create-drop
+
+  mail:
+    host: smtp.gmail.com
+    username: ${MAIL_USERNAME}
+    password: tests
+    port: 465
+    protocol: smtps
+
+app:
+
+  tokens:
+    expiration:
+      access: ${TOKENS_EXPIRATION_ACCESS}
+      refresh: ${TOKENS_EXPIRATION_REFRESH}
+    secret: ${TOKENS_SECRET}
+
+  confirmation:
+    time:
+      registration: 1
+      join: 1
+
+  sms:
+    username: ${SMS_USERNAME}
+    password: tests
+    sign: ${SMS_SIGN}
+
+  threadPoolSize: ${THREAD_POOL_SIZE}
+
+  client:
+    url: ${CLIENT_URL}
