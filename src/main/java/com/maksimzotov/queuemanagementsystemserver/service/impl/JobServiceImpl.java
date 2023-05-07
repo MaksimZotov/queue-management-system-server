@@ -13,7 +13,7 @@ public class JobServiceImpl implements JobService {
     @Value("${app.threadPoolSize}")
     private Integer threadPoolSize;
 
-    private ExecutorService executorService;
+    private volatile ExecutorService executorService;
 
     @Override
     public void runAsync(Runnable command) {
@@ -22,7 +22,9 @@ public class JobServiceImpl implements JobService {
 
     private ExecutorService getExecutorService() {
         if (executorService == null) {
-            executorService = Executors.newFixedThreadPool(threadPoolSize);
+            synchronized (this) {
+                executorService = Executors.newFixedThreadPool(threadPoolSize);
+            }
         }
         return executorService;
     }
