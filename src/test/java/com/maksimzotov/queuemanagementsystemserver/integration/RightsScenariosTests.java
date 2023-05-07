@@ -116,7 +116,7 @@ public class RightsScenariosTests extends IntegrationTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1" ,
+                        "Локация 1",
                         "Описание"
                 )
         );
@@ -138,7 +138,7 @@ public class RightsScenariosTests extends IntegrationTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1" ,
+                        "Локация 1",
                         "Описание"
                 )
         );
@@ -160,7 +160,7 @@ public class RightsScenariosTests extends IntegrationTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                       "Локация 1" ,
+                       "Локация 1",
                         "Описание"
                 )
         );
@@ -180,6 +180,68 @@ public class RightsScenariosTests extends IntegrationTests {
                 new CreateServiceRequest(
                         "Услуга 1",
                         "Описание"
+                )
+        );
+    }
+
+    @Test
+    @SneakyThrows
+    void testAddRightsByAccountWithEmployeeRights() {
+        LocationModel locationModel = locationService.createLocation(
+                localizer,
+                firstTokens.getAccess(),
+                new CreateLocationRequest(
+                        "Локация 1",
+                        "Описание"
+                )
+        );
+        rightsService.addRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "zotovmaksim1254@gmail.com",
+                        RightsStatusEntity.Status.EMPLOYEE.name()
+                )
+        );
+        assertThrows(DescriptionException.class, () -> rightsService.addRights(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "test1234567tyiefse4@gmail.com",
+                        RightsStatusEntity.Status.EMPLOYEE.name()
+                )
+        ));
+    }
+
+    @Test
+    @SneakyThrows
+    void testAddRightsByAccountWithAdministratorRights() {
+        LocationModel locationModel = locationService.createLocation(
+                localizer,
+                firstTokens.getAccess(),
+                new CreateLocationRequest(
+                        "Локация 1",
+                        "Описание"
+                )
+        );
+        rightsService.addRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "zotovmaksim1254@gmail.com",
+                        RightsStatusEntity.Status.ADMINISTRATOR.name()
+                )
+        );
+        rightsService.addRights(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "test1234567tyiefse4@gmail.com",
+                        RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         );
     }
