@@ -23,8 +23,8 @@ app:
 
   confirmation:
     time:
-      registration: 1
-      join: 1
+      registration: ${CONFIRMATION_TIME_REGISTRATION}
+      join: ${CONFIRMATION_TIME_JOIN}
 
   sms:
     username: ${SMS_USERNAME}
