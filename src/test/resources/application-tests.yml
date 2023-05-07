@@ -2,13 +2,9 @@ server.servlet.contextPath: /api
 
 spring:
 
-  datasource:
-    url: jdbc:tc:postgresql:15.2-alpine:test_db
-
   jpa:
-    generate-ddl: false
     hibernate:
-      ddl-auto=validate: create-drop
+      ddl-auto: create-drop
 
   mail:
     host: smtp.gmail.com
