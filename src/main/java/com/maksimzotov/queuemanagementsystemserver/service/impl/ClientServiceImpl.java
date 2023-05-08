@@ -395,6 +395,10 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
+        if (!confirmationRequired) {
+            locationService.updateLocationState(locationId);
+        }
+
         return ClientModel.toModel(clientEntity);
     }
 }
