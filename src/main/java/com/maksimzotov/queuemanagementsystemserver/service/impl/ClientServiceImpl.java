@@ -82,6 +82,8 @@ public class ClientServiceImpl implements ClientService {
                     )
             );
         }
+
+        locationService.updateLocationState(locationId);
     }
 
     @Override
