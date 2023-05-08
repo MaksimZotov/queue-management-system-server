@@ -37,6 +37,8 @@ public class LocationState {
         String phone;
         @JsonProperty("wait_timestamp")
         Date waitTimestamp;
+        @JsonProperty("total_timestamp")
+        Date totalTimestamp;
         List<Service> services;
         Queue queue;
     }
@@ -62,6 +64,7 @@ public class LocationState {
                         .map(clientEntity -> {
                             Integer code = getCode(clientEntity);
                             Date waitTimestamp = getWaitTime(clientEntity);
+                            Date totalTimestamp = getTotalTime(clientEntity);
                             List<Service> allServices = getAllServices(clientEntity, serviceEntities, clientToChosenServiceEntities);
                             Queue queue = getQueue(clientEntity, queueEntities);
                             return new Client(
@@ -69,6 +72,7 @@ public class LocationState {
                                     code,
                                     clientEntity.getPhone(),
                                     waitTimestamp,
+                                    totalTimestamp,
                                     allServices,
                                     queue
                             );
@@ -84,6 +88,10 @@ public class LocationState {
 
     private static Date getWaitTime(ClientEntity clientEntity) {
         return clientEntity.getWaitTimestamp();
+    }
+
+    private static Date getTotalTime(ClientEntity clientEntity) {
+        return clientEntity.getTotalTimestamp();
     }
 
     private static List<Service> getAllServices(
