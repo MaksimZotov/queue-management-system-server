@@ -88,7 +88,7 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientId);
         Optional<QueueEntity> queueWithClient = queueRepo.findByClientId(clientId);
         List<QueueEntity> queueEntities = queueWithClient.isEmpty() ? List.of() : List.of(queueWithClient.get());
 
@@ -128,7 +128,7 @@ public class ClientServiceImpl implements ClientService {
         queueEntity.setClientId(clientId);
         queueRepo.save(queueEntity);
 
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(queueEntity.getLocationId());
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(queueEntity.getLocationId(), clientId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
 
         locationService.updateLocationState(
@@ -163,7 +163,7 @@ public class ClientServiceImpl implements ClientService {
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
 
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(queueEntity.getLocationId());
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(queueEntity.getLocationId(), clientId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
 
         locationService.updateLocationState(
@@ -204,7 +204,7 @@ public class ClientServiceImpl implements ClientService {
 
         clientRepo.save(clientEntity);
 
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(clientEntity.getLocationId());
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(clientEntity.getLocationId(), clientId);
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
 
         locationService.updateLocationState(
@@ -492,7 +492,7 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientEntity.getId());
 
         if (!confirmationRequired) {
             locationService.updateLocationState(
