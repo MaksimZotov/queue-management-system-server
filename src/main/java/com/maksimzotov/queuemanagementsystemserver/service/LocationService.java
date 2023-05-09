@@ -3,10 +3,7 @@ package com.maksimzotov.queuemanagementsystemserver.service;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
+import com.maksimzotov.queuemanagementsystemserver.model.location.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface LocationService {
@@ -16,5 +13,5 @@ public interface LocationService {
     ContainerForList<LocationModel> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
     LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
     LocationState getLocationState(Localizer localizer, Long locationId);
-    void updateLocationState(Long locationId);
+    void updateLocationState(Long locationId, LocationChange locationChange);
 }

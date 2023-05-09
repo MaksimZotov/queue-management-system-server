@@ -5,6 +5,8 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.client.*;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationChange;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
@@ -70,20 +72,37 @@ public class ClientServiceImpl implements ClientService {
             queueRepo.save(queueEntity);
         }
 
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = new ArrayList<>();
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : changeClientRequest.getServiceIdsToOrderNumbers().entrySet()) {
-            clientToChosenServiceRepo.save(
-                    new ClientToChosenServiceEntity(
-                            new ClientToChosenServiceEntity.PrimaryKey(
-                                    clientEntity.getId(),
-                                    serviceIdToOrderNumber.getKey(),
-                                    locationId
-                            ),
-                            serviceIdToOrderNumber.getValue()
-                    )
+            clientToChosenServiceEntities.add(
+                    clientToChosenServiceRepo.save(
+                        new ClientToChosenServiceEntity(
+                                new ClientToChosenServiceEntity.PrimaryKey(
+                                        clientEntity.getId(),
+                                        serviceIdToOrderNumber.getKey(),
+                                        locationId
+                                ),
+                                serviceIdToOrderNumber.getValue()
+                        )
+                )
             );
         }
 
-        locationService.updateLocationState(locationId);
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+        Optional<QueueEntity> queueWithClient = queueRepo.findByClientId(clientId);
+        List<QueueEntity> queueEntities = queueWithClient.isEmpty() ? List.of() : List.of(queueWithClient.get());
+
+        locationService.updateLocationState(
+                locationId,
+                new LocationChange.UpdateClient(
+                        LocationState.Client.toModel(
+                                clientEntity,
+                                serviceEntities,
+                                clientToChosenServiceEntities,
+                                queueEntities
+                        )
+                )
+        );
     }
 
     @Override
@@ -104,11 +123,25 @@ public class ClientServiceImpl implements ClientService {
         if (client.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
+        ClientEntity clientEntity = client.get();
 
         queueEntity.setClientId(clientId);
         queueRepo.save(queueEntity);
 
-        locationService.updateLocationState(queueEntity.getLocationId());
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(queueEntity.getLocationId());
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
+
+        locationService.updateLocationState(
+                queueEntity.getLocationId(),
+                new LocationChange.UpdateClient(
+                        LocationState.Client.toModel(
+                                clientEntity,
+                                serviceEntities,
+                                clientToChosenServiceEntities,
+                                List.of(queueEntity)
+                        )
+                )
+        );
     }
 
     @Override
@@ -120,11 +153,30 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_DOES_NOT_EXIST));
         }
 
+        Optional<ClientEntity> client = clientRepo.findById(clientId);
+        if (client.isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
+        }
+        ClientEntity clientEntity = client.get();
+
         QueueEntity queueEntity = queue.get();
         queueEntity.setClientId(null);
         queueRepo.save(queueEntity);
 
-        locationService.updateLocationState(queueEntity.getLocationId());
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(queueEntity.getLocationId());
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
+
+        locationService.updateLocationState(
+                queueEntity.getLocationId(),
+                new LocationChange.UpdateClient(
+                        LocationState.Client.toModel(
+                                clientEntity,
+                                serviceEntities,
+                                clientToChosenServiceEntities,
+                                List.of(queueEntity)
+                        )
+                )
+        );
     }
 
     @Override
@@ -151,7 +203,21 @@ public class ClientServiceImpl implements ClientService {
         clientEntity.setCode(CodeGenerator.generateCodeInLocation(clientEntities.stream().map(ClientEntity::getCode).toList()));
 
         clientRepo.save(clientEntity);
-        locationService.updateLocationState(clientEntity.getLocationId());
+
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(clientEntity.getLocationId());
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
+
+        locationService.updateLocationState(
+                clientEntity.getLocationId(),
+                new LocationChange.AddClient(
+                        LocationState.Client.toModel(
+                                clientEntity,
+                                serviceEntities,
+                                clientToChosenServiceEntities,
+                                new ArrayList<>()
+                        )
+                )
+        );
 
         return getQueueStateForClient(localizer, clientId);
     }
@@ -171,6 +237,7 @@ public class ClientServiceImpl implements ClientService {
 
         Integer min = minOrderNumber.get();
 
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientId);
         for (Long serviceId : serveClientRequest.getServices()) {
             Optional<ClientToChosenServiceEntity> clientToChosenService = clientToChosenServiceRepo.findByPrimaryKeyClientIdAndPrimaryKeyServiceId(
                     clientId,
@@ -184,6 +251,7 @@ public class ClientServiceImpl implements ClientService {
                 throw new DescriptionException(localizer.getMessage(Message.INCORRECT_SERVICES));
             }
             clientToChosenServiceRepo.delete(clientToChosenServiceEntity);
+            clientToChosenServiceEntities.remove(clientToChosenServiceEntity);
         }
 
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
@@ -196,16 +264,34 @@ public class ClientServiceImpl implements ClientService {
 
         if (!clientToChosenServiceRepo.existsByPrimaryKeyClientId(clientId)) {
             clientRepo.deleteById(clientId);
+            locationService.updateLocationState(
+                    queueEntity.getLocationId(),
+                    new LocationChange.DeleteClient(
+                            clientId
+                    )
+            );
         } else {
             Optional<ClientEntity> client = clientRepo.findById(clientId);
             if (client.isPresent()) {
                 ClientEntity clientEntity = client.get();
                 clientEntity.setWaitTimestamp(new Date());
                 clientRepo.save(clientEntity);
+
+                List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(queueEntity.getLocationId());
+
+                locationService.updateLocationState(
+                        queueEntity.getLocationId(),
+                        new LocationChange.UpdateClient(
+                                LocationState.Client.toModel(
+                                        clientEntity,
+                                        serviceEntities,
+                                        clientToChosenServiceEntities,
+                                        new ArrayList<>()
+                                )
+                        )
+                );
             }
         }
-
-        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
@@ -235,7 +321,13 @@ public class ClientServiceImpl implements ClientService {
         }
         clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientId);
         clientRepo.deleteById(clientId);
-        locationService.updateLocationState(locationId);
+
+        locationService.updateLocationState(
+                locationId,
+                new LocationChange.DeleteClient(
+                        clientId
+                )
+        );
     }
 
     private void checkRightsInQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException {
@@ -369,16 +461,19 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = new ArrayList<>();
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
-            clientToChosenServiceRepo.save(
-                    new ClientToChosenServiceEntity(
-                            new ClientToChosenServiceEntity.PrimaryKey(
-                                    clientEntity.getId(),
-                                    serviceIdToOrderNumber.getKey(),
-                                    locationId
-                            ),
-                            serviceIdToOrderNumber.getValue()
-                    )
+            clientToChosenServiceEntities.add(
+                    clientToChosenServiceRepo.save(
+                        new ClientToChosenServiceEntity(
+                                new ClientToChosenServiceEntity.PrimaryKey(
+                                        clientEntity.getId(),
+                                        serviceIdToOrderNumber.getKey(),
+                                        locationId
+                                ),
+                                serviceIdToOrderNumber.getValue()
+                        )
+                )
             );
         }
 
@@ -397,8 +492,20 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
+        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
+
         if (!confirmationRequired) {
-            locationService.updateLocationState(locationId);
+            locationService.updateLocationState(
+                    clientEntity.getLocationId(),
+                    new LocationChange.AddClient(
+                            LocationState.Client.toModel(
+                                    clientEntity,
+                                    serviceEntities,
+                                    clientToChosenServiceEntities,
+                                    new ArrayList<>()
+                            )
+                    )
+            );
         }
 
         return ClientModel.toModel(clientEntity);

@@ -6,10 +6,7 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationsOwnerInfo;
+import com.maksimzotov.queuemanagementsystemserver.model.location.*;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
@@ -145,21 +142,10 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public void updateLocationState(Long locationId) {
-        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
-        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
-        List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
-        LocationState locationState = LocationState.toModel(
-                locationId,
-                clientEntities,
-                serviceEntities,
-                clientToChosenServiceEntities,
-                queueEntities
-        );
+    public void updateLocationState(Long locationId, LocationChange locationChange) {
         messagingTemplate.convertAndSend(
                 WebSocketConfig.LOCATION_URL + locationId,
-                locationState
+                locationChange
         );
     }
 }

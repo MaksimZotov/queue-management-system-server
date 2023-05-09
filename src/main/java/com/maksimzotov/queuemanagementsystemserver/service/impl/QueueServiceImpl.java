@@ -1,13 +1,22 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.*;
+import com.maksimzotov.queuemanagementsystemserver.entity.LocationEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ServiceInSpecialistEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.queue.*;
-import com.maksimzotov.queuemanagementsystemserver.repository.*;
-import com.maksimzotov.queuemanagementsystemserver.service.*;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueModel;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
+import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.QueueRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.ServiceInSpecialistRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.SpecialistRepo;
+import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
+import com.maksimzotov.queuemanagementsystemserver.service.QueueService;
+import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +33,6 @@ public class QueueServiceImpl implements QueueService {
 
     private final AccountService accountService;
     private final RightsService rightsService;
-    private final LocationService locationService;
     private final LocationRepo locationRepo;
     private final QueueRepo queueRepo;
     private final SpecialistRepo specialistRepo;
@@ -56,7 +64,6 @@ public class QueueServiceImpl implements QueueService {
                         null
                 )
         );
-        locationService.updateLocationState(locationId);
 
         return QueueModel.toModel(queueEntity, true);
     }
@@ -68,7 +75,6 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_ASSIGNED_TO_QUEUE));
         }
         queueRepo.deleteById(queueId);
-        locationService.updateLocationState(queueEntity.getLocationId());
     }
 
     @Override
