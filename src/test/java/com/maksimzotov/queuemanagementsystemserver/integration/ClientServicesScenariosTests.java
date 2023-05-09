@@ -57,7 +57,7 @@ public class ClientServicesScenariosTests extends IntegrationTests {
     }
 
     @Test
-    void testJoin() {
+    void testCustomQueryWithJoin() {
         ServiceEntity firstServiceEntity = serviceRepo.save(
                 new ServiceEntity(
                       null,
