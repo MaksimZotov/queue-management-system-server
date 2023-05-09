@@ -40,3 +40,7 @@ dependencies {
 	testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
 	testImplementation 'org.mockito:mockito-core:5.3.1'
 }
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

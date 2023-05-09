@@ -20,8 +20,12 @@ public class UtilTests {
 
     @Test
     void testGenerateCodeInLocation() {
-        assertEquals(11, CodeGenerator.generateCodeInLocation(List.of(1, 5, 10)));
+        assertEquals(3, CodeGenerator.generateCodeInLocation(List.of(1, 2, 5, 10)));
         assertEquals(1, CodeGenerator.generateCodeInLocation(List.of(2, 5, 10)));
+        assertEquals(5, CodeGenerator.generateCodeInLocation(List.of(1, 2, 3, 4, 6)));
+        assertEquals(7, CodeGenerator.generateCodeInLocation(List.of(1, 2, 3, 4, 5, 6)));
+        assertEquals(5, CodeGenerator.generateCodeInLocation(List.of(4, 2, 3, 1, 6)));
+        assertEquals(1, CodeGenerator.generateCodeInLocation(List.of(4, 2, 3, 7, 6)));
     }
 
     @Test
