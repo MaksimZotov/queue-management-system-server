@@ -196,11 +196,11 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_CONFIRMED));
         }
 
-        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(clientEntity.getLocationId());
+        List<Integer> clientCodesInLocation = clientRepo.findAllClientCodesInLocation(clientEntity.getLocationId());
 
         clientEntity.setStatus(ClientStatusEntity.Status.CONFIRMED.name());
         clientEntity.setWaitTimestamp(new Date());
-        clientEntity.setCode(CodeGenerator.generateCodeInLocation(clientEntities.stream().map(ClientEntity::getCode).toList()));
+        clientEntity.setCode(CodeGenerator.generateCodeInLocation(clientCodesInLocation));
 
         clientRepo.save(clientEntity);
 
@@ -427,6 +427,7 @@ public class ClientServiceImpl implements ClientService {
                             )
                     );
                 } else {
+                    clientToChosenServiceRepo.deleteByPrimaryKeyClientId(clientEntity.getId());
                     clientRepo.delete(clientEntity);
                 }
             }
@@ -447,12 +448,13 @@ public class ClientServiceImpl implements ClientService {
                     )
             );
         } else {
+            List<Integer> clientCodesInLocation = clientRepo.findAllClientCodesInLocation(locationId);
             clientEntity = clientRepo.save(
                     new ClientEntity(
                             null,
                             locationId,
                             null,
-                            CodeGenerator.generateCodeInLocation(clientRepo.findAllByLocationId(locationId).stream().map(ClientEntity::getCode).toList()),
+                            CodeGenerator.generateCodeInLocation(clientCodesInLocation),
                             CodeGenerator.generateAccessKey(),
                             ClientStatusEntity.Status.CONFIRMED.name(),
                             new Date(),
@@ -483,18 +485,7 @@ public class ClientServiceImpl implements ClientService {
                     localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
             );
         } else if (phone != null) {
-            smsService.send(
-                    phone,
-                    localizer.getMessageForClientCheckStatus(
-                            clientEntity.getCode().toString(),
-                            getLinkForClient(localizer, clientEntity, locationId)
-                    )
-            );
-        }
-
-        List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientEntity.getId());
-
-        if (!confirmationRequired) {
+            List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
             locationService.updateLocationState(
                     clientEntity.getLocationId(),
                     new LocationChange.AddClient(
@@ -504,6 +495,13 @@ public class ClientServiceImpl implements ClientService {
                                     clientToChosenServiceEntities,
                                     new ArrayList<>()
                             )
+                    )
+            );
+            smsService.send(
+                    phone,
+                    localizer.getMessageForClientCheckStatus(
+                            clientEntity.getCode().toString(),
+                            getLinkForClient(localizer, clientEntity, locationId)
                     )
             );
         }

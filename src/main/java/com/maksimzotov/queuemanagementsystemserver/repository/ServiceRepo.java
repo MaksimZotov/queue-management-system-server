@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface ServiceRepo extends JpaRepository<ServiceEntity, Long> {
+
     @Query(
             value = "SELECT * FROM service LEFT JOIN client_to_chosen_service " +
                     "ON service.id = client_to_chosen_service.service_id " +

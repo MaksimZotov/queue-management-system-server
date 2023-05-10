@@ -136,9 +136,6 @@ public class LocationState {
 
     List<Client> clients;
 
-    @JsonProperty("created_at")
-    Date createdAt;
-
     public static LocationState toModel(
             Long locationId,
             List<ClientEntity> clientEntities,
@@ -148,14 +145,21 @@ public class LocationState {
     ) {
         List<Client> clients = clientEntities
                 .stream()
-                .map(clientEntity -> Client.toModel(clientEntity, serviceEntities, clientToChosenServiceEntities, queueEntities))
+                .filter(clientEntity -> clientEntity.getCode() != null)
+                .map(clientEntity ->
+                        Client.toModel(
+                                clientEntity,
+                                serviceEntities,
+                                clientToChosenServiceEntities,
+                                queueEntities
+                        )
+                )
                 .sorted(Comparator.comparing(Client::getCode))
                 .toList();
 
         return new LocationState(
                 locationId,
-                clients,
-                new Date()
+                clients
         );
     }
 }
