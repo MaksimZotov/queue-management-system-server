@@ -186,7 +186,10 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
         ClientEntity clientEntity = client.get();
-        if (new Date().getTime() - clientEntity.getTotalTimestamp().getTime() > confirmationTime) {
+        if (
+                Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.RESERVED.name()) &&
+                        new Date().getTime() - clientEntity.getTotalTimestamp().getTime() > confirmationTime
+        ) {
             throw new DescriptionException(localizer.getMessage(Message.CONFIRMATION_TIME_EXPIRED));
         }
         return QueueStateForClient.toModel(clientEntity);
