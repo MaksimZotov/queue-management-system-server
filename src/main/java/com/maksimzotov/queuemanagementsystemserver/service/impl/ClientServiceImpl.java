@@ -186,12 +186,16 @@ public class ClientServiceImpl implements ClientService {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_DOES_NOT_EXIST));
         }
         ClientEntity clientEntity = client.get();
+        if (new Date().getTime() - clientEntity.getTotalTimestamp().getTime() > confirmationTime) {
+            throw new DescriptionException(localizer.getMessage(Message.CONFIRMATION_TIME_EXPIRED));
+        }
         return QueueStateForClient.toModel(clientEntity);
     }
 
     @Override
     public QueueStateForClient confirmAccessKeyByClient(Localizer localizer, Long clientId, Integer accessKey) throws DescriptionException {
         ClientEntity clientEntity = checkAccessKey(localizer, clientId, accessKey);
+
         if (Objects.equals(clientEntity.getStatus(), ClientStatusEntity.Status.CONFIRMED.name())) {
             throw new DescriptionException(localizer.getMessage(Message.CLIENT_ALREADY_CONFIRMED));
         }
@@ -199,7 +203,6 @@ public class ClientServiceImpl implements ClientService {
         List<Integer> clientCodesInLocation = clientRepo.findAllClientCodesInLocation(clientEntity.getLocationId());
 
         clientEntity.setStatus(ClientStatusEntity.Status.CONFIRMED.name());
-        clientEntity.setWaitTimestamp(new Date());
         clientEntity.setCode(CodeGenerator.generateCodeInLocation(clientCodesInLocation));
 
         clientRepo.save(clientEntity);

@@ -90,10 +90,34 @@ public class AccountServiceImpl implements AccountService {
         if (confirmCodeRequest.getCode().length() != 4) {
             throw new DescriptionException(localizer.getMessage(Message.CODE_MUST_CONTAINS_4_SYMBOLS));
         }
-        if (!registrationCodeRepo.existsByEmail(confirmCodeRequest.getEmail())) {
+
+        Optional<AccountEntity> account = accountRepo.findByEmail(confirmCodeRequest.getEmail());
+        if (account.isEmpty()) {
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_START,
+                            confirmCodeRequest.getEmail(),
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_END
+                    )
+            );
+        }
+        AccountEntity accountEntity = account.get();
+
+        Optional<RegistrationCodeEntity> registrationCode = registrationCodeRepo.findByEmail(confirmCodeRequest.getEmail());
+        if (registrationCode.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED));
         }
-        registrationCodeRepo.deleteByEmail(confirmCodeRequest.getEmail());
+        RegistrationCodeEntity registrationCodeEntity = registrationCode.get();
+
+        if (new Date().getTime() - accountEntity.getRegistrationTimestamp().getTime() > registrationTime) {
+            throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED));
+        }
+
+        if (!registrationCodeEntity.getCode().toString().equals(confirmCodeRequest.getCode())) {
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_CODE));
+        }
+
+        registrationCodeRepo.delete(registrationCodeEntity);
     }
 
     @Override
