@@ -1,13 +1,15 @@
 package com.maksimzotov.queuemanagementsystemserver.service.impl;
 
-import com.maksimzotov.queuemanagementsystemserver.entity.*;
+import com.maksimzotov.queuemanagementsystemserver.entity.QueueEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ServiceEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ServiceInServicesSequenceEntity;
+import com.maksimzotov.queuemanagementsystemserver.entity.ServiceInSpecialistEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.service.OrderedServicesModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.ServiceModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
@@ -18,10 +20,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 
 @Service
@@ -48,35 +47,6 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ServiceModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createServiceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
-        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
-        return ServiceModel.toModel(
-                serviceRepo.save(
-                        new ServiceEntity(
-                                null,
-                                locationId,
-                                createServiceRequest.getName(),
-                                createServiceRequest.getDescription(),
-                                true
-                        )
-                )
-        );
-    }
-
-    @Override
-    public void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException {
-        if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
-            throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        }
-        if (clientToChosenServiceRepo.existsByPrimaryKeyServiceId(serviceId)) {
-            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_BOOKED_BY_CLIENT));
-        }
-        serviceRepo.deleteById(serviceId);
-    }
-
-    @Override
     public ContainerForList<ServiceModel> getServicesInQueue(Localizer localizer, Long queueId) throws DescriptionException {
         Optional<QueueEntity> queue = queueRepo.findById(queueId);
         if (queue.isEmpty()) {
@@ -99,54 +69,49 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServicesSequenceModel> getServicesSequencesInLocation(Localizer localizer, Long locationId) throws DescriptionException {
-        if (!locationRepo.existsById(locationId)) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+    public OrderedServicesModel getServicesInServicesSequence(Localizer localizer, Long servicesSequenceId) throws DescriptionException {
+        if (!servicesSequenceRepo.existsById(servicesSequenceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICES_SEQUENCE_DOES_NOT_EXIST));
         }
-        return new ContainerForList<>(servicesSequenceRepo.findAllByLocationId(locationId).stream().map(ServicesSequenceModel::toModel).toList());
+        List<ServiceInServicesSequenceEntity> serviceInServicesSequenceEntities = serviceInServicesSequenceRepo.findAllByPrimaryKeyServicesSequenceIdOrderByOrderNumberAsc(servicesSequenceId);
+        Map<Long, Integer> serviceIdsToOrderNumbers = new HashMap<>();
+        for (ServiceInServicesSequenceEntity serviceInServicesSequenceEntity : serviceInServicesSequenceEntities) {
+            serviceIdsToOrderNumbers.put(serviceInServicesSequenceEntity.getPrimaryKey().getServiceId(), serviceInServicesSequenceEntity.getOrderNumber());
+        }
+        return new OrderedServicesModel(serviceIdsToOrderNumbers);
     }
 
     @Override
-    public ServicesSequenceModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
+    public ServiceModel createServiceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServiceRequest createServiceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
-        ServicesSequenceEntity servicesSequenceEntity = servicesSequenceRepo.save(
-                new ServicesSequenceEntity(
-                        null,
-                        locationId,
-                        createServicesSequenceRequest.getName(),
-                        createServicesSequenceRequest.getDescription(),
-                        true
+        }
+        return ServiceModel.toModel(
+                serviceRepo.save(
+                        new ServiceEntity(
+                                null,
+                                locationId,
+                                createServiceRequest.getName(),
+                                createServiceRequest.getDescription()
+                        )
                 )
         );
-        for (Map.Entry<Long, Integer> serviceIdToOrderNumber : createServicesSequenceRequest.getServiceIdsToOrderNumbers().entrySet()) {
-            if (!serviceRepo.existsByIdAndLocationId(serviceIdToOrderNumber.getKey(), locationId)) {
-                throw new DescriptionException(
-                        localizer.getMessage(
-                                Message.YOU_ARE_TRYING_TO_CREATE_SERVICES_SEQUENCE_WITH_SERVICES_THAT_ARE_NOT_IN_LOCATION
-                        )
-                );
-            }
-            serviceInServicesSequenceRepo.save(
-                    new ServiceInServicesSequenceEntity(
-                            new ServiceInServicesSequenceEntity.PrimaryKey(
-                                    serviceIdToOrderNumber.getKey(),
-                                    servicesSequenceEntity.getId()
-                            ),
-                            serviceIdToOrderNumber.getValue()
-                    )
-            );
-        }
-        return ServicesSequenceModel.toModel(servicesSequenceEntity);
     }
 
     @Override
-    public void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException {
+    public void deleteServiceInLocation(Localizer localizer, String accessToken, Long locationId, Long serviceId) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
-        serviceInServicesSequenceRepo.deleteAllByPrimaryKeyServicesSequenceId(servicesSequenceId);
-        servicesSequenceRepo.deleteById(servicesSequenceId);
+        }
+        if (clientToChosenServiceRepo.existsByPrimaryKeyServiceId(serviceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_BOOKED_BY_CLIENT));
+        }
+        if (serviceInSpecialistRepo.existsByServiceId(serviceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_ASSIGNED_TO_SPECIALIST));
+        }
+        if (serviceInServicesSequenceRepo.existsByPrimaryKeyServiceId(serviceId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_IS_ASSIGNED_TO_SERVICES_SEQUENCE));
+        }
+        serviceRepo.deleteById(serviceId);
     }
 }

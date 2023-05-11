@@ -1,15 +1,10 @@
 package com.maksimzotov.queuemanagementsystemserver.model.client;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Value;
+import lombok.Data;
 
 import java.util.List;
 
-@Value
+@Data
 public class ServeClientRequest {
-    @JsonProperty("client_id")
-    Long clientId;
-    @JsonProperty("queue_id")
-    Long queueId;
     List<Long> services;
 }

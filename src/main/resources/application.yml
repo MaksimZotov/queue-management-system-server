@@ -1,0 +1,43 @@
+server.servlet.contextPath: /api
+
+spring:
+
+  datasource:
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto=validate: validate
+
+  mail:
+    host: smtp.gmail.com
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    port: 465
+    protocol: smtps
+
+app:
+
+  tokens:
+    expiration:
+      access: ${TOKENS_EXPIRATION_ACCESS}
+      refresh: ${TOKENS_EXPIRATION_REFRESH}
+    secret: ${TOKENS_SECRET}
+
+  confirmation:
+    time:
+      registration: ${CONFIRMATION_TIME_REGISTRATION}
+      join: ${CONFIRMATION_TIME_JOIN}
+
+  sms:
+    username: ${SMS_USERNAME}
+    password: ${SMS_PASSWORD}
+    sign: ${SMS_SIGN}
+
+  threadPoolSize: ${THREAD_POOL_SIZE}
+
+  client:
+    url: ${CLIENT_URL}

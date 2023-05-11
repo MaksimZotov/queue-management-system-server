@@ -1,5 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -12,13 +13,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableAsync
 public class AppConfig {
 
+    @Value("${app.client.url}")
+    private String clientBaseUrl;
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:64407")
+                        .allowedOrigins(clientBaseUrl)
                         .allowedMethods("*");
             }
         };

@@ -57,11 +57,11 @@ public class RightsController extends BaseController {
         }
     }
 
-    @DeleteMapping("/delete")
+    @DeleteMapping("/{email}/delete")
     public ResponseEntity<?> deleteRights(
             HttpServletRequest request,
-            @RequestParam("location_id") Long locationId,
-            @RequestParam("email") String email
+            @PathVariable("email") String email,
+            @RequestParam("location_id") Long locationId
     ) {
         try {
             rightsService.deleteRights(getLocalizer(request), getToken(request), locationId, email);

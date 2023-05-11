@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class Location {
+public class LocationModel {
 
     private Long id;
     @JsonProperty("owner_email")
@@ -19,8 +19,8 @@ public class Location {
     @JsonProperty("rights_status")
     private String rightsStatus;
 
-    public static Location toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {
-        return new Location(
+    public static LocationModel toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {
+        return new LocationModel(
                 entity.getId(),
                 entity.getOwnerEmail(),
                 entity.getName(),

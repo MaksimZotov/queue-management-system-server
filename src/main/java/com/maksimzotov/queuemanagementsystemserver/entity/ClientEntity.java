@@ -22,7 +22,7 @@ public class ClientEntity {
 
     private Long locationId;
 
-    private String email;
+    private String phone;
 
     private Integer code;
 
@@ -31,4 +31,6 @@ public class ClientEntity {
     private String status;
 
     private Date waitTimestamp;
+
+    private Date totalTimestamp;
 }

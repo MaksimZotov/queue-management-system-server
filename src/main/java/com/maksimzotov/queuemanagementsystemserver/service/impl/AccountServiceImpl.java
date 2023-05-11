@@ -18,12 +18,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.CleanerService;
-import com.maksimzotov.queuemanagementsystemserver.service.DelayedJobService;
 import com.maksimzotov.queuemanagementsystemserver.service.MailService;
 import com.maksimzotov.queuemanagementsystemserver.util.CodeGenerator;
 import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,66 +36,44 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
     private final MailService mailService;
-    private final DelayedJobService delayedJobService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
-    private final CleanerService cleanerService;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final String secret;
-    private final Long accessTokenExpiration;
-    private final Long refreshTokenExpiration;
-    private final Integer confirmationTimeInSeconds;
-
-    public AccountServiceImpl(
-            MailService mailService,
-            DelayedJobService delayedJobService,
-            AccountRepo accountRepo,
-            RegistrationCodeRepo registrationCodeRepo,
-            CleanerService cleanerService,
-            AuthenticationManager authenticationManager,
-            PasswordEncoder passwordEncoder,
-            @Value("${app.tokens.secret}") String secret,
-            @Value("${app.tokens.access.expiration}") Long accessTokenExpiration,
-            @Value("${app.tokens.refresh.expiration}") Long refreshTokenExpiration,
-            @Value("${app.registration.confirmationtime.registration}") Integer confirmationTimeInSeconds
-    ) {
-        this.mailService = mailService;
-        this.delayedJobService = delayedJobService;
-        this.accountRepo = accountRepo;
-        this.registrationCodeRepo = registrationCodeRepo;
-        this.cleanerService = cleanerService;
-        this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.secret = secret;
-        this.accessTokenExpiration = accessTokenExpiration;
-        this.refreshTokenExpiration = refreshTokenExpiration;
-        this.confirmationTimeInSeconds = confirmationTimeInSeconds;
-    }
+    @Value("${app.tokens.secret}")
+    private String secret;
+    @Value("${app.tokens.expiration.access}")
+    private Long accessTokenExpiration;
+    @Value("${app.tokens.expiration.refresh}")
+    private Long refreshTokenExpiration;
+    @Value("${app.confirmation.time.registration}")
+    private Integer registrationTime;
 
     @Override
     public void signup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
-        checkSignup(localizer, signupRequest);
+        AccountEntity accountEntity = checkSignup(localizer, signupRequest);
+        if (accountEntity == null) {
+            accountEntity = new AccountEntity();
+        }
+        accountEntity.setEmail(signupRequest.getEmail());
+        accountEntity.setFirstName(signupRequest.getFirstName());
+        accountEntity.setLastName(signupRequest.getLastName());
+        accountEntity.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+        accountEntity.setRegistrationTimestamp(new Date());
 
         Integer code = CodeGenerator.generateCodeForEmail();
-        AccountEntity account = new AccountEntity(
-                null,
-                signupRequest.getEmail(),
-                signupRequest.getFirstName(),
-                signupRequest.getLastName(),
-                passwordEncoder.encode(signupRequest.getPassword())
-        );
-        accountRepo.save(account);
+
+        accountRepo.save(accountEntity);
         registrationCodeRepo.save(
                 new RegistrationCodeEntity(
-                        account.getEmail(),
+                        accountEntity.getEmail(),
                         code
                 )
         );
@@ -106,12 +83,6 @@ public class AccountServiceImpl implements AccountService {
                 localizer.getMessage(Message.CONFIRMATION_OF_REGISTRATION),
                 localizer.getMessage(Message.CODE_FOR_CONFIRMATION_OF_REGISTRATION, code)
         );
-
-        delayedJobService.schedule(
-                () -> cleanerService.deleteNonConfirmedUser(account.getEmail()),
-                confirmationTimeInSeconds,
-                TimeUnit.SECONDS
-        );
     }
 
     @Override
@@ -119,10 +90,34 @@ public class AccountServiceImpl implements AccountService {
         if (confirmCodeRequest.getCode().length() != 4) {
             throw new DescriptionException(localizer.getMessage(Message.CODE_MUST_CONTAINS_4_SYMBOLS));
         }
-        if (!registrationCodeRepo.existsByEmail(confirmCodeRequest.getEmail())) {
+
+        Optional<AccountEntity> account = accountRepo.findByEmail(confirmCodeRequest.getEmail());
+        if (account.isEmpty()) {
+            throw new DescriptionException(
+                    localizer.getMessage(
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_START,
+                            confirmCodeRequest.getEmail(),
+                            Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_END
+                    )
+            );
+        }
+        AccountEntity accountEntity = account.get();
+
+        Optional<RegistrationCodeEntity> registrationCode = registrationCodeRepo.findByEmail(confirmCodeRequest.getEmail());
+        if (registrationCode.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED));
         }
-        registrationCodeRepo.deleteByEmail(confirmCodeRequest.getEmail());
+        RegistrationCodeEntity registrationCodeEntity = registrationCode.get();
+
+        if (new Date().getTime() - accountEntity.getRegistrationTimestamp().getTime() > registrationTime) {
+            throw new DescriptionException(localizer.getMessage(Message.CODE_EXPIRED));
+        }
+
+        if (!registrationCodeEntity.getCode().toString().equals(confirmCodeRequest.getCode())) {
+            throw new DescriptionException(localizer.getMessage(Message.WRONG_CODE));
+        }
+
+        registrationCodeRepo.delete(registrationCodeEntity);
     }
 
     @Override
@@ -191,7 +186,12 @@ public class AccountServiceImpl implements AccountService {
                     .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                     .sign(algorithm);
 
-            return new TokensResponse(accessToken, refreshToken, accountEntity.getId());
+            String newRefreshToken = JWT.create()
+                    .withSubject(accountEntity.getEmail())
+                    .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
+                    .sign(algorithm);
+
+            return new TokensResponse(accessToken, newRefreshToken, accountEntity.getId());
         } catch (Exception ex) {
             throw new RefreshTokenFailedException();
         }
@@ -221,7 +221,7 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
-    private void checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
+    private AccountEntity checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
 
         if (signupRequest.getPassword().length() < 8) {
@@ -276,16 +276,22 @@ public class AccountServiceImpl implements AccountService {
             throw new FieldsException(fieldsErrors);
         }
 
-        if (accountRepo.existsByEmail(signupRequest.getEmail())) {
+        Optional<AccountEntity> account = accountRepo.findByEmail(signupRequest.getEmail());
+        if (account.isPresent()) {
             if (registrationCodeRepo.existsByEmail(signupRequest.getEmail())) {
-                fieldsErrors.put(
-                        FieldsException.EMAIL,
-                        localizer.getMessage(
-                                Message.USER_WITH_EMAIL_RESERVED_START,
-                                signupRequest.getEmail(),
-                                Message.USER_WITH_EMAIL_RESERVED_END
-                        )
-                );
+                AccountEntity accountEntity = account.get();
+                if (new Date().getTime() - accountEntity.getRegistrationTimestamp().getTime() < registrationTime) {
+                    fieldsErrors.put(
+                            FieldsException.EMAIL,
+                            localizer.getMessage(
+                                    Message.USER_WITH_EMAIL_RESERVED_START,
+                                    signupRequest.getEmail(),
+                                    Message.USER_WITH_EMAIL_RESERVED_END
+                            )
+                    );
+                } else {
+                    return accountEntity;
+                }
             } else {
                 fieldsErrors.put(
                         FieldsException.EMAIL,
@@ -300,6 +306,7 @@ public class AccountServiceImpl implements AccountService {
         if (!fieldsErrors.isEmpty()) {
             throw new FieldsException(fieldsErrors);
         }
+        return null;
     }
 
     private void checkLogin(Localizer localizer, LoginRequest loginRequest) throws FieldsException {
@@ -335,6 +342,17 @@ public class AccountServiceImpl implements AccountService {
                             Message.USER_WITH_EMAIL_DOES_NOT_EXIST_START,
                             loginRequest.getEmail(),
                             Message.USER_WITH_EMAIL_DOES_NOT_EXIST_END
+                    )
+            );
+            throw new FieldsException(fieldsErrors);
+        }
+        if (registrationCodeRepo.existsByEmail(loginRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(
+                            Message.USER_WITH_EMAIL_IS_NOT_CONFIRMED_START,
+                            loginRequest.getEmail(),
+                            Message.USER_WITH_EMAIL_IS_NOT_CONFIRMED_END
                     )
             );
             throw new FieldsException(fieldsErrors);

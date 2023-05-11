@@ -11,5 +11,4 @@ public interface QueueService {
     void deleteQueue(Localizer localizer, String accessToken, Long queueId) throws DescriptionException, AccountIsNotAuthorizedException;
     ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId);
     QueueStateModel getQueueState(Localizer localizer, String accessToken, Long queueId) throws DescriptionException;
-    void changePausedState(Localizer localizer, String accessToken, Long queueId, Boolean paused) throws DescriptionException, AccountIsNotAuthorizedException;
 }

@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @AllArgsConstructor
-public  class BaseController {
+public class BaseController {
 
     public MessageSource messageSource;
 

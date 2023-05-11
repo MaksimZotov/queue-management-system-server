@@ -1,8 +1,6 @@
 package com.maksimzotov.queuemanagementsystemserver.util;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Random;
 
 public class CodeGenerator {
@@ -11,20 +9,22 @@ public class CodeGenerator {
     }
 
     public static Integer generateCodeInLocation(List<Integer> list) {
-        int result = 1;
-        Optional<Integer> minOptional = list.stream().filter(Objects::nonNull).min(Integer::compare);
-        if (minOptional.isPresent()) {
-            int min = minOptional.get();
-            if (min > 1) {
-                result = min - 1;
-            } else {
-                result = list.stream().filter(Objects::nonNull).max(Integer::compare).get() + 1;
+        if (list.isEmpty()) {
+            return 1;
+        }
+        List<Integer> sorted = list.stream().sorted().toList();
+        if (sorted.get(0) == 2) {
+            return 1;
+        }
+        for (int i = 0; i < sorted.size() - 1; i++) {
+            if (sorted.get(i + 1) - sorted.get(i) > 1) {
+                return sorted.get(i) + 1;
             }
         }
-        return result;
+        return sorted.get(sorted.size() - 1) + 1;
     }
 
     public static Integer generateAccessKey() {
-        return new Random().nextInt(9000000) + 1000000;
+        return new Random().nextInt(9000) + 1000;
     }
 }

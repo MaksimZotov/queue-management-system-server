@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface ServiceInServicesSequenceRepo extends JpaRepository<ServiceInServicesSequenceEntity, Long> {
     List<ServiceInServicesSequenceEntity> findAllByPrimaryKeyServicesSequenceIdOrderByOrderNumberAsc(Long servicesSequenceId);
+    Boolean existsByPrimaryKeyServiceId(Long serviceId);
     void deleteAllByPrimaryKeyServicesSequenceId(Long servicesSequenceId);
 }

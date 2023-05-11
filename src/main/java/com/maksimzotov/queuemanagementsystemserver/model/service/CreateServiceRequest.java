@@ -1,6 +1,5 @@
 package com.maksimzotov.queuemanagementsystemserver.model.service;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Value;
 
 @Value

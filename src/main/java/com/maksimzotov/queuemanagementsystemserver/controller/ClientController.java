@@ -5,6 +5,9 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ErrorResult;
+import com.maksimzotov.queuemanagementsystemserver.model.client.CreateClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.client.ServeClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.service.ClientService;
 import lombok.EqualsAndHashCode;
 import org.springframework.context.MessageSource;
@@ -14,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/client")
+@RequestMapping("/clients")
 @EqualsAndHashCode(callSuper = true)
 public class ClientController extends BaseController {
 
@@ -25,23 +28,25 @@ public class ClientController extends BaseController {
         this.clientService = clientService;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getQueueStateForClient(
+    @PostMapping("/create")
+    public ResponseEntity<?> createClient(
             HttpServletRequest request,
-            @RequestParam("client_id") Long clientId,
-            @RequestParam("access_key") Integer accessKey
+            @RequestParam("location_id") Long locationId,
+            @RequestBody CreateClientRequest createClientRequest
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId, accessKey));
+            return ResponseEntity.ok().body(clientService.createClient(getLocalizer(request), getToken(request), locationId, createClientRequest));
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
     }
 
-    @PostMapping("/confirm")
+    @PostMapping("/{client_id}/confirm")
     public ResponseEntity<?> confirmAccessKeyByClient(
             HttpServletRequest request,
-            @RequestParam("client_id") Long clientId,
+            @PathVariable("client_id") Long clientId,
             @RequestParam("access_key") Integer accessKey
     ) {
         try {
@@ -51,14 +56,13 @@ public class ClientController extends BaseController {
         }
     }
 
-    @PostMapping("/leave")
-    public ResponseEntity<?> leaveByClient(
+    @GetMapping("/{client_id}/state")
+    public ResponseEntity<?> getQueueStateForClient(
             HttpServletRequest request,
-            @RequestParam("client_id") Long clientId,
-            @RequestParam("access_key") Integer accessKey
+            @PathVariable("client_id") Long clientId
     ) {
         try {
-            return ResponseEntity.ok().body(clientService.leaveByClient(getLocalizer(request), clientId, accessKey));
+            return ResponseEntity.ok().body(clientService.getQueueStateForClient(getLocalizer(request), clientId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -72,6 +76,88 @@ public class ClientController extends BaseController {
     ) {
         try {
             clientService.deleteClientInLocation(getLocalizer(request), getToken(request), locationId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{client_id}/change")
+    public ResponseEntity<?> changeClientInLocation(
+            HttpServletRequest request,
+            @PathVariable("client_id") Long clientId,
+            @RequestParam("location_id") Long locationId,
+            @RequestBody ChangeClientRequest changeClientRequest
+    ) {
+        try {
+            clientService.changeClient(getLocalizer(request), getToken(request), locationId, clientId, changeClientRequest);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{client_id}/serve")
+    public ResponseEntity<?> serveClientInQueue(
+            HttpServletRequest request,
+            @PathVariable("client_id") Long clientId,
+            @RequestParam("queue_id") Long queueId,
+            @RequestBody ServeClientRequest serveClientRequest
+    ) {
+        try {
+            clientService.serveClient(getLocalizer(request), getToken(request), queueId, clientId, serveClientRequest);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{client_id}/call")
+    public ResponseEntity<?> callClientToQueue(
+            HttpServletRequest request,
+            @PathVariable(name = "client_id") Long clientId,
+            @RequestParam(name = "queue_id") Long queueId
+    ) {
+        try {
+            clientService.callClient(getLocalizer(request), getToken(request), queueId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{client_id}/return")
+    public ResponseEntity<?> returnClientToQueue(
+            HttpServletRequest request,
+            @PathVariable(name = "client_id") Long clientId,
+            @RequestParam(name = "queue_id") Long queueId
+    ) {
+        try {
+            clientService.returnClient(getLocalizer(request), getToken(request), queueId, clientId);
+            return ResponseEntity.ok().build();
+        } catch (AccountIsNotAuthorizedException ex) {
+            return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
+    }
+
+    @PostMapping("/{client_id}/notify")
+    public ResponseEntity<?> notifyClientInQueue(
+            HttpServletRequest request,
+            @PathVariable("client_id") Long clientId,
+            @RequestParam("queue_id") Long queueId
+    ) {
+        try {
+            clientService.notifyClient(getLocalizer(request), getToken(request), queueId, clientId);
             return ResponseEntity.ok().build();
         } catch (AccountIsNotAuthorizedException ex) {
             return ResponseEntity.status(401).body(new ErrorResult(getLocalizer(request).getMessage(Message.ACCOUNT_IS_NOT_AUTHORIZED)));

@@ -39,12 +39,8 @@ public class Localizer {
                 link;
     }
 
-    public String getMessageForClientCheckStatus(String queue, String publicCode, String link) {
-        return messageSource.getMessage(Message.YOUR_QUEUE.toMessageId(), null, locale) +
-                " " +
-                queue +
-                ". " +
-                messageSource.getMessage(Message.PUBLIC_CODE.toMessageId(), null, locale) +
+    public String getMessageForClientCheckStatus(String publicCode, String link) {
+        return messageSource.getMessage(Message.YOUR_TICKET_NUMBER.toMessageId(), null, locale) +
                 " " +
                 publicCode +
                 ". " +

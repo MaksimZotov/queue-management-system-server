@@ -10,14 +10,14 @@ public class QueueStateForClient {
     Long clientId;
     @JsonProperty("location_id")
     Long locationId;
-    String email;
+    String phone;
     Integer code;
 
     public static QueueStateForClient toModel(ClientEntity clientEntity) {
         return new QueueStateForClient(
                 clientEntity.getId(),
                 clientEntity.getLocationId(),
-                clientEntity.getEmail(),
+                clientEntity.getPhone(),
                 clientEntity.getCode()
         );
     }
