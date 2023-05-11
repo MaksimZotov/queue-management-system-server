@@ -43,7 +43,10 @@ public class ServicesSequenceServiceImpl implements ServicesSequenceService {
     public ServicesSequenceModel createServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, CreateServicesSequenceRequest createServicesSequenceRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
+        }
+        if (createServicesSequenceRequest.getServiceIdsToOrderNumbers().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.INCORRECT_REQUEST));
+        }
         ServicesSequenceEntity servicesSequenceEntity = servicesSequenceRepo.save(
                 new ServicesSequenceEntity(
                         null,
