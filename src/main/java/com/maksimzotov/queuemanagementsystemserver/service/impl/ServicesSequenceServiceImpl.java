@@ -80,7 +80,7 @@ public class ServicesSequenceServiceImpl implements ServicesSequenceService {
     public void deleteServicesSequenceInLocation(Localizer localizer, String accessToken, Long locationId, Long servicesSequenceId) throws DescriptionException, AccountIsNotAuthorizedException {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
-        };
+        }
         serviceInServicesSequenceRepo.deleteAllByPrimaryKeyServicesSequenceId(servicesSequenceId);
         servicesSequenceRepo.deleteById(servicesSequenceId);
     }
