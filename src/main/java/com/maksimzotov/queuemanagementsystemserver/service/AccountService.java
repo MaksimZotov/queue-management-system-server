@@ -16,5 +16,4 @@ public interface AccountService {
     TokensResponse login(Localizer localizer, LoginRequest loginRequest) throws FieldsException, DescriptionException;
     TokensResponse refreshToken(String refreshToken) throws RefreshTokenFailedException;
     String getEmail(String accessToken) throws AccountIsNotAuthorizedException;
-    String getEmailOrNull(String accessToken);
 }

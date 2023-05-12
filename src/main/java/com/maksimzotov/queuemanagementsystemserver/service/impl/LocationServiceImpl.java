@@ -6,11 +6,13 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthor
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.message.Message;
 import com.maksimzotov.queuemanagementsystemserver.model.base.ContainerForList;
-import com.maksimzotov.queuemanagementsystemserver.model.location.*;
+import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationChange;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
+import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
 import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.AllArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -27,7 +29,6 @@ import java.util.Optional;
 public class LocationServiceImpl implements LocationService {
 
     private final AccountService accountService;
-    private final RightsService rightsService;
     private final LocationRepo locationRepo;
     private final AccountRepo accountRepo;
     private final RightsRepo rightsRepo;

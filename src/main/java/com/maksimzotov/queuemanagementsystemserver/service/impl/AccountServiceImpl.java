@@ -212,15 +212,6 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
-    @Override
-    public String getEmailOrNull(String accessToken) {
-        try {
-            return getEmail(accessToken);
-        } catch (AccountIsNotAuthorizedException ex) {
-            return null;
-        }
-    }
-
     private AccountEntity checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
 
