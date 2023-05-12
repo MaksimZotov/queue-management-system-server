@@ -105,14 +105,6 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public LocationsOwnerInfo checkIsOwner(Localizer localizer, Long accountId) throws DescriptionException {
-        if (!accountRepo.existsById(accountId)) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
-        }
-        return new LocationsOwnerInfo(true);
-    }
-
-    @Override
     public LocationState getLocationState(Localizer localizer, Long locationId) {
         List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);

@@ -38,18 +38,6 @@ public class LocationController extends BaseController {
         }
     }
 
-    @GetMapping("/check")
-    public ResponseEntity<?> checkIsOwner(
-            HttpServletRequest request,
-            @RequestParam("account_id") Long accountId
-    ) {
-        try {
-            return ResponseEntity.ok().body(locationService.checkIsOwner(getLocalizer(request), accountId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
     @PostMapping("/create")
     public ResponseEntity<?> createLocation(
             HttpServletRequest request,
