@@ -32,19 +32,7 @@ public class LocationController extends BaseController {
             @RequestParam("account_id") Long accountId
     ) {
         try {
-            return ResponseEntity.ok().body(locationService.getLocations(getLocalizer(request), getToken(request), accountId));
-        } catch (DescriptionException ex) {
-            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
-        }
-    }
-
-    @GetMapping("/check")
-    public ResponseEntity<?> checkIsOwner(
-            HttpServletRequest request,
-            @RequestParam("account_id") Long accountId
-    ) {
-        try {
-            return ResponseEntity.ok().body(locationService.checkIsOwner(getLocalizer(request), getToken(request), accountId));
+            return ResponseEntity.ok().body(locationService.getLocations(getLocalizer(request), accountId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }
@@ -85,7 +73,7 @@ public class LocationController extends BaseController {
             @PathVariable("location_id") Long locationId
     ) {
         try {
-            return ResponseEntity.ok().body(locationService.getLocation(getLocalizer(request), getToken(request), locationId));
+            return ResponseEntity.ok().body(locationService.getLocation(getLocalizer(request), locationId));
         } catch (DescriptionException ex) {
             return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
         }

@@ -53,7 +53,7 @@ public class SpecialistServiceImpl implements SpecialistService {
             if (!serviceRepo.existsByIdAndLocationId(serviceId, locationId)) {
                 throw new DescriptionException(
                         localizer.getMessage(
-                                Message.YOU_ARE_TRYING_TO_CREATE_QUEUE_TYPES_WITH_SERVICES_THAT_ARE_NOT_IN_LOCATION
+                                Message.YOU_ARE_TRYING_TO_CREATE_SPECIALIST_WITH_SERVICES_THAT_ARE_NOT_IN_LOCATION
                         )
                 );
             }

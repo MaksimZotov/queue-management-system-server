@@ -65,7 +65,7 @@ public class QueueServiceImpl implements QueueService {
                 )
         );
 
-        return QueueModel.toModel(queueEntity, true);
+        return QueueModel.toModel(queueEntity);
     }
 
     @Override
@@ -78,19 +78,12 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ContainerForList<QueueModel> getQueues(Localizer localizer, String accessToken, Long locationId) {
+    public ContainerForList<QueueModel> getQueues(Localizer localizer, Long locationId) {
         List<QueueEntity> queuesEntities = queueRepo.findAllByLocationId(locationId);
         return new ContainerForList<>(
                 queuesEntities
                         .stream()
-                        .map((item) -> QueueModel.toModel(
-                                        item,
-                                        rightsService.checkEmployeeRightsInLocationNoException(
-                                                accountService.getEmailOrNull(accessToken),
-                                                locationId
-                                        )
-                                )
-                        )
+                        .map(QueueModel::toModel)
                         .sorted((Comparator.comparing(QueueModel::getId)))
                         .toList()
         );

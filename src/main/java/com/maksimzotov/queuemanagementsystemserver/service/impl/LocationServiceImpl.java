@@ -54,7 +54,7 @@ public class LocationServiceImpl implements LocationService {
                 )
         );
 
-        return LocationModel.toModel(locationEntity, Objects.equals(accountEmail, locationEntity.getOwnerEmail()), null);
+        return LocationModel.toModel(locationEntity);
     }
 
     @Override
@@ -79,51 +79,29 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public LocationModel getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException {
+    public LocationModel getLocation(Localizer localizer, Long locationId) throws DescriptionException {
         Optional<LocationEntity> location = locationRepo.findById(locationId);
         if (location.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
         }
         LocationEntity locationEntity = location.get();
-        String accountEmail = accountService.getEmailOrNull(accessToken);
-        return LocationModel.toModel(
-                locationEntity,
-                Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
-                rightsService.getRightsStatus(localizer, accountEmail, locationId)
-        );
+        return LocationModel.toModel(locationEntity);
     }
 
     @Override
-    public ContainerForList<LocationModel> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
+    public ContainerForList<LocationModel> getLocations(Localizer localizer, Long accountId) throws DescriptionException {
         Optional<AccountEntity> account = accountRepo.findById(accountId);
         if (account.isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
         }
         AccountEntity accountEntity = account.get();
         List<LocationEntity> locationsEntities = locationRepo.findByOwnerEmailContaining(accountEntity.getEmail());
-        String accountEmail = accountService.getEmailOrNull(accessToken);
         return new ContainerForList<>(
                 locationsEntities
                         .stream()
-                        .map(locationEntity ->
-                                LocationModel.toModel(
-                                        locationEntity,
-                                        Objects.equals(accountEmail, locationEntity.getOwnerEmail()),
-                                        null
-                                )
-                        )
+                        .map(LocationModel::toModel)
                         .toList()
         );
-    }
-
-    @Override
-    public LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException {
-        Optional<AccountEntity> account = accountRepo.findById(accountId);
-        if (account.isEmpty()) {
-            throw new DescriptionException(localizer.getMessage(Message.LOCATION_OWNER_NOT_FOUND));
-        }
-        AccountEntity accountEntity = account.get();
-        return new LocationsOwnerInfo(Objects.equals(accountService.getEmailOrNull(accessToken), accountEntity.getEmail()));
     }
 
     @Override

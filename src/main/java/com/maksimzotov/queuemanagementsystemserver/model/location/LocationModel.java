@@ -14,19 +14,13 @@ public class LocationModel {
     private String ownerEmail;
     private String name;
     private String description;
-    @JsonProperty("is_owner")
-    private Boolean isOwner;
-    @JsonProperty("rights_status")
-    private String rightsStatus;
 
-    public static LocationModel toModel(LocationEntity entity, Boolean isOwner, String rightsStatus) {
+    public static LocationModel toModel(LocationEntity entity) {
         return new LocationModel(
                 entity.getId(),
                 entity.getOwnerEmail(),
                 entity.getName(),
-                entity.getDescription(),
-                isOwner,
-                rightsStatus
+                entity.getDescription()
         );
     }
 }

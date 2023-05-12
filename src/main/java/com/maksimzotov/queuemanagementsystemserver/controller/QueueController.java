@@ -31,7 +31,7 @@ public class QueueController extends BaseController {
             HttpServletRequest request,
             @RequestParam(name = "location_id") Long locationId
     ) {
-        return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), getToken(request), locationId));
+        return ResponseEntity.ok().body(queueService.getQueues(getLocalizer(request), locationId));
     }
 
     @PostMapping("/create")
