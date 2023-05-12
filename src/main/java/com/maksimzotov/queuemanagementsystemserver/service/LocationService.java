@@ -9,9 +9,9 @@ import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 public interface LocationService {
     LocationModel createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException, AccountIsNotAuthorizedException;
-    LocationModel getLocation(Localizer localizer, String accessToken, Long locationId) throws DescriptionException;
-    ContainerForList<LocationModel> getLocations(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
-    LocationsOwnerInfo checkIsOwner(Localizer localizer, String accessToken, Long accountId) throws DescriptionException;
+    LocationModel getLocation(Localizer localizer, Long locationId) throws DescriptionException;
+    ContainerForList<LocationModel> getLocations(Localizer localizer, Long accountId) throws DescriptionException;
+    LocationsOwnerInfo checkIsOwner(Localizer localizer, Long accountId) throws DescriptionException;
     LocationState getLocationState(Localizer localizer, Long locationId);
     void updateLocationState(Long locationId, LocationChange locationChange);
 }
