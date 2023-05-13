@@ -469,19 +469,16 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
-        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = new ArrayList<>();
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
-            clientToChosenServiceEntities.add(
-                    clientToChosenServiceRepo.save(
-                        new ClientToChosenServiceEntity(
-                                new ClientToChosenServiceEntity.PrimaryKey(
-                                        clientEntity.getId(),
-                                        serviceIdToOrderNumber.getKey(),
-                                        locationId
-                                ),
-                                serviceIdToOrderNumber.getValue()
-                        )
-                )
+            clientToChosenServiceRepo.save(
+                    new ClientToChosenServiceEntity(
+                            new ClientToChosenServiceEntity.PrimaryKey(
+                                    clientEntity.getId(),
+                                    serviceIdToOrderNumber.getKey(),
+                                    locationId
+                            ),
+                            serviceIdToOrderNumber.getValue()
+                    )
             );
         }
 
@@ -489,26 +486,6 @@ public class ClientServiceImpl implements ClientService {
             smsService.send(
                     phone,
                     localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
-            );
-        } else if (phone != null) {
-            List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
-            locationService.updateLocationState(
-                    clientEntity.getLocationId(),
-                    new LocationChange.AddClient(
-                            LocationState.Client.toModel(
-                                    clientEntity,
-                                    serviceEntities,
-                                    clientToChosenServiceEntities,
-                                    new ArrayList<>()
-                            )
-                    )
-            );
-            smsService.send(
-                    phone,
-                    localizer.getMessageForClientCheckStatus(
-                            clientEntity.getCode().toString(),
-                            getLinkForClient(localizer, clientEntity, locationId)
-                    )
             );
         }
 

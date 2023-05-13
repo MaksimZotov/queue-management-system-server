@@ -38,14 +38,4 @@ public class Localizer {
                 " " +
                 link;
     }
-
-    public String getMessageForClientCheckStatus(String publicCode, String link) {
-        return messageSource.getMessage(Message.YOUR_TICKET_NUMBER.toMessageId(), null, locale) +
-                " " +
-                publicCode +
-                ". " +
-                messageSource.getMessage(Message.YOU_CAN_CHECK_YOUR_STATUS_HERE.toMessageId(), null, locale) +
-                " " +
-                link;
-    }
 }
