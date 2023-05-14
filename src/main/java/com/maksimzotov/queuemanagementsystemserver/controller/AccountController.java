@@ -55,7 +55,6 @@ public class AccountController extends BaseController {
         }
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<?> login(
             HttpServletRequest request,

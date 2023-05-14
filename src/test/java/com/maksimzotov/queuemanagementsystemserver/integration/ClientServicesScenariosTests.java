@@ -25,7 +25,6 @@ public class ClientServicesScenariosTests extends IntegrationTests {
     @Autowired
     private ClientToChosenServiceRepo clientToChosenServiceRepo;
 
-    private AccountEntity accountEntity;
     private LocationEntity locationEntity;
 
     @BeforeEach
@@ -36,7 +35,7 @@ public class ClientServicesScenariosTests extends IntegrationTests {
         serviceRepo.deleteAll();
         clientToChosenServiceRepo.deleteAll();
 
-        accountEntity = accountRepo.save(
+        AccountEntity accountEntity = accountRepo.save(
                 new AccountEntity(
                         null,
                         "dfref5vgvef4vevdf4@gmail.com",
