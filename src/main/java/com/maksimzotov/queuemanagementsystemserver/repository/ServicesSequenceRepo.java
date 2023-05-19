@@ -8,4 +8,5 @@ import java.util.List;
 public interface ServicesSequenceRepo extends JpaRepository<ServicesSequenceEntity, Long> {
     List<ServicesSequenceEntity> findAllByLocationId(Long locationId);
     Boolean existsByIdAndLocationId(Long id, Long locationId);
+    void deleteAllByLocationId(Long locationId);
 }

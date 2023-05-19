@@ -8,4 +8,5 @@ import java.util.List;
 public interface SpecialistRepo extends JpaRepository<SpecialistEntity, Long> {
     List<SpecialistEntity> findAllByLocationId(Long locationId);
     Boolean existsByIdAndLocationId(Long id, Long locationId);
+    void deleteAllByLocationId(Long locationId);
 }

@@ -86,6 +86,9 @@ public class ServiceServiceImpl implements ServiceService {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
+        if (createServiceRequest.getName().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICE_NAME_MUST_NOT_BE_EMPTY));
+        }
         return ServiceModel.toModel(
                 serviceRepo.save(
                         new ServiceEntity(

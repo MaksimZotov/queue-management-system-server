@@ -22,4 +22,5 @@ public interface ServiceRepo extends JpaRepository<ServiceEntity, Long> {
 
     List<ServiceEntity> findAllByLocationId(Long locationId);
     Boolean existsByIdAndLocationId(Long id, Long locationId);
+    void deleteAllByLocationId(Long locationId);
 }

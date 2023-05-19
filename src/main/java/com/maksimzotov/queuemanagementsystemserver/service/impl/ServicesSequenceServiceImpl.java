@@ -44,6 +44,9 @@ public class ServicesSequenceServiceImpl implements ServicesSequenceService {
         if (!rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId)) {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
+        if (createServicesSequenceRequest.getName().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.SERVICES_SEQUENCE_NAME_MUST_NOT_BE_EMPTY));
+        }
         if (createServicesSequenceRequest.getServiceIdsToOrderNumbers().isEmpty()) {
             throw new DescriptionException(localizer.getMessage(Message.INCORRECT_REQUEST));
         }

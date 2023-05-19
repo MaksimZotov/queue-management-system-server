@@ -41,6 +41,9 @@ public class SpecialistServiceImpl implements SpecialistService {
     @Override
     public SpecialistModel createSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         rightsService.checkEmployeeRightsInLocation(localizer, accountService.getEmail(accessToken), locationId);
+        if (createSpecialistRequest.getName().isEmpty()) {
+            throw new DescriptionException(localizer.getMessage(Message.SPECIALIST_NAME_MUST_NOT_BE_EMPTY));
+        }
         SpecialistEntity specialistEntity = specialistRepo.save(
                 new SpecialistEntity(
                         null,
