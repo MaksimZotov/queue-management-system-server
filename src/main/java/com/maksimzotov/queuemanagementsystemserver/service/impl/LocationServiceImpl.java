@@ -35,6 +35,10 @@ public class LocationServiceImpl implements LocationService {
     private final QueueRepo queueRepo;
     private final ClientRepo clientRepo;
     private final ServiceRepo serviceRepo;
+    private final SpecialistRepo specialistRepo;
+    private final ServiceInSpecialistRepo serviceInSpecialistRepo;
+    private final ServicesSequenceRepo servicesSequenceRepo;
+    private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -76,6 +80,20 @@ public class LocationServiceImpl implements LocationService {
 
         rightsRepo.deleteAllByPrimaryKeyLocationId(locationId);
         queueRepo.deleteAllByLocationId(locationId);
+
+        List<ServicesSequenceEntity> servicesSequenceEntities = servicesSequenceRepo.findAllByLocationId(locationId);
+        for (ServicesSequenceEntity servicesSequenceEntity : servicesSequenceEntities) {
+            serviceInServicesSequenceRepo.deleteAllByPrimaryKeyServicesSequenceId(servicesSequenceEntity.getId());
+        }
+        servicesSequenceRepo.deleteAllByLocationId(locationId);
+
+        List<SpecialistEntity> specialistEntities = specialistRepo.findAllByLocationId(locationId);
+        for (SpecialistEntity specialistEntity : specialistEntities) {
+            serviceInSpecialistRepo.deleteAllBySpecialistId(specialistEntity.getId());
+        }
+        specialistRepo.deleteAllByLocationId(locationId);
+
+        serviceRepo.deleteAllByLocationId(locationId);
         locationRepo.deleteById(locationId);
     }
 
