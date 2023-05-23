@@ -46,7 +46,7 @@ public class LocationServiceImpl implements LocationService {
     public LocationModel createLocation(Localizer localizer, String accessToken, CreateLocationRequest createLocationRequest) throws DescriptionException, AccountIsNotAuthorizedException {
         String accountEmail = accountService.getEmail(accessToken);
 
-        if (createLocationRequest.getName().isEmpty()) {
+        if (createLocationRequest.getName().isBlank()) {
             throw new DescriptionException(localizer.getMessage(Message.LOCATION_NAME_MUST_NOT_BE_EMPTY));
         }
 

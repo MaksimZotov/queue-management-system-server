@@ -218,13 +218,19 @@ public class AccountServiceImpl implements AccountService {
         if (signupRequest.getPassword().length() < 8) {
             fieldsErrors.put(
                     FieldsException.PASSWORD,
-                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_8_SYMBOLS)
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_7_SYMBOLS)
             );
         }
         if (signupRequest.getPassword().length() > 64) {
             fieldsErrors.put(
                     FieldsException.PASSWORD,
-                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_65_SYMBOLS)
+            );
+        }
+        if (signupRequest.getPassword().contains(" ")) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_NOT_CONTAINS_WHITESPACES)
             );
         }
         if (!signupRequest.getPassword().equals(signupRequest.getRepeatPassword())) {
@@ -233,28 +239,16 @@ public class AccountServiceImpl implements AccountService {
                     localizer.getMessage(Message.PASSWORDS_DO_NOT_MATCH)
             );
         }
-        if (signupRequest.getFirstName().isEmpty()) {
+        if (signupRequest.getFirstName().isBlank()) {
             fieldsErrors.put(
                     FieldsException.FIRST_NAME,
                     localizer.getMessage(Message.FIRST_NAME_MUST_NOT_BE_EMPTY)
             );
         }
-        if (signupRequest.getFirstName().length() > 64) {
-            fieldsErrors.put(
-                    FieldsException.FIRST_NAME,
-                    localizer.getMessage(Message.FIRST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
-            );
-        }
-        if (signupRequest.getLastName().isEmpty()) {
+        if (signupRequest.getLastName().isBlank()) {
             fieldsErrors.put(
                     FieldsException.LAST_NAME,
                     localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY)
-            );
-        }
-        if (signupRequest.getLastName().length() > 64) {
-            fieldsErrors.put(
-                    FieldsException.LAST_NAME,
-                    localizer.getMessage(Message.LAST_NAME_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
             );
         }
         if (!EmailChecker.emailMatches(signupRequest.getEmail())) {
@@ -302,28 +296,6 @@ public class AccountServiceImpl implements AccountService {
 
     private void checkLogin(Localizer localizer, LoginRequest loginRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
-
-        if (!EmailChecker.emailMatches(loginRequest.getEmail())) {
-            fieldsErrors.put(
-                    FieldsException.EMAIL,
-                    localizer.getMessage(Message.WRONG_EMAIL)
-            );
-        }
-        if (loginRequest.getPassword().length() < 8) {
-            fieldsErrors.put(
-                    FieldsException.PASSWORD,
-                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_8_SYMBOLS)
-            );
-        }
-        if (loginRequest.getPassword().length() > 64) {
-            fieldsErrors.put(
-                    FieldsException.PASSWORD,
-                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_64_SYMBOLS)
-            );
-        }
-        if (!fieldsErrors.isEmpty()) {
-            throw new FieldsException(fieldsErrors);
-        }
 
         Optional<AccountEntity> account = accountRepo.findByEmail(loginRequest.getEmail());
         if (account.isEmpty()) {
