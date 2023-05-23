@@ -102,3 +102,12 @@ CREATE TABLE rights (
     status TEXT REFERENCES rights_status (name) NOT NULL,
     PRIMARY KEY (location_id, email)
 );
+
+-- Indexes
+CREATE INDEX service_location_id_idx ON service (location_id);
+CREATE INDEX services_sequence_location_id_idx ON services_sequence (location_id);
+CREATE INDEX service_in_services_sequence_services_sequence_id_idx ON service_in_services_sequence (services_sequence_id);
+CREATE INDEX specialist_location_id_idx ON specialist (location_id);
+CREATE INDEX service_in_specialist_specialist_id_idx ON service_in_specialist (specialist_id);
+CREATE INDEX queue_location_id_idx ON queue (location_id);
+CREATE INDEX rights_location_id_idx ON rights (location_id);
