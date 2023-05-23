@@ -88,7 +88,6 @@ public class ClientServiceImpl implements ClientService {
         }
 
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientId);
-        Optional<QueueEntity> queueWithClient = queueRepo.findByClientId(clientId);
 
         locationService.updateLocationState(
                 locationId,
@@ -97,7 +96,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                queueWithClient.isEmpty() ? null : queueWithClient.get()
+                                null
                         )
                 )
         );
@@ -171,7 +170,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                queueEntity
+                                null
                         )
                 )
         );
