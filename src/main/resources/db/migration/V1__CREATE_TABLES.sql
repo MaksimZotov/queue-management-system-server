@@ -1,14 +1,14 @@
 -- Account
 CREATE TABLE account (
     id BIGSERIAL PRIMARY KEY,
-    email VARCHAR(64) NOT NULL UNIQUE,
-    password VARCHAR(64) NOT NULL,
-    first_name VARCHAR(64) NOT NULL,
-    last_name VARCHAR(64) NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL CHECK (char_length(name) BETWEEN 8 AND 64),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
     registration_timestamp TIMESTAMP NOT NULL
 );
 CREATE TABLE registration_code (
-    email VARCHAR(64) REFERENCES account (email) NOT NULL,
+    email TEXT REFERENCES account (email) NOT NULL,
     code INTEGER NOT NULL,
     PRIMARY KEY (email)
 );
@@ -16,23 +16,23 @@ CREATE TABLE registration_code (
 -- Location
 CREATE TABLE location (
     id BIGSERIAL PRIMARY KEY,
-    owner_email VARCHAR(64) REFERENCES account (email) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048)
+    owner_email TEXT REFERENCES account (email) NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT
 );
 
 -- Service
 CREATE TABLE service (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048)
+    name TEXT NOT NULL,
+    description TEXT
 );
 CREATE TABLE services_sequence (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048)
+    name TEXT NOT NULL,
+    description TEXT
 );
 CREATE TABLE service_in_services_sequence (
     service_id BIGINT REFERENCES service (id) NOT NULL,
@@ -43,8 +43,8 @@ CREATE TABLE service_in_services_sequence (
 CREATE TABLE specialist (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048)
+    name TEXT NOT NULL,
+    description TEXT
 );
 CREATE TABLE service_in_specialist (
     service_id BIGINT REFERENCES service (id) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE service_in_specialist (
 -- Client
 CREATE TABLE client_status (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
 );
 INSERT INTO client_status VALUES
     (1, 'RESERVED'),
@@ -63,10 +63,10 @@ INSERT INTO client_status VALUES
 CREATE TABLE client (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    phone VARCHAR(32),
+    phone TEXT,
     code INTEGER,
     access_key INTEGER NOT NULL,
-    status VARCHAR(64) REFERENCES client_status (name) NOT NULL,
+    status TEXT REFERENCES client_status (name) NOT NULL,
     wait_timestamp TIMESTAMP NOT NULL,
     total_timestamp TIMESTAMP NOT NULL
 );
@@ -83,22 +83,22 @@ CREATE TABLE queue (
     id BIGSERIAL PRIMARY KEY,
     location_id BIGINT REFERENCES location (id) NOT NULL,
     specialist_id BIGINT REFERENCES specialist (id) NOT NULL,
-    name VARCHAR(256) NOT NULL,
-    description VARCHAR(2048),
+    name TEXT NOT NULL,
+    description TEXT,
     client_id BIGINT REFERENCES client (id)
 );
 
 -- Rights
 CREATE TABLE rights_status (
     id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(64) NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE
 );
 INSERT INTO rights_status VALUES
     (1, 'EMPLOYEE'),
     (2, 'ADMINISTRATOR');
 CREATE TABLE rights (
     location_id BIGINT REFERENCES location (id) NOT NULL,
-    email VARCHAR(64) NOT NULL,
-    status VARCHAR(64) REFERENCES rights_status (name) NOT NULL,
+    email TEXT NOT NULL,
+    status TEXT REFERENCES rights_status (name) NOT NULL,
     PRIMARY KEY (location_id, email)
 );
