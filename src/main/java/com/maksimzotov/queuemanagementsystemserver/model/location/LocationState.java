@@ -43,12 +43,34 @@ public class LocationState {
                 ClientEntity clientEntity,
                 List<ServiceEntity> serviceEntities,
                 List<ClientToChosenServiceEntity> clientToChosenServiceEntities,
+                QueueEntity queueEntity
+        ) {
+            Integer code = getCode(clientEntity);
+            Date waitTimestamp = getWaitTime(clientEntity);
+            Date totalTimestamp = getTotalTime(clientEntity);
+            List<Service> services = mapServices(serviceEntities, clientToChosenServiceEntities);
+            Queue queue = mapQueue(queueEntity);
+            return new Client(
+                    clientEntity.getId(),
+                    code,
+                    clientEntity.getPhone(),
+                    waitTimestamp,
+                    totalTimestamp,
+                    services,
+                    queue
+            );
+        }
+
+        public static Client toModelWithAllQueuesInLocation(
+                ClientEntity clientEntity,
+                List<ServiceEntity> serviceEntities,
+                List<ClientToChosenServiceEntity> clientToChosenServiceEntities,
                 List<QueueEntity> queueEntities
         ) {
             Integer code = getCode(clientEntity);
             Date waitTimestamp = getWaitTime(clientEntity);
             Date totalTimestamp = getTotalTime(clientEntity);
-            List<Service> allServices = getAllServices(clientEntity, serviceEntities, clientToChosenServiceEntities);
+            List<Service> services = mapServices(serviceEntities, clientToChosenServiceEntities);
             Queue queue = getQueue(clientEntity, queueEntities);
             return new Client(
                     clientEntity.getId(),
@@ -56,7 +78,7 @@ public class LocationState {
                     clientEntity.getPhone(),
                     waitTimestamp,
                     totalTimestamp,
-                    allServices,
+                    services,
                     queue
             );
         }
@@ -73,19 +95,12 @@ public class LocationState {
             return clientEntity.getTotalTimestamp();
         }
 
-        private static List<Service> getAllServices(
-                ClientEntity clientEntity,
+        private static List<Service> mapServices(
                 List<ServiceEntity> serviceEntities,
                 List<ClientToChosenServiceEntity> clientToChosenServiceEntities
         ) {
             return clientToChosenServiceEntities
                     .stream()
-                    .filter(clientToChosenServiceEntity ->
-                            Objects.equals(
-                                    clientToChosenServiceEntity.getPrimaryKey().getClientId(),
-                                    clientEntity.getId()
-                            )
-                    )
                     .map(clientToChosenServiceEntity ->
                             serviceEntities
                                     .stream()
@@ -130,6 +145,18 @@ public class LocationState {
                 return queue.get();
             }
         }
+
+        private static Queue mapQueue(
+                QueueEntity queueEntity
+        ) {
+            if (queueEntity == null) {
+                return null;
+            }
+            return new Queue(
+                    queueEntity.getId(),
+                    queueEntity.getName()
+            );
+        }
     }
 
     Long id;
@@ -138,19 +165,18 @@ public class LocationState {
 
     public static LocationState toModel(
             Long locationId,
-            List<ClientEntity> clientEntities,
             List<ServiceEntity> serviceEntities,
-            List<ClientToChosenServiceEntity> clientToChosenServiceEntities,
-            List<QueueEntity> queueEntities
+            List<QueueEntity> queueEntities,
+            Map<ClientEntity, List<ClientToChosenServiceEntity>> clientToChosenServices
     ) {
-        List<Client> clients = clientEntities
+        List<Client> clients = clientToChosenServices.keySet()
                 .stream()
                 .filter(clientEntity -> clientEntity.getCode() != null)
                 .map(clientEntity ->
-                        Client.toModel(
+                        Client.toModelWithAllQueuesInLocation(
                                 clientEntity,
                                 serviceEntities,
-                                clientToChosenServiceEntities,
+                                clientToChosenServices.get(clientEntity),
                                 queueEntities
                         )
                 )

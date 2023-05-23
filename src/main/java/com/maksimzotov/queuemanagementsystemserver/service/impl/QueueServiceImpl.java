@@ -46,7 +46,7 @@ public class QueueServiceImpl implements QueueService {
             throw new DescriptionException(localizer.getMessage(Message.YOU_DO_NOT_HAVE_RIGHTS_TO_PERFORM_OPERATION));
         }
 
-        if (createQueueRequest.getName().isEmpty()) {
+        if (createQueueRequest.getName().isBlank()) {
             throw new DescriptionException(localizer.getMessage(Message.QUEUE_NAME_MUST_NOT_BE_EMPTY));
         }
 
