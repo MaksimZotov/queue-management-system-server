@@ -19,9 +19,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -125,16 +123,20 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public LocationState getLocationState(Localizer localizer, Long locationId) {
-        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationId(locationId);
-        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyLocationId(locationId);
         List<QueueEntity> queueEntities = queueRepo.findAllByLocationId(locationId);
+
+        List<ClientEntity> clientEntities = clientRepo.findAllByLocationId(locationId);
+        Map<ClientEntity, List<ClientToChosenServiceEntity>> clientToChosenServices = new HashMap<>();
+        for (ClientEntity clientEntity : clientEntities) {
+            clientToChosenServices.put(clientEntity, clientToChosenServiceRepo.findAllByPrimaryKeyClientId(clientEntity.getId()));
+        }
+
         return LocationState.toModel(
                 locationId,
-                clientEntities,
                 serviceEntities,
-                clientToChosenServiceEntities,
-                queueEntities
+                queueEntities,
+                clientToChosenServices
         );
     }
 

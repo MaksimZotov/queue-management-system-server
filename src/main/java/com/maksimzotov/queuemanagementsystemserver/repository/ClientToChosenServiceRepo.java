@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface ClientToChosenServiceRepo extends JpaRepository<ClientToChosenServiceEntity, ClientToChosenServiceEntity.PrimaryKey> {
     Optional<ClientToChosenServiceEntity> findByPrimaryKeyClientIdAndPrimaryKeyServiceId(Long clientId, Long serviceId);
-    List<ClientToChosenServiceEntity> findAllByPrimaryKeyLocationId(Long locationId);
     List<ClientToChosenServiceEntity> findAllByPrimaryKeyClientId(Long clientId);
     Boolean existsByPrimaryKeyClientId(Long clientId);
     Boolean existsByPrimaryKeyServiceId(Long serviceId);

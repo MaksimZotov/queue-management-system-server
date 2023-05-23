@@ -2,7 +2,7 @@
 CREATE TABLE account (
     id BIGSERIAL PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL CHECK (char_length(name) BETWEEN 8 AND 64),
+    password TEXT NOT NULL CHECK (char_length(password) BETWEEN 8 AND 64),
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     registration_timestamp TIMESTAMP NOT NULL
@@ -73,9 +73,8 @@ CREATE TABLE client (
 CREATE TABLE client_to_chosen_service (
     client_id BIGINT REFERENCES client (id) NOT NULL,
     service_id BIGINT REFERENCES service (id) NOT NULL,
-    location_id BIGINT REFERENCES location (id) NOT NULL,
     order_number INTEGER NOT NULL,
-    PRIMARY KEY (client_id, service_id, location_id)
+    PRIMARY KEY (client_id, service_id)
 );
 
 -- Queue

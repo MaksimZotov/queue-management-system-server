@@ -79,8 +79,7 @@ public class ClientServiceImpl implements ClientService {
                         new ClientToChosenServiceEntity(
                                 new ClientToChosenServiceEntity.PrimaryKey(
                                         clientEntity.getId(),
-                                        serviceIdToOrderNumber.getKey(),
-                                        locationId
+                                        serviceIdToOrderNumber.getKey()
                                 ),
                                 serviceIdToOrderNumber.getValue()
                         )
@@ -90,7 +89,6 @@ public class ClientServiceImpl implements ClientService {
 
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientId);
         Optional<QueueEntity> queueWithClient = queueRepo.findByClientId(clientId);
-        List<QueueEntity> queueEntities = queueWithClient.isEmpty() ? List.of() : List.of(queueWithClient.get());
 
         locationService.updateLocationState(
                 locationId,
@@ -99,7 +97,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                queueEntities
+                                queueWithClient.isEmpty() ? null : queueWithClient.get()
                         )
                 )
         );
@@ -138,7 +136,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                List.of(queueEntity)
+                                queueEntity
                         )
                 )
         );
@@ -173,7 +171,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                List.of(queueEntity)
+                                queueEntity
                         )
                 )
         );
@@ -220,7 +218,7 @@ public class ClientServiceImpl implements ClientService {
                                 clientEntity,
                                 serviceEntities,
                                 clientToChosenServiceEntities,
-                                new ArrayList<>()
+                                null
                         )
                 )
         );
@@ -292,7 +290,7 @@ public class ClientServiceImpl implements ClientService {
                                         clientEntity,
                                         serviceEntities,
                                         clientToChosenServiceEntities,
-                                        new ArrayList<>()
+                                        null
                                 )
                         )
                 );
@@ -474,8 +472,7 @@ public class ClientServiceImpl implements ClientService {
                     new ClientToChosenServiceEntity(
                             new ClientToChosenServiceEntity.PrimaryKey(
                                     clientEntity.getId(),
-                                    serviceIdToOrderNumber.getKey(),
-                                    locationId
+                                    serviceIdToOrderNumber.getKey()
                             ),
                             serviceIdToOrderNumber.getValue()
                     )
