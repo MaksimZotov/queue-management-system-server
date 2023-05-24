@@ -99,8 +99,7 @@ public class ClientServicesScenariosTests extends IntegrationTests {
                 new ClientToChosenServiceEntity(
                         new ClientToChosenServiceEntity.PrimaryKey(
                                 clientEntity.getId(),
-                                firstServiceEntity.getId(),
-                                locationEntity.getId()
+                                firstServiceEntity.getId()
                         ),
                         1
                 )
@@ -109,8 +108,7 @@ public class ClientServicesScenariosTests extends IntegrationTests {
                 new ClientToChosenServiceEntity(
                         new ClientToChosenServiceEntity.PrimaryKey(
                                 clientEntity.getId(),
-                                secondServiceEntity.getId(),
-                                locationEntity.getId()
+                                secondServiceEntity.getId()
                         ),
                         2
                 )
