@@ -1,0 +1,37 @@
+server.servlet.contextPath: /api
+
+spring:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  mail:
+    host: smtp.gmail.com
+    username: ${MAIL_USERNAME}
+    password: tests
+    port: 465
+    protocol: smtps
+
+app:
+
+  tokens:
+    expiration:
+      access: ${TOKENS_EXPIRATION_ACCESS}
+      refresh: ${TOKENS_EXPIRATION_REFRESH}
+    secret: ${TOKENS_SECRET}
+
+  confirmation:
+    time:
+      registration: ${CONFIRMATION_TIME_REGISTRATION}
+      join: ${CONFIRMATION_TIME_JOIN}
+
+  sms:
+    username: ${SMS_USERNAME}
+    password: tests
+    sign: ${SMS_SIGN}
+
+  threadPoolSize: ${THREAD_POOL_SIZE}
+
+  client:
+    url: ${CLIENT_URL}
