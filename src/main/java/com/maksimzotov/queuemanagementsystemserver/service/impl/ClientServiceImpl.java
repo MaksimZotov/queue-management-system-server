@@ -75,17 +75,16 @@ public class ClientServiceImpl implements ClientService {
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = new ArrayList<>();
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : changeClientRequest.getServiceIdsToOrderNumbers().entrySet()) {
             clientToChosenServiceEntities.add(
-                    clientToChosenServiceRepo.save(
-                        new ClientToChosenServiceEntity(
-                                new ClientToChosenServiceEntity.PrimaryKey(
-                                        clientEntity.getId(),
-                                        serviceIdToOrderNumber.getKey()
-                                ),
-                                serviceIdToOrderNumber.getValue()
-                        )
-                )
+                    new ClientToChosenServiceEntity(
+                            new ClientToChosenServiceEntity.PrimaryKey(
+                                    clientEntity.getId(),
+                                    serviceIdToOrderNumber.getKey()
+                            ),
+                            serviceIdToOrderNumber.getValue()
+                    )
             );
         }
+        clientToChosenServiceRepo.saveAll(clientToChosenServiceEntities);
 
         List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(locationId, clientId);
 
@@ -466,8 +465,9 @@ public class ClientServiceImpl implements ClientService {
             );
         }
 
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = new ArrayList<>();
         for (Map.Entry<Long, Integer> serviceIdToOrderNumber : serviceIdsToOrderNumbers.entrySet()) {
-            clientToChosenServiceRepo.save(
+            clientToChosenServiceEntities.add(
                     new ClientToChosenServiceEntity(
                             new ClientToChosenServiceEntity.PrimaryKey(
                                     clientEntity.getId(),
@@ -477,11 +477,25 @@ public class ClientServiceImpl implements ClientService {
                     )
             );
         }
+        clientToChosenServiceRepo.saveAll(clientToChosenServiceEntities);
 
         if (confirmationRequired) {
             smsService.send(
                     phone,
                     localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
+            );
+
+            List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(clientEntity.getLocationId(), clientEntity.getId());
+            locationService.updateLocationState(
+                    clientEntity.getLocationId(),
+                    new LocationChange.AddClient(
+                            LocationState.Client.toModel(
+                                    clientEntity,
+                                    serviceEntities,
+                                    clientToChosenServiceEntities,
+                                    null
+                            )
+                    )
             );
         }
 
