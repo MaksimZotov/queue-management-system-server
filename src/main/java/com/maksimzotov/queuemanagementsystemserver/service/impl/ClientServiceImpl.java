@@ -484,7 +484,7 @@ public class ClientServiceImpl implements ClientService {
                     phone,
                     localizer.getMessageForClientConfirmation(getLinkForClient(localizer, clientEntity, locationId))
             );
-
+        } else {
             List<ServiceEntity> serviceEntities = serviceRepo.findAllByLocationIdAndAssignedToClient(clientEntity.getLocationId(), clientEntity.getId());
             locationService.updateLocationState(
                     clientEntity.getLocationId(),
