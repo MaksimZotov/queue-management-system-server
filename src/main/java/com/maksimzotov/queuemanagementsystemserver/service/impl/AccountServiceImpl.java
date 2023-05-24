@@ -215,6 +215,12 @@ public class AccountServiceImpl implements AccountService {
     private AccountEntity checkSignup(Localizer localizer, SignupRequest signupRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
 
+        if (!EmailChecker.emailMatches(signupRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(Message.WRONG_EMAIL)
+            );
+        }
         if (signupRequest.getPassword().length() < 8) {
             fieldsErrors.put(
                     FieldsException.PASSWORD,
@@ -249,12 +255,6 @@ public class AccountServiceImpl implements AccountService {
             fieldsErrors.put(
                     FieldsException.LAST_NAME,
                     localizer.getMessage(Message.LAST_NAME_MUST_NOT_BE_EMPTY)
-            );
-        }
-        if (!EmailChecker.emailMatches(signupRequest.getEmail())) {
-            fieldsErrors.put(
-                    FieldsException.EMAIL,
-                    localizer.getMessage(Message.WRONG_EMAIL)
             );
         }
         if (!fieldsErrors.isEmpty()) {
@@ -296,6 +296,34 @@ public class AccountServiceImpl implements AccountService {
 
     private void checkLogin(Localizer localizer, LoginRequest loginRequest) throws FieldsException {
         Map<String, String> fieldsErrors = new HashMap<>();
+
+        if (!EmailChecker.emailMatches(loginRequest.getEmail())) {
+            fieldsErrors.put(
+                    FieldsException.EMAIL,
+                    localizer.getMessage(Message.WRONG_EMAIL)
+            );
+        }
+        if (loginRequest.getPassword().length() < 8) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_MORE_THAN_7_SYMBOLS)
+            );
+        }
+        if (loginRequest.getPassword().length() > 64) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_CONTAINS_LESS_THAN_65_SYMBOLS)
+            );
+        }
+        if (loginRequest.getPassword().contains(" ")) {
+            fieldsErrors.put(
+                    FieldsException.PASSWORD,
+                    localizer.getMessage(Message.PASSWORD_MUST_NOT_CONTAINS_WHITESPACES)
+            );
+        }
+        if (!fieldsErrors.isEmpty()) {
+            throw new FieldsException(fieldsErrors);
+        }
 
         Optional<AccountEntity> account = accountRepo.findByEmail(loginRequest.getEmail());
         if (account.isEmpty()) {
