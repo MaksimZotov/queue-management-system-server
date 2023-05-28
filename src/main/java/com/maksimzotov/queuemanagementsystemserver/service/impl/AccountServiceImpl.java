@@ -24,10 +24,6 @@ import com.maksimzotov.queuemanagementsystemserver.util.EmailChecker;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +41,6 @@ public class AccountServiceImpl implements AccountService {
     private final MailService mailService;
     private final AccountRepo accountRepo;
     private final RegistrationCodeRepo registrationCodeRepo;
-    private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     @Value("${app.tokens.secret}")
     private String secret;
@@ -124,37 +119,24 @@ public class AccountServiceImpl implements AccountService {
     public TokensResponse login(Localizer localizer, LoginRequest loginRequest) throws FieldsException, DescriptionException {
         checkLogin(localizer, loginRequest);
 
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                loginRequest.getEmail(),
-                loginRequest.getPassword()
-        );
-
-        Authentication authentication;
-        try {
-            authentication = authenticationManager.authenticate(authenticationToken);
-        } catch (Exception ex) {
-            throw new DescriptionException(localizer.getMessage(Message.AUTHORIZATION_FAILED));
-        }
-
-        User user = (User)authentication.getPrincipal();
         Algorithm algorithm = Algorithm.HMAC256(secret.getBytes());
 
         String access = JWT.create()
-                .withSubject(user.getUsername())
+                .withSubject(loginRequest.getEmail())
                 .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .sign(algorithm);
 
         String refresh = JWT.create()
-                .withSubject(user.getUsername())
+                .withSubject(loginRequest.getEmail())
                 .withExpiresAt(new Date(System.currentTimeMillis() + refreshTokenExpiration))
                 .sign(algorithm);
 
-        Optional<AccountEntity> account = accountRepo.findByEmail(user.getUsername());
+        Optional<AccountEntity> account = accountRepo.findByEmail(loginRequest.getEmail());
         if (account.isEmpty()) {
             throw new DescriptionException(
                     localizer.getMessage(
                             Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_START,
-                            user.getUsername(),
+                            loginRequest.getEmail(),
                             Message.ACCOUNT_WITH_EMAIL_DOES_NOT_EXIST_END
                     )
             );
