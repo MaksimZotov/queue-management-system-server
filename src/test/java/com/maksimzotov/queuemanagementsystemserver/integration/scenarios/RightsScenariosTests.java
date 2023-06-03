@@ -8,18 +8,21 @@ import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
+import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.service.ServiceModel;
+import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecialistRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.specialist.SpecialistModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.RightsRepo;
 import com.maksimzotov.queuemanagementsystemserver.repository.ServiceRepo;
-import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
-import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
+import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,10 +35,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static java.util.Map.entry;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ExtendWith(PostgreSQLExtension.class)
@@ -53,6 +58,10 @@ public class RightsScenariosTests {
     private LocationService locationService;
     @Autowired
     private RightsService rightsService;
+    @Autowired
+    private SpecialistService specialistService;
+    @Autowired ServicesSequenceService servicesSequenceService;
+    @Autowired QueueService queueService;
 
     @Autowired
     private RightsRepo rightsRepo;
@@ -128,8 +137,8 @@ public class RightsScenariosTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
         assertThrows(DescriptionException.class, () -> rightsService.addRights(
@@ -144,13 +153,13 @@ public class RightsScenariosTests {
     }
 
     @Test
-    void testCreateServiceByAccountWithoutRights() {
+    void testPerformOperationsByAccountWithoutRights() {
         LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
         assertThrows(DescriptionException.class, () -> serviceService.createServiceInLocation(
@@ -158,20 +167,50 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new CreateServiceRequest(
-                        "Услуга 1",
-                        "Описание"
+                        null,
+                        null
+                )
+        ));
+        assertThrows(DescriptionException.class, () -> servicesSequenceService.createServicesSequenceInLocation(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateServicesSequenceRequest(
+                        null,
+                        null,
+                        null
+                )
+        ));
+        assertThrows(DescriptionException.class, () -> specialistService.createSpecialistInLocation(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateSpecialistRequest(
+                        null,
+                        null,
+                        null
+                )
+        ));
+        assertThrows(DescriptionException.class, () -> queueService.createQueue(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateQueueRequest(
+                        null,
+                        null,
+                        null
                 )
         ));
     }
 
     @Test
-    void testCreateServiceByAccountWithRights() {
+    void testPerformOperationsByAccountWithRights() {
         LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                       "Локация 1",
-                        "Описание"
+                       "Location 1",
+                        "Description"
                 )
         ));
         assertDoesNotThrow(() -> rightsService.addRights(
@@ -183,13 +222,45 @@ public class RightsScenariosTests {
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
-        assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+        ServiceModel serviceModel = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new CreateServiceRequest(
-                        "Услуга 1",
-                        "Описание"
+                        "Service 1",
+                        "Description"
+                )
+        ));
+        assertDoesNotThrow(() -> servicesSequenceService.createServicesSequenceInLocation(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateServicesSequenceRequest(
+                        "Services Sequence 1",
+                        "Description",
+                        Map.ofEntries(
+                                entry(serviceModel.getId(), 1)
+                        )
+                )
+        ));
+        SpecialistModel specialistModel = assertDoesNotThrow(() -> specialistService.createSpecialistInLocation(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateSpecialistRequest(
+                        "Specialist 1",
+                        "Description",
+                        List.of(serviceModel.getId())
+                )
+        ));
+        assertDoesNotThrow(() -> queueService.createQueue(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new CreateQueueRequest(
+                        specialistModel.getId(),
+                        "Queue 1",
+                        "Description"
                 )
         ));
     }
@@ -200,8 +271,8 @@ public class RightsScenariosTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
         assertDoesNotThrow(() -> rightsService.addRights(
@@ -230,8 +301,8 @@ public class RightsScenariosTests {
                 localizer,
                 firstTokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
         assertDoesNotThrow(() -> rightsService.addRights(
@@ -244,6 +315,79 @@ public class RightsScenariosTests {
                 )
         ));
         assertDoesNotThrow(() -> rightsService.addRights(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "test1234567tyiefse4@gmail.com",
+                        RightsStatusEntity.Status.EMPLOYEE.name()
+                )
+        ));
+    }
+
+    @Test
+    void testAddRightsByAccountWithRemovedAdministratorRights() {
+        LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
+                localizer,
+                firstTokens.getAccess(),
+                new CreateLocationRequest(
+                        "Location 1",
+                        "Description"
+                )
+        ));
+        assertDoesNotThrow(() -> rightsService.addRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "zotovmaksim1254@gmail.com",
+                        RightsStatusEntity.Status.ADMINISTRATOR.name()
+                )
+        ));
+
+        assertDoesNotThrow(() -> rightsService.addRights(
+                localizer,
+                secondTokens.getAccess(),
+                locationModel.getId(),
+                new AddRightsRequest(
+                        "test1234567tyiefse4@gmail.com",
+                        RightsStatusEntity.Status.EMPLOYEE.name()
+                )
+        ));
+
+        List<String> rightsModelsBefore = assertDoesNotThrow(() -> rightsService.getRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId()
+        )).getResults()
+                .stream()
+                .map(RightsModel::getEmail)
+                .toList();
+        assertTrue(rightsModelsBefore.contains("test1234567tyiefse4@gmail.com"));
+        assertTrue(rightsModelsBefore.contains("zotovmaksim1254@gmail.com"));
+
+        assertDoesNotThrow(() -> rightsService.deleteRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId(),
+                "test1234567tyiefse4@gmail.com"
+        ));
+        assertDoesNotThrow(() -> rightsService.deleteRights(
+                localizer,
+                firstTokens.getAccess(),
+                locationModel.getId(),
+                "zotovmaksim1254@gmail.com"
+        ));
+
+        assertTrue(
+                assertDoesNotThrow(() -> rightsService.getRights(
+                        localizer,
+                        firstTokens.getAccess(),
+                        locationModel.getId()
+                )).getResults().isEmpty()
+        );
+
+        assertThrows(DescriptionException.class, () -> rightsService.addRights(
                 localizer,
                 secondTokens.getAccess(),
                 locationModel.getId(),

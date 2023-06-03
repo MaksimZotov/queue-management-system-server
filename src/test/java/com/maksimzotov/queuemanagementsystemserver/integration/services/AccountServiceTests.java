@@ -3,9 +3,11 @@ package com.maksimzotov.queuemanagementsystemserver.integration.services;
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
+import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
 import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.account.SignupRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
@@ -26,9 +28,9 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.Date;
 import java.util.Locale;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ExtendWith(PostgreSQLExtension.class)
@@ -126,6 +128,10 @@ public class AccountServiceTests {
                         "0000"
                 )
         ));
+
+        Optional<RegistrationCodeEntity> registrationCodeBefore = registrationCodeRepo.findByEmail("zotovm256@gmail.com");
+        assertTrue(registrationCodeBefore.isPresent());
+
         assertDoesNotThrow(() -> accountService.confirmRegistrationCode(
                 localizer,
                 new ConfirmCodeRequest(
@@ -133,6 +139,9 @@ public class AccountServiceTests {
                         "1111"
                 )
         ));
+
+        Optional<RegistrationCodeEntity> registrationCodeAfter = registrationCodeRepo.findByEmail("zotovm256@gmail.com");
+        assertTrue(registrationCodeAfter.isEmpty());
     }
 
     @Test
@@ -151,5 +160,30 @@ public class AccountServiceTests {
         assertDoesNotThrow(() -> accountService.refreshToken(
                 tokens.getRefresh()
         ));
+    }
+
+    @Test
+    void testSignup() {
+        assertThrows(FieldsException.class, () -> accountService.signup(
+                localizer,
+                new SignupRequest(
+                        "zotovm256@gmail.com",
+                        "Maksim",
+                        "Zotov",
+                        "123456789",
+                        "123456789"
+                )
+        ));
+        assertDoesNotThrow(() -> accountService.signup(
+                localizer,
+                new SignupRequest(
+                        "zotovmaksim1254@gmail.com",
+                        "Maksim",
+                        "Zotov",
+                        "123456789",
+                        "123456789"
+                )
+        ));
+        assertTrue(accountRepo.findByEmail("zotovmaksim1254@gmail.com").isPresent());
     }
 }

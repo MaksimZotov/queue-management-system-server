@@ -33,6 +33,7 @@ public class ServiceServiceImpl implements ServiceService {
     private final ServiceRepo serviceRepo;
     private final LocationRepo locationRepo;
     private final ClientToChosenServiceRepo clientToChosenServiceRepo;
+    private final SpecialistRepo specialistRepo;
     private final ServiceInSpecialistRepo serviceInSpecialistRepo;
     private final ServicesSequenceRepo servicesSequenceRepo;
     private final ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
@@ -57,7 +58,10 @@ public class ServiceServiceImpl implements ServiceService {
     }
 
     @Override
-    public ContainerForList<ServiceModel> getServicesInSpecialist(Localizer localizer, Long specialistId) {
+    public ContainerForList<ServiceModel> getServicesInSpecialist(Localizer localizer, Long specialistId) throws DescriptionException {
+        if (!specialistRepo.existsById(specialistId)) {
+            throw new DescriptionException(localizer.getMessage(Message.SPECIALIST_DOES_NOT_EXIST));
+        }
         List<ServiceInSpecialistEntity> serviceInSpecialistEntities = serviceInSpecialistRepo.findAllBySpecialistId(specialistId);
         List<ServiceModel> serviceModels = new ArrayList<>();
         for (ServiceInSpecialistEntity serviceInSpecialistEntity : serviceInSpecialistEntities) {
