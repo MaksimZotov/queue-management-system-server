@@ -1,8 +1,8 @@
-package com.maksimzotov.queuemanagementsystemserver.integration;
+package com.maksimzotov.queuemanagementsystemserver.integration.scenarios;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.ClientToChosenServiceEntity;
-import com.maksimzotov.queuemanagementsystemserver.integration.base.IntegrationTests;
+import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
@@ -20,17 +20,28 @@ import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.*;
 
 import static java.util.Map.entry;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ServicesSequenceScenariosTests extends IntegrationTests {
+@SpringBootTest
+@ExtendWith(PostgreSQLExtension.class)
+@TestPropertySource(
+        properties = {"spring.config.location=classpath:application-tests.yml"}
+)
+@DirtiesContext
+public class ServicesSequenceScenariosTests {
 
     @Autowired
     private ClientService clientService;
@@ -98,18 +109,17 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
     }
 
     @Test
-    @SneakyThrows
     void testClientChosePreparedSequence() {
-        LocationModel locationModel = locationService.createLocation(
+        LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
                 localizer,
                 tokens.getAccess(),
                 new CreateLocationRequest(
                         "Локация 1",
                         "Описание"
                 )
-        );
+        ));
 
-        ServiceModel firstServiceOrder1 = serviceService.createServiceInLocation(
+        ServiceModel firstServiceOrder1 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -117,8 +127,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 1",
                         "Описание 1"
                 )
-        );
-        ServiceModel secondServiceOrder2 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel secondServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -126,8 +136,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 2",
                         "Описание 2"
                 )
-        );
-        ServiceModel thirdServiceOrder2 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel thirdServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -135,8 +145,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 3 (без описания)",
                         null
                 )
-        );
-        ServiceModel fourthServiceOrder3 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel fourthServiceOrder3 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -144,7 +154,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 4 (без описания)",
                         null
                 )
-        );
+        ));
 
         Map<Long, Integer> serviceIdsToOrderNumbers = Map.ofEntries(
                 entry(firstServiceOrder1.getId(), 1),
@@ -153,7 +163,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                 entry(fourthServiceOrder3.getId(), 3)
         );
 
-        ServicesSequenceModel servicesSequence = servicesSequenceService.createServicesSequenceInLocation(
+        ServicesSequenceModel servicesSequence = assertDoesNotThrow(() -> servicesSequenceService.createServicesSequenceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -162,9 +172,9 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Описание",
                         serviceIdsToOrderNumbers
                 )
-        );
+        ));
 
-        ClientModel client = clientService.createClient(
+        ClientModel client = assertDoesNotThrow(() -> clientService.createClient(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -174,7 +184,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         servicesSequence.getId(),
                         false
                 )
-        );
+        ));
 
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
         HashMap<Long, Integer> actual = new HashMap<>();
@@ -188,18 +198,17 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
     }
 
     @Test
-    @SneakyThrows
     void testClientMovedToCustomSequence() {
-        LocationModel locationModel = locationService.createLocation(
+        LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
                 localizer,
                 tokens.getAccess(),
                 new CreateLocationRequest(
                         "Локация 1",
                         "Описание"
                 )
-        );
+        ));
 
-        ServiceModel firstServiceOrder1 = serviceService.createServiceInLocation(
+        ServiceModel firstServiceOrder1 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -207,8 +216,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 1",
                         "Описание 1"
                 )
-        );
-        ServiceModel secondServiceOrder2 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel secondServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -216,8 +225,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 2",
                         "Описание 2"
                 )
-        );
-        ServiceModel thirdServiceOrder2 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel thirdServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -225,8 +234,8 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 3 (без описания)",
                         null
                 )
-        );
-        ServiceModel fourthServiceOrder3 = serviceService.createServiceInLocation(
+        ));
+        ServiceModel fourthServiceOrder3 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -234,9 +243,9 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         "Услуга 4 (без описания)",
                         null
                 )
-        );
+        ));
 
-        ClientModel client = clientService.createClient(
+        ClientModel client = assertDoesNotThrow(() -> clientService.createClient(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -246,7 +255,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                         null,
                         false
                 )
-        );
+        ));
 
         List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
 
@@ -261,7 +270,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                 entry(fourthServiceOrder3.getId(), 3)
         );
 
-        clientService.changeClient(
+        assertDoesNotThrow(() -> clientService.changeClient(
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
@@ -269,7 +278,7 @@ public class ServicesSequenceScenariosTests extends IntegrationTests {
                 new ChangeClientRequest(
                         serviceIdsToOrderNumbers
                 )
-        );
+        ));
 
         clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
         HashMap<Long, Integer> actual = new HashMap<>();

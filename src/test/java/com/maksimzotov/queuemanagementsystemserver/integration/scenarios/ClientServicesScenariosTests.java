@@ -1,18 +1,29 @@
-package com.maksimzotov.queuemanagementsystemserver.integration;
+package com.maksimzotov.queuemanagementsystemserver.integration.scenarios;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
-import com.maksimzotov.queuemanagementsystemserver.integration.base.IntegrationTests;
+import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ClientServicesScenariosTests extends IntegrationTests {
+@SpringBootTest
+@ExtendWith(PostgreSQLExtension.class)
+@TestPropertySource(
+        properties = {"spring.config.location=classpath:application-tests.yml"}
+)
+@DirtiesContext
+public class ClientServicesScenariosTests {
 
     @Autowired
     private AccountRepo accountRepo;
