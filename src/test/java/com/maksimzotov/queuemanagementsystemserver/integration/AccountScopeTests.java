@@ -151,6 +151,7 @@ public class AccountScopeTests {
 
     @Test
     void testSignup() {
+        assertTrue(accountRepo.findByEmail(FIRST_EMAIL).isPresent());
         assertThrows(FieldsException.class, () -> accountService.signup(
                 localizer,
                 new SignupRequest(
@@ -161,6 +162,7 @@ public class AccountScopeTests {
                         PASSWORD
                 )
         ));
+        assertFalse(accountRepo.findByEmail(SECOND_EMAIL).isPresent());
         assertDoesNotThrow(() -> accountService.signup(
                 localizer,
                 new SignupRequest(

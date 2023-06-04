@@ -12,6 +12,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocation
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueModel;
+import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueStateModel;
 import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
@@ -314,6 +315,7 @@ public class LocationScopeTests {
                 locationModel.getId()
         ));
 
+        assertFalse(assertDoesNotThrow(() -> clientRepo.findAllByLocationId(locationModel.getId())).isEmpty());
         assertDoesNotThrow(() -> clientService.deleteClientInLocation(
                 localizer,
                 tokens.getAccess(),
@@ -326,6 +328,7 @@ public class LocationScopeTests {
                 locationModel.getId(),
                 nonConfirmedClientModel.getId()
         ));
+        assertTrue(assertDoesNotThrow(() -> clientRepo.findAllByLocationId(locationModel.getId())).isEmpty());
 
         assertFalse(
                 assertDoesNotThrow(() -> rightsService.getRights(
@@ -398,7 +401,6 @@ public class LocationScopeTests {
         ));
 
         assertFalse(clientRepo.findAllByLocationId(locationModel.getId()).isEmpty());
-
         assertDoesNotThrow(() -> clientService.deleteClientInLocation(
                 localizer,
                 tokens.getAccess(),
@@ -411,7 +413,6 @@ public class LocationScopeTests {
                 locationModel.getId(),
                 nonConfirmedClientModel.getId()
         ));
-
         assertTrue(clientRepo.findAllByLocationId(locationModel.getId()).isEmpty());
 
         assertTrue(
@@ -532,10 +533,19 @@ public class LocationScopeTests {
                 tokens.getAccess(),
                 NON_EXISTING_ID
         ));
-        assertDoesNotThrow(() -> queueService.getQueueState(
+        QueueStateModel actual = assertDoesNotThrow(() -> queueService.getQueueState(
                 localizer,
                 tokens.getAccess(),
                 firstQueueModel.getId()
         ));
+        QueueStateModel expected = new QueueStateModel(
+                firstQueueModel.getId(),
+                locationModel.getId(),
+                firstQueueModel.getName(),
+                firstQueueModel.getDescription(),
+                EMAIL,
+                List.of(firstServiceModel.getId())
+        );
+        assertEquals(expected, actual);
     }
 }

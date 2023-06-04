@@ -280,6 +280,12 @@ public class ClientScopeTests {
                 firstQueueModel.getId(),
                 NON_EXISTING_ID
         ));
+
+        Optional<QueueEntity> queueBeforeCall = queueRepo.findById(firstQueueModel.getId());
+        assertTrue(queueBeforeCall.isPresent());
+        QueueEntity queueEntityBeforeCall = queueBeforeCall.get();
+        assertNull(queueEntityBeforeCall.getClientId());
+
         assertDoesNotThrow(() -> clientService.callClient(
                 localizer,
                 tokens.getAccess(),
