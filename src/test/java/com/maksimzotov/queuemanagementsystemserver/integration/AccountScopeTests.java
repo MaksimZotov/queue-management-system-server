@@ -132,7 +132,7 @@ public class AccountScopeTests {
     }
 
     @Test
-    void testSignupIntoExistingAccount() {
+    void testLoginIntoExistingAccount() {
         assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
