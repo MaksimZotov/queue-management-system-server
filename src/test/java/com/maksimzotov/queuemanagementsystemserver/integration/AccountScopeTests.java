@@ -1,19 +1,17 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.services;
+package com.maksimzotov.queuemanagementsystemserver.integration;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RegistrationCodeEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.FieldsException;
-import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
+import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.ConfirmCodeRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.SignupRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
-import com.maksimzotov.queuemanagementsystemserver.repository.*;
+import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.RegistrationCodeRepo;
 import com.maksimzotov.queuemanagementsystemserver.service.AccountService;
-import com.maksimzotov.queuemanagementsystemserver.service.LocationService;
-import com.maksimzotov.queuemanagementsystemserver.service.RightsService;
-import com.maksimzotov.queuemanagementsystemserver.service.ServiceService;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,25 +36,17 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {"spring.config.location=classpath:application-tests.yml"}
 )
 @DirtiesContext
-public class AccountServiceTests {
+public class AccountScopeTests {
 
-    @Autowired
-    private ServiceService serviceService;
+    private static final String PASSWORD = "12345678";
+    private static final String FIRST_EMAIL = "zotovm256@gmail.com";
+    private static final String SECOND_EMAIL = "zotovmaksim1254@gmail.com";
+
     @Autowired
     private AccountService accountService;
-    @Autowired
-    private LocationService locationService;
-    @Autowired
-    private RightsService rightsService;
 
     @Autowired
-    private RightsRepo rightsRepo;
-    @Autowired
     private AccountRepo accountRepo;
-    @Autowired
-    private ServiceRepo serviceRepo;
-    @Autowired
-    private LocationRepo locationRepo;
     @Autowired
     RegistrationCodeRepo registrationCodeRepo;
 
@@ -71,19 +61,16 @@ public class AccountServiceTests {
 
     @BeforeEach
     void beforeEach() {
-        rightsRepo.deleteAll();
-        serviceRepo.deleteAll();
-        locationRepo.deleteAll();
         registrationCodeRepo.deleteAll();
         accountRepo.deleteAll();
 
         accountRepo.save(
                 new AccountEntity(
-                        1L,
-                        "zotovm256@gmail.com",
+                        null,
+                        FIRST_EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
@@ -91,8 +78,8 @@ public class AccountServiceTests {
         tokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com" ,
-                        "12345678"
+                        FIRST_EMAIL,
+                        PASSWORD
                 )
         ));
 
@@ -107,7 +94,7 @@ public class AccountServiceTests {
         assertThrows(DescriptionException.class, () -> accountService.confirmRegistrationCode(
                 localizer,
                 new ConfirmCodeRequest(
-                        "zotovm256@gmail.com",
+                        FIRST_EMAIL,
                         "1234"
                 )
         ));
@@ -117,30 +104,30 @@ public class AccountServiceTests {
     void testConfirmExistingNonExpiredRegistrationCode() {
         registrationCodeRepo.save(
                 new RegistrationCodeEntity(
-                        "zotovm256@gmail.com",
+                        FIRST_EMAIL,
                         1111
                 )
         );
         assertThrows(DescriptionException.class, () -> accountService.confirmRegistrationCode(
                 localizer,
                 new ConfirmCodeRequest(
-                        "zotovm256@gmail.com",
+                        FIRST_EMAIL,
                         "0000"
                 )
         ));
 
-        Optional<RegistrationCodeEntity> registrationCodeBefore = registrationCodeRepo.findByEmail("zotovm256@gmail.com");
+        Optional<RegistrationCodeEntity> registrationCodeBefore = registrationCodeRepo.findByEmail(FIRST_EMAIL);
         assertTrue(registrationCodeBefore.isPresent());
 
         assertDoesNotThrow(() -> accountService.confirmRegistrationCode(
                 localizer,
                 new ConfirmCodeRequest(
-                        "zotovm256@gmail.com",
+                        FIRST_EMAIL,
                         "1111"
                 )
         ));
 
-        Optional<RegistrationCodeEntity> registrationCodeAfter = registrationCodeRepo.findByEmail("zotovm256@gmail.com");
+        Optional<RegistrationCodeEntity> registrationCodeAfter = registrationCodeRepo.findByEmail(FIRST_EMAIL);
         assertTrue(registrationCodeAfter.isEmpty());
     }
 
@@ -149,8 +136,8 @@ public class AccountServiceTests {
         assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com",
-                        "12345678"
+                        FIRST_EMAIL,
+                        PASSWORD
                 )
         ));
     }
@@ -167,23 +154,23 @@ public class AccountServiceTests {
         assertThrows(FieldsException.class, () -> accountService.signup(
                 localizer,
                 new SignupRequest(
-                        "zotovm256@gmail.com",
+                        FIRST_EMAIL,
                         "Maksim",
                         "Zotov",
-                        "123456789",
-                        "123456789"
+                        PASSWORD,
+                        PASSWORD
                 )
         ));
         assertDoesNotThrow(() -> accountService.signup(
                 localizer,
                 new SignupRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         "Maksim",
                         "Zotov",
-                        "123456789",
-                        "123456789"
+                        PASSWORD,
+                        PASSWORD
                 )
         ));
-        assertTrue(accountRepo.findByEmail("zotovmaksim1254@gmail.com").isPresent());
+        assertTrue(accountRepo.findByEmail(SECOND_EMAIL).isPresent());
     }
 }

@@ -1,11 +1,10 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.util;
+package com.maksimzotov.queuemanagementsystemserver.integration.extension;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class PostgreSQLExtension implements BeforeAllCallback, AfterAllCallback {
+public class PostgreSQLExtension implements BeforeAllCallback {
 
     private PostgreSQLContainer<?> postgres;
 
@@ -22,10 +21,5 @@ public class PostgreSQLExtension implements BeforeAllCallback, AfterAllCallback 
         System.setProperty("spring.datasource.url", postgres.getJdbcUrl());
         System.setProperty("spring.datasource.username", postgres.getUsername());
         System.setProperty("spring.datasource.password", postgres.getPassword());
-    }
-
-    @Override
-    public void afterAll(ExtensionContext context) {
-        // do nothing, Testcontainers handles container shutdown
     }
 }

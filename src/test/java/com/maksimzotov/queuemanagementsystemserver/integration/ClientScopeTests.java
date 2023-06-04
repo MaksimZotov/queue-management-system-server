@@ -1,9 +1,9 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.services;
+package com.maksimzotov.queuemanagementsystemserver.integration;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.*;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.AccountIsNotAuthorizedException;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
+import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.client.ChangeClientRequest;
@@ -14,6 +14,8 @@ import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocation
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueModel;
+import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
+import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.service.ServiceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecialistRequest;
@@ -34,6 +36,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.*;
 
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -42,7 +45,12 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {"spring.config.location=classpath:application-tests.yml"}
 )
 @DirtiesContext
-public class ClientServiceTests {
+public class ClientScopeTests {
+
+    private static final String PASSWORD = "12345678";
+    private static final String EMAIL = "zotovm256@gmail.com";
+    private static final Long NON_EXISTING_ID = 1000L;
+
     @Autowired
     private ServiceService serviceService;
     @Autowired
@@ -57,6 +65,8 @@ public class ClientServiceTests {
     private SpecialistService specialistService;
     @Autowired
     private QueueService queueService;
+    @Autowired
+    private ServicesSequenceService servicesSequenceService;
 
     @Autowired
     private AccountRepo accountRepo;
@@ -69,9 +79,15 @@ public class ClientServiceTests {
     @Autowired
     private SpecialistRepo specialistRepo;
     @Autowired
+    private ServiceInSpecialistRepo serviceInSpecialistRepo;
+    @Autowired
     private ClientRepo clientRepo;
     @Autowired
     private ClientToChosenServiceRepo clientToChosenServiceRepo;
+    @Autowired
+    private ServicesSequenceRepo servicesSequenceRepo;
+    @Autowired
+    private ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
 
     @Mock
     private MessageSource messageSource;
@@ -91,13 +107,16 @@ public class ClientServiceTests {
 
     @BeforeEach
     void beforeEach() {
+        clientToChosenServiceRepo.deleteAll();
+        clientRepo.deleteAll();
         queueRepo.deleteAll();
+        serviceInSpecialistRepo.deleteAll();
         specialistRepo.deleteAll();
+        serviceInServicesSequenceRepo.deleteAll();
+        servicesSequenceRepo.deleteAll();
         serviceRepo.deleteAll();
         locationRepo.deleteAll();
         accountRepo.deleteAll();
-        clientToChosenServiceRepo.deleteAll();
-        clientRepo.deleteAll();
 
         localizer = new Localizer(
                 new Locale("ru"),
@@ -106,11 +125,11 @@ public class ClientServiceTests {
 
         accountRepo.save(
                 new AccountEntity(
-                        1L,
-                        "zotovm256@gmail.com",
+                        null,
+                        EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
@@ -118,8 +137,8 @@ public class ClientServiceTests {
         tokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com",
-                        "12345678"
+                        EMAIL,
+                        PASSWORD
                 )
         ));
 
@@ -240,7 +259,7 @@ public class ClientServiceTests {
                 localizer,
                 tokens.getAccess(),
                 locationModel.getId(),
-                1000L,
+                NON_EXISTING_ID,
                 new ChangeClientRequest(
                         new HashMap<>()
                 )
@@ -252,14 +271,14 @@ public class ClientServiceTests {
         assertThrows(DescriptionException.class, () -> clientService.callClient(
                 localizer,
                 tokens.getAccess(),
-                1000L,
+                NON_EXISTING_ID,
                 confirmedClientModel.getId()
         ));
         assertThrows(DescriptionException.class, () -> clientService.callClient(
                 localizer,
                 tokens.getAccess(),
                 firstQueueModel.getId(),
-                1000L
+                NON_EXISTING_ID
         ));
         assertDoesNotThrow(() -> clientService.callClient(
                 localizer,
@@ -276,14 +295,14 @@ public class ClientServiceTests {
         assertThrows(DescriptionException.class, () -> clientService.returnClient(
                 localizer,
                 tokens.getAccess(),
-                1000L,
+                NON_EXISTING_ID,
                 confirmedClientModel.getId()
         ));
         assertThrows(DescriptionException.class, () -> clientService.returnClient(
                 localizer,
                 tokens.getAccess(),
                 firstQueueModel.getId(),
-                1000L
+                NON_EXISTING_ID
         ));
         assertDoesNotThrow(() -> clientService.returnClient(
                 localizer,
@@ -388,14 +407,14 @@ public class ClientServiceTests {
         assertThrows(DescriptionException.class, () -> clientService.notifyClient(
                 localizer,
                 tokens.getAccess(),
-                1000L,
+                NON_EXISTING_ID,
                 nonConfirmedClientModel.getId()
         ));
         assertThrows(DescriptionException.class, () -> clientService.notifyClient(
                 localizer,
                 tokens.getAccess(),
                 firstQueueModel.getId(),
-                1000L
+                NON_EXISTING_ID
         ));
         assertThrows(DescriptionException.class, () -> clientService.notifyClient(
                 localizer,
@@ -445,5 +464,226 @@ public class ClientServiceTests {
         ));
 
         assertTrue(clientRepo.findById(confirmedClientModel.getId()).isEmpty());
+    }
+
+    @Test
+    void testCustomQueryWithJoinServicesForClient() {
+        ServiceModel thirdServiceModel = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 3",
+                        null
+                )
+        ));
+
+        ClientModel localClientModel = assertDoesNotThrow(() -> clientService.createClient(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateClientRequest(
+                        null,
+                        List.of(firstServiceModel.getId(), secondServiceModel.getId()),
+                        null,
+                        false
+                )
+        ));
+
+        assertTrue(serviceRepo.findById(firstServiceModel.getId()).isPresent());
+        assertTrue(serviceRepo.findById(secondServiceModel.getId()).isPresent());
+        assertTrue(serviceRepo.findById(thirdServiceModel.getId()).isPresent());
+
+        List<ServiceModel> servicesForClient = serviceRepo.findAllByLocationIdAndAssignedToClient(locationModel.getId(), localClientModel.getId())
+                .stream()
+                .map(ServiceModel::toModel)
+                .toList();
+
+        assertTrue(servicesForClient.contains(firstServiceModel));
+        assertTrue(servicesForClient.contains(secondServiceModel));
+        assertFalse(servicesForClient.contains(thirdServiceModel));
+    }
+
+    @Test
+    void testCreateClientWithPreparedServicesSequence() {
+        LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
+                localizer,
+                tokens.getAccess(),
+                new CreateLocationRequest(
+                        "Location 2",
+                        "Description"
+                )
+        ));
+
+        ServiceModel firstServiceOrder1 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 1",
+                        "Description 1"
+                )
+        ));
+        ServiceModel secondServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 2",
+                        "Description 2"
+                )
+        ));
+        ServiceModel thirdServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 3 (without description)",
+                        null
+                )
+        ));
+        ServiceModel fourthServiceOrder3 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 4 (without description)",
+                        null
+                )
+        ));
+
+        Map<Long, Integer> serviceIdsToOrderNumbers = Map.ofEntries(
+                entry(firstServiceOrder1.getId(), 1),
+                entry(secondServiceOrder2.getId(), 2),
+                entry(thirdServiceOrder2.getId(), 2),
+                entry(fourthServiceOrder3.getId(), 3)
+        );
+
+        ServicesSequenceModel servicesSequence = assertDoesNotThrow(() -> servicesSequenceService.createServicesSequenceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServicesSequenceRequest(
+                        "ServicesSequence",
+                        "Description",
+                        serviceIdsToOrderNumbers
+                )
+        ));
+
+        ClientModel client = assertDoesNotThrow(() -> clientService.createClient(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateClientRequest(
+                        null,
+                        null,
+                        servicesSequence.getId(),
+                        false
+                )
+        ));
+
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
+        HashMap<Long, Integer> actual = new HashMap<>();
+        for (ClientToChosenServiceEntity clientToChosenServiceEntity : clientToChosenServiceEntities) {
+            actual.put(
+                    clientToChosenServiceEntity.getPrimaryKey().getServiceId(),
+                    clientToChosenServiceEntity.getOrderNumber()
+            );
+        }
+        assertEquals(serviceIdsToOrderNumbers, actual);
+    }
+
+    @Test
+    void testChangeClient() {
+        LocationModel locationModel = assertDoesNotThrow(() -> locationService.createLocation(
+                localizer,
+                tokens.getAccess(),
+                new CreateLocationRequest(
+                        "Location 2",
+                        "Description"
+                )
+        ));
+
+        ServiceModel firstServiceOrder1 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 1",
+                        "Description 1"
+                )
+        ));
+        ServiceModel secondServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 2",
+                        "Description 2"
+                )
+        ));
+        ServiceModel thirdServiceOrder2 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 3 (without description)",
+                        null
+                )
+        ));
+        ServiceModel fourthServiceOrder3 = assertDoesNotThrow(() -> serviceService.createServiceInLocation(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateServiceRequest(
+                        "Service 4 (without description)",
+                        null
+                )
+        ));
+
+        ClientModel client = assertDoesNotThrow(() -> clientService.createClient(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                new CreateClientRequest(
+                        null,
+                        List.of(firstServiceOrder1.getId()),
+                        null,
+                        false
+                )
+        ));
+
+        List<ClientToChosenServiceEntity> clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
+
+        assertEquals(1, clientToChosenServiceEntities.size());
+        assertEquals(firstServiceOrder1.getId(), clientToChosenServiceEntities.get(0).getPrimaryKey().getServiceId());
+        assertEquals(1, clientToChosenServiceEntities.get(0).getOrderNumber());
+
+        Map<Long, Integer> serviceIdsToOrderNumbers = Map.ofEntries(
+                entry(firstServiceOrder1.getId(), 1),
+                entry(secondServiceOrder2.getId(), 2),
+                entry(thirdServiceOrder2.getId(), 2),
+                entry(fourthServiceOrder3.getId(), 3)
+        );
+
+        assertDoesNotThrow(() -> clientService.changeClient(
+                localizer,
+                tokens.getAccess(),
+                locationModel.getId(),
+                client.getId(),
+                new ChangeClientRequest(
+                        serviceIdsToOrderNumbers
+                )
+        ));
+
+        clientToChosenServiceEntities = clientToChosenServiceRepo.findAllByPrimaryKeyClientId(client.getId());
+        HashMap<Long, Integer> actual = new HashMap<>();
+        for (ClientToChosenServiceEntity clientToChosenServiceEntity : clientToChosenServiceEntities) {
+            actual.put(
+                    clientToChosenServiceEntity.getPrimaryKey().getServiceId(),
+                    clientToChosenServiceEntity.getOrderNumber()
+            );
+        }
+        assertEquals(serviceIdsToOrderNumbers, actual);
     }
 }

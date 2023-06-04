@@ -1,9 +1,9 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.scenarios;
+package com.maksimzotov.queuemanagementsystemserver.integration;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RightsStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
+import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
@@ -12,15 +12,11 @@ import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueReques
 import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.service.ServiceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecialistRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.SpecialistModel;
-import com.maksimzotov.queuemanagementsystemserver.repository.AccountRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.LocationRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.RightsRepo;
-import com.maksimzotov.queuemanagementsystemserver.repository.ServiceRepo;
+import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +44,12 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {"spring.config.location=classpath:application-tests.yml"}
 )
 @DirtiesContext
-public class RightsScenariosTests {
+public class RightsScopeTests {
+    
+    private static final String PASSWORD = "12345678";
+    private static final String FIRST_EMAIL = "zotovm256@gmail.com";
+    private static final String SECOND_EMAIL = "zotovmaksim1254@gmail.com";
+    private static final String THIRD_EMAIL = "test1234567tyiefse4@gmail.com";
 
     @Autowired
     private ServiceService serviceService;
@@ -71,6 +72,16 @@ public class RightsScenariosTests {
     private ServiceRepo serviceRepo;
     @Autowired
     private LocationRepo locationRepo;
+    @Autowired
+    private QueueRepo queueRepo;
+    @Autowired
+    private SpecialistRepo specialistRepo;
+    @Autowired
+    private ServiceInSpecialistRepo serviceInSpecialistRepo;
+    @Autowired
+    private ServicesSequenceRepo servicesSequenceRepo;
+    @Autowired
+    private ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
 
     @Mock
     private MessageSource messageSource;
@@ -79,33 +90,40 @@ public class RightsScenariosTests {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private AccountEntity firstAccountEntity;
+    private AccountEntity secondAccountEntity;
     private TokensResponse firstTokens;
     private TokensResponse secondTokens;
 
     @BeforeEach
     void beforeEach() {
         rightsRepo.deleteAll();
+        queueRepo.deleteAll();
+        serviceInSpecialistRepo.deleteAll();
+        specialistRepo.deleteAll();
+        serviceInServicesSequenceRepo.deleteAll();
+        servicesSequenceRepo.deleteAll();
         serviceRepo.deleteAll();
         locationRepo.deleteAll();
         accountRepo.deleteAll();
 
-        accountRepo.save(
+        firstAccountEntity = accountRepo.save(
                 new AccountEntity(
-                        1L,
-                        "zotovm256@gmail.com",
+                        null,
+                        FIRST_EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
-        accountRepo.save(
+        secondAccountEntity = accountRepo.save(
                 new AccountEntity(
-                        2L,
-                        "zotovmaksim1254@gmail.com",
+                        null,
+                        SECOND_EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
@@ -113,15 +131,15 @@ public class RightsScenariosTests {
         firstTokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com" ,
-                        "12345678"
+                        FIRST_EMAIL,
+                        PASSWORD
                 )
         ));
         secondTokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovmaksim1254@gmail.com" ,
-                        "12345678"
+                        SECOND_EMAIL,
+                        PASSWORD
                 )
         ));
 
@@ -146,7 +164,7 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -218,7 +236,7 @@ public class RightsScenariosTests {
                 firstTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -280,7 +298,7 @@ public class RightsScenariosTests {
                 firstTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -289,7 +307,7 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "test1234567tyiefse4@gmail.com",
+                        THIRD_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -310,7 +328,7 @@ public class RightsScenariosTests {
                 firstTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         RightsStatusEntity.Status.ADMINISTRATOR.name()
                 )
         ));
@@ -319,7 +337,7 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "test1234567tyiefse4@gmail.com",
+                        THIRD_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -340,7 +358,7 @@ public class RightsScenariosTests {
                 firstTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "zotovmaksim1254@gmail.com",
+                        SECOND_EMAIL,
                         RightsStatusEntity.Status.ADMINISTRATOR.name()
                 )
         ));
@@ -350,7 +368,7 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "test1234567tyiefse4@gmail.com",
+                        THIRD_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));
@@ -363,20 +381,20 @@ public class RightsScenariosTests {
                 .stream()
                 .map(RightsModel::getEmail)
                 .toList();
-        assertTrue(rightsModelsBefore.contains("test1234567tyiefse4@gmail.com"));
-        assertTrue(rightsModelsBefore.contains("zotovmaksim1254@gmail.com"));
+        assertTrue(rightsModelsBefore.contains(THIRD_EMAIL));
+        assertTrue(rightsModelsBefore.contains(SECOND_EMAIL));
 
         assertDoesNotThrow(() -> rightsService.deleteRights(
                 localizer,
                 firstTokens.getAccess(),
                 locationModel.getId(),
-                "test1234567tyiefse4@gmail.com"
+                THIRD_EMAIL
         ));
         assertDoesNotThrow(() -> rightsService.deleteRights(
                 localizer,
                 firstTokens.getAccess(),
                 locationModel.getId(),
-                "zotovmaksim1254@gmail.com"
+                SECOND_EMAIL
         ));
 
         assertTrue(
@@ -392,7 +410,7 @@ public class RightsScenariosTests {
                 secondTokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                        "test1234567tyiefse4@gmail.com",
+                        THIRD_EMAIL,
                         RightsStatusEntity.Status.EMPLOYEE.name()
                 )
         ));

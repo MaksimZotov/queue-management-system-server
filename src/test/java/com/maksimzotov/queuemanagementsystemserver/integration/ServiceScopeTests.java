@@ -1,21 +1,16 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.services;
+package com.maksimzotov.queuemanagementsystemserver.integration;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.RightsEntity;
-import com.maksimzotov.queuemanagementsystemserver.entity.RightsStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
+import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.client.ClientModel;
 import com.maksimzotov.queuemanagementsystemserver.model.client.CreateClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
-import com.maksimzotov.queuemanagementsystemserver.model.location.LocationState;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.QueueModel;
-import com.maksimzotov.queuemanagementsystemserver.model.rights.AddRightsRequest;
-import com.maksimzotov.queuemanagementsystemserver.model.rights.RightsModel;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.CreateServicesSequenceRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.sequence.ServicesSequenceModel;
 import com.maksimzotov.queuemanagementsystemserver.model.service.CreateServiceRequest;
@@ -24,7 +19,6 @@ import com.maksimzotov.queuemanagementsystemserver.model.specialist.CreateSpecia
 import com.maksimzotov.queuemanagementsystemserver.model.specialist.SpecialistModel;
 import com.maksimzotov.queuemanagementsystemserver.repository.*;
 import com.maksimzotov.queuemanagementsystemserver.service.*;
-import com.maksimzotov.queuemanagementsystemserver.service.impl.RightsServiceImpl;
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +45,12 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {"spring.config.location=classpath:application-tests.yml"}
 )
 @DirtiesContext
-public class ServiceServiceTests {
+public class ServiceScopeTests {
+
+    private static final String PASSWORD = "12345678";
+    private static final String EMAIL = "zotovm256@gmail.com";
+    private static final Long NON_EXISTING_ID = 1000L;
+
     @Autowired
     private ServiceService serviceService;
     @Autowired
@@ -79,6 +78,8 @@ public class ServiceServiceTests {
     private QueueRepo queueRepo;
     @Autowired
     private SpecialistRepo specialistRepo;
+    @Autowired
+    private ServiceInSpecialistRepo serviceInSpecialistRepo;
     @Autowired
     private ClientRepo clientRepo;
     @Autowired
@@ -110,15 +111,16 @@ public class ServiceServiceTests {
 
     @BeforeEach
     void beforeEach() {
-        queueRepo.deleteAll();
-        specialistRepo.deleteAll();
-        serviceRepo.deleteAll();
-        serviceInServicesSequenceRepo.deleteAll();
-        servicesSequenceRepo.deleteAll();
-        locationRepo.deleteAll();
-        accountRepo.deleteAll();
         clientToChosenServiceRepo.deleteAll();
         clientRepo.deleteAll();
+        queueRepo.deleteAll();
+        serviceInSpecialistRepo.deleteAll();
+        specialistRepo.deleteAll();
+        serviceInServicesSequenceRepo.deleteAll();
+        servicesSequenceRepo.deleteAll();
+        serviceRepo.deleteAll();
+        locationRepo.deleteAll();
+        accountRepo.deleteAll();
 
         localizer = new Localizer(
                 new Locale("ru"),
@@ -127,11 +129,11 @@ public class ServiceServiceTests {
 
         accountEntity = accountRepo.save(
                 new AccountEntity(
-                        1L,
-                        "zotovm256@gmail.com",
+                        null,
+                        EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
@@ -139,8 +141,8 @@ public class ServiceServiceTests {
         tokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com",
-                        "12345678"
+                        EMAIL,
+                        PASSWORD
                 )
         ));
 
@@ -148,8 +150,8 @@ public class ServiceServiceTests {
                 localizer,
                 tokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
 
@@ -177,7 +179,7 @@ public class ServiceServiceTests {
                 tokens.getAccess(),
                 locationModel.getId(),
                 new CreateServicesSequenceRequest(
-                        "ServicesSequence",
+                        "Services sequence",
                         "Description",
                         Map.ofEntries(
                                 entry(firstServiceModel.getId(), 1),
@@ -257,7 +259,7 @@ public class ServiceServiceTests {
     void testGetServicesInQueue() {
         assertThrows(DescriptionException.class, () -> serviceService.getServicesInQueue(
                 localizer,
-                1000L
+                NON_EXISTING_ID
         ));
         List<ServiceModel> serviceModels = assertDoesNotThrow(() -> serviceService.getServicesInQueue(
                 localizer,
@@ -270,7 +272,7 @@ public class ServiceServiceTests {
     void testGetServicesInSpecialist() {
         assertThrows(DescriptionException.class, () -> serviceService.getServicesInSpecialist(
                 localizer,
-                1000L
+                NON_EXISTING_ID
         ));
         List<ServiceModel> serviceModels = assertDoesNotThrow(() -> serviceService.getServicesInQueue(
                 localizer,
@@ -283,7 +285,7 @@ public class ServiceServiceTests {
     void testGetServicesInServicesSequence() {
         assertThrows(DescriptionException.class, () -> serviceService.getServicesInServicesSequence(
                 localizer,
-                1000L
+                NON_EXISTING_ID
         ));
         Map<Long, Integer> serviceIdsToOrderNumbers = assertDoesNotThrow(() -> serviceService.getServicesInServicesSequence(
                 localizer,

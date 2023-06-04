@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AccountServiceTests {
+
     @Mock
     private MailService mailService;
     @Mock

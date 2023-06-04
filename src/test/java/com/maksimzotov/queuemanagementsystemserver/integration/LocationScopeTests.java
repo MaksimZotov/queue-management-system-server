@@ -1,9 +1,9 @@
-package com.maksimzotov.queuemanagementsystemserver.integration.services;
+package com.maksimzotov.queuemanagementsystemserver.integration;
 
 import com.maksimzotov.queuemanagementsystemserver.entity.AccountEntity;
 import com.maksimzotov.queuemanagementsystemserver.entity.RightsStatusEntity;
 import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionException;
-import com.maksimzotov.queuemanagementsystemserver.integration.util.PostgreSQLExtension;
+import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
 import com.maksimzotov.queuemanagementsystemserver.model.client.ClientModel;
@@ -47,7 +47,13 @@ import static org.junit.jupiter.api.Assertions.*;
         properties = {"spring.config.location=classpath:application-tests.yml"}
 )
 @DirtiesContext
-public class LocationServiceTests {
+public class LocationScopeTests {
+
+    private static final String PASSWORD = "12345678";
+    private static final String EMAIL = "zotovm256@gmail.com";
+    private static final String RIGHTS_EMAIL = "zotovmaksim1254@gmail.com";
+    private static final Long NON_EXISTING_ID = 1000L;
+
     @Autowired
     private ServiceService serviceService;
     @Autowired
@@ -75,6 +81,8 @@ public class LocationServiceTests {
     private QueueRepo queueRepo;
     @Autowired
     private SpecialistRepo specialistRepo;
+    @Autowired
+    private ServiceInSpecialistRepo serviceInSpecialistRepo;
     @Autowired
     private ClientRepo clientRepo;
     @Autowired
@@ -106,15 +114,16 @@ public class LocationServiceTests {
 
     @BeforeEach
     void beforeEach() {
-        queueRepo.deleteAll();
-        specialistRepo.deleteAll();
-        serviceRepo.deleteAll();
-        serviceInServicesSequenceRepo.deleteAll();
-        servicesSequenceRepo.deleteAll();
-        locationRepo.deleteAll();
-        accountRepo.deleteAll();
         clientToChosenServiceRepo.deleteAll();
         clientRepo.deleteAll();
+        queueRepo.deleteAll();
+        serviceInSpecialistRepo.deleteAll();
+        specialistRepo.deleteAll();
+        serviceInServicesSequenceRepo.deleteAll();
+        servicesSequenceRepo.deleteAll();
+        serviceRepo.deleteAll();
+        locationRepo.deleteAll();
+        accountRepo.deleteAll();
 
         localizer = new Localizer(
                 new Locale("ru"),
@@ -124,10 +133,10 @@ public class LocationServiceTests {
         accountEntity = accountRepo.save(
                 new AccountEntity(
                         1L,
-                        "zotovm256@gmail.com",
+                        EMAIL,
                         "Test",
                         "Test",
-                        passwordEncoder.encode("12345678"),
+                        passwordEncoder.encode(PASSWORD),
                         new Date()
                 )
         );
@@ -135,8 +144,8 @@ public class LocationServiceTests {
         tokens = assertDoesNotThrow(() -> accountService.login(
                 localizer,
                 new LoginRequest(
-                        "zotovm256@gmail.com",
-                        "12345678"
+                        EMAIL,
+                        PASSWORD
                 )
         ));
 
@@ -144,8 +153,8 @@ public class LocationServiceTests {
                 localizer,
                 tokens.getAccess(),
                 new CreateLocationRequest(
-                        "Локация 1",
-                        "Описание"
+                        "Location 1",
+                        "Description"
                 )
         ));
 
@@ -173,7 +182,7 @@ public class LocationServiceTests {
                 tokens.getAccess(),
                 locationModel.getId(),
                 new CreateServicesSequenceRequest(
-                        "ServicesSequence",
+                        "Services sequence",
                         "Description",
                         Map.ofEntries(
                                 entry(firstServiceModel.getId(), 1),
@@ -265,7 +274,7 @@ public class LocationServiceTests {
     void testGetLocation() {
         assertThrows(DescriptionException.class, () -> locationService.getLocation(
                 localizer,
-                1000L
+                NON_EXISTING_ID
         ));
         LocationModel localLocationModel = assertDoesNotThrow(() -> locationService.getLocation(
                 localizer,
@@ -278,7 +287,7 @@ public class LocationServiceTests {
     void testGetLocations() {
         assertThrows(DescriptionException.class, () -> locationService.getLocations(
                 localizer,
-                1000L
+                NON_EXISTING_ID
         ));
         List<LocationModel> locations = assertDoesNotThrow(() -> locationService.getLocations(
                 localizer,
@@ -294,7 +303,7 @@ public class LocationServiceTests {
                 tokens.getAccess(),
                 locationModel.getId(),
                 new AddRightsRequest(
-                    "zotovm256@gmail.com",
+                        RIGHTS_EMAIL,
                         RightsStatusEntity.Status.ADMINISTRATOR.name()
                 )
         ));
@@ -521,7 +530,7 @@ public class LocationServiceTests {
         assertThrows(DescriptionException.class, () -> queueService.getQueueState(
                 localizer,
                 tokens.getAccess(),
-                1000L
+                NON_EXISTING_ID
         ));
         assertDoesNotThrow(() -> queueService.getQueueState(
                 localizer,
