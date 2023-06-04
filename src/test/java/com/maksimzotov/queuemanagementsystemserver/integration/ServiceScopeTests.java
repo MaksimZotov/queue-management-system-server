@@ -5,8 +5,6 @@ import com.maksimzotov.queuemanagementsystemserver.exceptions.DescriptionExcepti
 import com.maksimzotov.queuemanagementsystemserver.integration.extension.PostgreSQLExtension;
 import com.maksimzotov.queuemanagementsystemserver.model.account.LoginRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.account.TokensResponse;
-import com.maksimzotov.queuemanagementsystemserver.model.client.ClientModel;
-import com.maksimzotov.queuemanagementsystemserver.model.client.CreateClientRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.CreateLocationRequest;
 import com.maksimzotov.queuemanagementsystemserver.model.location.LocationModel;
 import com.maksimzotov.queuemanagementsystemserver.model.queue.CreateQueueRequest;
@@ -81,10 +79,6 @@ public class ServiceScopeTests {
     @Autowired
     private ServiceInSpecialistRepo serviceInSpecialistRepo;
     @Autowired
-    private ClientRepo clientRepo;
-    @Autowired
-    private ClientToChosenServiceRepo clientToChosenServiceRepo;
-    @Autowired
     private ServicesSequenceRepo servicesSequenceRepo;
     @Autowired
     private ServiceInServicesSequenceRepo serviceInServicesSequenceRepo;
@@ -105,14 +99,9 @@ public class ServiceScopeTests {
     private SpecialistModel secondSpecialistModel;
     private QueueModel firstQueueModel;
     private QueueModel secondQueueModel;
-    private ClientModel confirmedClientModel;
-    private ClientModel nonConfirmedClientModel;
-    private AccountEntity accountEntity;
 
     @BeforeEach
     void beforeEach() {
-        clientToChosenServiceRepo.deleteAll();
-        clientRepo.deleteAll();
         queueRepo.deleteAll();
         serviceInSpecialistRepo.deleteAll();
         specialistRepo.deleteAll();
@@ -127,7 +116,7 @@ public class ServiceScopeTests {
                 messageSource
         );
 
-        accountEntity = accountRepo.save(
+        accountRepo.save(
                 new AccountEntity(
                         null,
                         EMAIL,
@@ -188,30 +177,6 @@ public class ServiceScopeTests {
                 )
         ));
 
-        confirmedClientModel = assertDoesNotThrow(() -> clientService.createClient(
-                localizer,
-                tokens.getAccess(),
-                locationModel.getId(),
-                new CreateClientRequest(
-                        null,
-                        List.of(firstServiceModel.getId(), secondServiceModel.getId()),
-                        null,
-                        false
-                )
-        ));
-
-        nonConfirmedClientModel = assertDoesNotThrow(() -> clientService.createClient(
-                localizer,
-                tokens.getAccess(),
-                locationModel.getId(),
-                new CreateClientRequest(
-                        "+79193058732",
-                        List.of(firstServiceModel.getId(), secondServiceModel.getId()),
-                        null,
-                        true
-                )
-        ));
-
         firstSpecialistModel = assertDoesNotThrow(() -> specialistService.createSpecialistInLocation(
                 localizer,
                 tokens.getAccess(),
@@ -261,11 +226,20 @@ public class ServiceScopeTests {
                 localizer,
                 NON_EXISTING_ID
         ));
-        List<ServiceModel> serviceModels = assertDoesNotThrow(() -> serviceService.getServicesInQueue(
-                localizer,
-                firstQueueModel.getId()
-        )).getResults();
-        assertEquals(List.of(firstServiceModel), serviceModels);
+        assertEquals(
+                List.of(firstServiceModel),
+                assertDoesNotThrow(() -> serviceService.getServicesInQueue(
+                        localizer,
+                        firstQueueModel.getId()
+                )).getResults()
+        );
+        assertEquals(
+                List.of(secondServiceModel),
+                assertDoesNotThrow(() -> serviceService.getServicesInQueue(
+                        localizer,
+                        secondQueueModel.getId()
+                )).getResults()
+        );
     }
 
     @Test
@@ -274,11 +248,20 @@ public class ServiceScopeTests {
                 localizer,
                 NON_EXISTING_ID
         ));
-        List<ServiceModel> serviceModels = assertDoesNotThrow(() -> serviceService.getServicesInQueue(
-                localizer,
-                firstSpecialistModel.getId()
-        )).getResults();
-        assertEquals(List.of(firstServiceModel), serviceModels);
+        assertEquals(
+                List.of(firstServiceModel),
+                assertDoesNotThrow(() -> serviceService.getServicesInSpecialist(
+                        localizer,
+                        firstSpecialistModel.getId()
+                )).getResults()
+        );
+        assertEquals(
+                List.of(secondServiceModel),
+                assertDoesNotThrow(() -> serviceService.getServicesInSpecialist(
+                        localizer,
+                        secondSpecialistModel.getId()
+                )).getResults()
+        );
     }
 
     @Test

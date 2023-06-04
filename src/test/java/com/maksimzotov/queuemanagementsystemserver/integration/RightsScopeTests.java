@@ -90,8 +90,6 @@ public class RightsScopeTests {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private AccountEntity firstAccountEntity;
-    private AccountEntity secondAccountEntity;
     private TokensResponse firstTokens;
     private TokensResponse secondTokens;
 
@@ -107,7 +105,7 @@ public class RightsScopeTests {
         locationRepo.deleteAll();
         accountRepo.deleteAll();
 
-        firstAccountEntity = accountRepo.save(
+        accountRepo.save(
                 new AccountEntity(
                         null,
                         FIRST_EMAIL,
@@ -117,7 +115,7 @@ public class RightsScopeTests {
                         new Date()
                 )
         );
-        secondAccountEntity = accountRepo.save(
+        accountRepo.save(
                 new AccountEntity(
                         null,
                         SECOND_EMAIL,
