@@ -31,7 +31,11 @@ public class SpecialistController extends BaseController {
             HttpServletRequest request,
             @RequestParam("location_id") Long locationId
     ) {
-        return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
+        try {
+            return ResponseEntity.ok().body(specialistService.getSpecialistsInLocation(getLocalizer(request), locationId));
+        } catch (DescriptionException ex) {
+            return ResponseEntity.badRequest().body(new ErrorResult(ex.getDescription()));
+        }
     }
 
     @PostMapping("/create")

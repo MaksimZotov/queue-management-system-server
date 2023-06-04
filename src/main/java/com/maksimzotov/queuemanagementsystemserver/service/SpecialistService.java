@@ -8,7 +8,7 @@ import com.maksimzotov.queuemanagementsystemserver.model.specialist.SpecialistMo
 import com.maksimzotov.queuemanagementsystemserver.util.Localizer;
 
 public interface SpecialistService {
-    ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId);
+    ContainerForList<SpecialistModel> getSpecialistsInLocation(Localizer localizer, Long locationId) throws DescriptionException;
     SpecialistModel createSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, CreateSpecialistRequest createSpecialistRequest) throws DescriptionException, AccountIsNotAuthorizedException;
     void deleteSpecialistInLocation(Localizer localizer, String accessToken, Long locationId, Long specialistId) throws DescriptionException, AccountIsNotAuthorizedException;
 }

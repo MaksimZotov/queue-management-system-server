@@ -78,7 +78,10 @@ public class QueueServiceImpl implements QueueService {
     }
 
     @Override
-    public ContainerForList<QueueModel> getQueues(Localizer localizer, Long locationId) {
+    public ContainerForList<QueueModel> getQueues(Localizer localizer, Long locationId) throws DescriptionException {
+        if (!locationRepo.existsById(locationId)) {
+            throw new DescriptionException(localizer.getMessage(Message.LOCATION_DOES_NOT_EXIST));
+        }
         List<QueueEntity> queuesEntities = queueRepo.findAllByLocationId(locationId);
         return new ContainerForList<>(
                 queuesEntities
